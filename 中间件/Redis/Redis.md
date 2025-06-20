@@ -26,7 +26,7 @@
       - Redis通常用于一些特定场景，需要和MySQL一起使用
       - **两者并不是相互替换和竞争关系，而实共用和配合使用**
 
-  ![与mysql关系](.\图片\基础\与mysql关系.png)
+  ![](图片\基础\与mysql关系.png)
 
   - **内存存储和持久化（RDB+AOF）**，Redis支持异步将内存中的数据写到硬盘上，同时不影响继续服务
 
@@ -53,7 +53,7 @@
 
 ### 1.4 总结
 
-![总结](.\图片\基础\总结.png)
+![总结](图片\基础\总结.png)
 
 
 
@@ -77,24 +77,24 @@
   - gcc是 [GNU](https://so.csdn.net/so/search?q=GNU&spm=1001.2101.3001.7020) 编译器集合（GNU Compiler Collection）的核心组件之一，**用于编译 C、C++ 和其他语言的源代码**。它是 Linux 系统和开源项目中最常用的编译工具。
   - 查看是否安装gcc：gcc -v
 
-  ![总结](.\图片\基础\gcc查看.png)
+  ![总结](图片\基础\gcc查看.png)
 
   - 安装gcc：yum -y install gcc-c++
 
-  ![总结](.\图片\基础\gcc安装.png)
+  ![总结](图片\基础\gcc安装.png)
 
 
 
 ### 2.2 下载安装
 
-![总结](.\图片\基础\redis安装步骤.png)
+![总结](图片\基础\redis安装步骤.png)
 
 - 1、下载地址：https://redis.io/downloads/，上传到opt目录
 - 2、进入到opt目录：cd /opt，解压命令：**tar -zxvf redis-7.4.0.tar.gz**
 - 3、进入redis目录：**cd redis-7.4.0**
 - 4、执行make编译命令：**make && make install**，直到出现这个就证明编译安装成功
 
-![总结](.\图片\基础\编译安装成功标志.png)
+![总结](图片\基础\编译安装成功标志.png)
 
 - 5、查看默认安装目录：**usr/local/bin**
 
@@ -107,7 +107,7 @@
     - redis-sentinel：redis集群使用
     - <font color="red">redis-server：redis服务器启动命令</font>
 
-  ![总结](.\图片\基础\redis安装路径.png)
+  ![总结](图片\基础\redis安装路径.png)
 
 - 6、将redis解压包下默认的配置文件redis.conf拷贝到自己定义好的一个路径下
   - mkdir myredis
@@ -134,7 +134,7 @@
 
 ## 3、十大数据类型
 
-![总结](.\图片\数据类型\十大数据类型.png)
+![总结](图片\数据类型\十大数据类型.png)
 
 - **String（字符串）**
   - String是redis最基本的类型，一个key对应一个value
@@ -441,7 +441,7 @@ getset k1 qwe
 - 如果值全移除，对应的键也就消失了
 - <font color="red">**它的底层实际是个双向链表，对两端的操作性能很高，通过索引下标的操作中间的节点性能会比较差**</font>
 
-![总结](.\图片\数据类型\list.png)
+![总结](图片\数据类型\list.png)
 
 
 
@@ -1221,7 +1221,7 @@ zrevrank zset1 v3
 - <font color="red">**位图本质是数组**</font>，它是基于String数据类型的按位的操作。该数组由多个二进制位组成，每个二进制位都对应一个偏移量（我们称之为一个索引）
 - Bitmap支持的最大位数是2^32位，它可以极大的节约存储空间，使用512M内存就可以存储多大42.9亿的字节信息（2^32=4294967296）
 
-![总结](.\图片\数据类型\bitmap.png)
+![总结](图片\数据类型\bitmap.png)
 
 - 能干嘛：用于状态统计，Y/N，类似AtomicBoolean
 
@@ -1364,7 +1364,7 @@ pfcount hll03
   - RDB：通俗来说就是把内存数据文件整个保存，要用直接读取就行（默认）
   - AOF：通俗来说就是把所有数据写命令记录下来，要用的时候一个个按照命令执行
 
-![总结](.\图片\持久化\持久化.png)
+![总结](图片\持久化\持久化.png)
 
 
 
@@ -1405,7 +1405,7 @@ pfcount hll03
     - save 300 10：每隔300s（5min），如果有超过10个key发生了变化，就写一份新的RDB文件、
     - save 60 10000：每隔60s（1min），如果有超过10000个key发生了变化，就写一份新的RDB文件
 
-![总结](.\图片\持久化\rdb6.0.16版本以下配置文件.png)
+![总结](图片\持久化\rdb6.0.16版本以下配置文件.png)
 
 - 6.2版本和7.0版本配置文件
   - 比如：save m n：表示m秒内数据集存在n次修改时，自动触发bgsave
@@ -1413,7 +1413,7 @@ pfcount hll03
     - save 300 100：每隔300s（5min），如果有超过100个key发生了变化，就写一份新的RDB文件、
     - save 60 10000：每隔60s（1min），如果有超过10000个key发生了变化，就写一份新的RDB文件
 
-![总结](.\图片\持久化\rdb6.2版本以上配置文件.png)
+![总结](图片\持久化\rdb6.2版本以上配置文件.png)
 
 - 总结：<font color="red">**只是时间刻度发生变化，设置公式还是一致**</font>
 
@@ -1424,11 +1424,11 @@ pfcount hll03
 - 默认存放地址修改为：dir ./myredis/dumpfiles/
   - 此文件路径需要提前建好：mkdir dumpfiles
 
-![总结](.\图片\持久化\dump文件默认存放地址.png)
+![总结](图片\持久化\dump文件默认存放地址.png)
 
 - dump文件默认文件名修改为：dbfilename dump6379.rdb
 
-![总结](.\图片\持久化\dump文件默认文件名.png)
+![总结](图片\持久化\dump文件默认文件名.png)
 
 - 修改触发机制：save 5 2
 - 重启服务：
@@ -1499,7 +1499,7 @@ lastsave
 # 结果：(integer) 1749998246
 ~~~
 
-![总结](.\图片\持久化\rdb之手动触发.png)
+![总结](图片\持久化\rdb之手动触发.png)
 
 
 
@@ -1553,7 +1553,7 @@ cd /usr/local/bin/
 redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 ~~~
 
-![总结](.\图片\持久化\检查修复rdb文件.png)
+![总结](图片\持久化\检查修复rdb文件.png)
 
 
 
@@ -1572,7 +1572,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 - 动态所有停止RDB保存规则的方法：redis-cli config set value ""
 - 手动修改配置文件：把这个配置打开
 
-![总结](.\图片\持久化\禁用RDB快照.png)
+![总结](图片\持久化\禁用RDB快照.png)
 
 
 
@@ -1583,25 +1583,25 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 - dbfilename：配置快照的文件名
 - stop-writes-on-bgsave-error：默认yes。如果配置成no，表示不在乎数据不一致或者有其他的手段发现和控制这种不一致，**那么在快照写入失败时，也能确保redis继续接受新的写请求**
 
-![总结](.\图片\持久化\stop-writes-on-bgsave-error.jpg)
+![总结](图片\持久化\stop-writes-on-bgsave-error.jpg)
 
 - rdbcompression：默认yes，对于存储到磁盘中的快照，可以设置是否进行**压缩存储**。如果是的话，Redis会采用LZF算法进行压缩。如果你不想消耗CPU来进行压缩的话，可以设置为关闭此功能
 
-![总结](.\图片\持久化\rdbcompression.jpg)
+![总结](图片\持久化\rdbcompression.jpg)
 
 - rdbchecksum：默认yes，在存储快照后，**还可以让redis使用CRC64算法来进行数据校验**，但是这样做会增加大约10%的性能消耗，如果希望获取到最大的性能提升，可以关闭此功能
 
-![总结](.\图片\持久化\rdbchecksum.jpg)
+![总结](图片\持久化\rdbchecksum.jpg)
 
 - rdb-del-sync-files：**在没有持久化的情况下删除复制中使用的RDB文件**。默认情况下no，此选项是禁用的。
 
-![总结](.\图片\持久化\rdb-del-sync-files.jpg)
+![总结](图片\持久化\rdb-del-sync-files.jpg)
 
 
 
 #### 4.2.10 总结
 
-![总结](.\图片\持久化\rdb总结.png)
+![总结](图片\持久化\rdb总结.png)
 
 
 
@@ -1619,7 +1619,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 
 #### 4.3.2 AOF持久化工作流程
 
-![总结](.\图片\持久化\AOF持久化工作流程.png)
+![总结](图片\持久化\AOF持久化工作流程.png)
 
 1. Client作为命令的来源，会有多个源头以及源源不断的请求命令
 2. 在这些命令到达Redis Server以后并不是直接写入AOF文件，会将这些命令先放入AOF缓存区中进行保存。**这里的AOF缓存区实际上是内存的一片区域，存在的目的是当这些命令达到一定量以后再写入磁盘，避免频繁的磁盘IO操作**
@@ -1662,7 +1662,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
       - 增量文件：appendonly.aof.1.incr.aof、appendonly.aof.2.incr.aof ...
       - 清单文件：appendonly.aof.manifest
 
-![总结](.\图片\持久化\aof文件.png)
+![总结](图片\持久化\aof文件.png)
 
 
 
@@ -1670,7 +1670,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 
 - set了三个值之后，会在配置的dir目录下生成dump6379.rdb文件和aof的文件目录
 
-![总结](.\图片\持久化\持久化文件夹.png)
+![总结](图片\持久化\持久化文件夹.png)
 
 - 删除dump6379.rdb并将aof文件夹改名为appendonlydirbak
 - flushdb清空redis数据库
@@ -1687,19 +1687,19 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 - 现象：每秒钟都会写入到aof文件中，但是如果因为网络波动问题导致内容才写一半，redis挂了，那么就会出现aof文件异常
 - 模拟：往incr文件中乱写一段模拟网络闪断文件写error
 
-![总结](.\图片\持久化\aof文件错误.png)
+![总结](图片\持久化\aof文件错误.png)
 
 - 重启服务，发现无法启动
 
-![总结](.\图片\持久化\aof文件错误无法启动服务.png)
+![总结](图片\持久化\aof文件错误无法启动服务.png)
 
 - <font color="red">**异常修复命令：redis-check-aof --fix appendonly.aof.1.incr.aof**</font>
 
-![总结](.\图片\持久化\aof修改成功.png)
+![总结](图片\持久化\aof修改成功.png)
 
 - 修改成功后的文件内容如下：删除了多余错误的文件内容
 
-![总结](.\图片\持久化\修改成功后的文件.png)
+![总结](图片\持久化\修改成功后的文件.png)
 
 
 
@@ -1740,12 +1740,12 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
   - 案例结果：
     - 当文件大小达到1kb时，会生成新的base和incr文件，而base中会保留最小指令集，新的命令则写入incr文件中
 
-![总结](.\图片\持久化\重写.png)
+![总结](图片\持久化\重写.png)
 
 - 手动触发案例
   - bgrewriteaof
 
-![总结](.\图片\持久化\手动触发重写.png)
+![总结](图片\持久化\手动触发重写.png)
 
 - 结论：<font color="red">**AOF文件重写不是对原文件进行重新整理，而是直接读取服务器现有的键值对，然后用一条命令去代替之前记录的这个键值对的多条命令，生成一个新的文件后去替换原来的AOF文件**</font>
   - AOF文件重写触发机制：通过redis,conf配置文件中的auto-aof-rewrite-percentage 100，以及auto-aof-rewrite-min-size 64mb配置，也就是说默认情况下，<font color="red">**当AOF文件大小是上次rewrite后大小的一倍且文件大于64MB时触发**</font>
@@ -1775,7 +1775,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 
 - 同时开启rdb和aof时，重启时只会加载aof文件，不会加载rdb文件
 
-![总结](.\图片\持久化\加载顺序.png)
+![总结](图片\持久化\加载顺序.png)
 
 - **官方建议两者配合使用：aof-use-rdb-preamble yes**
 - 混合方式：**RDB做全量持久化，AOF做增量持久化**
@@ -2032,7 +2032,7 @@ QUEUED
   - 服务端处理命令，并将结果返回给客户端。
 - 上述两步称为：Round Trip Time (简称 RTT, 数据包往返于两端的时间)
 
-![总结](.\图片\管道\redis客户端与服务端的交互模型.png)
+![总结](图片\管道\redis客户端与服务端的交互模型.png)
 
 - 如果同时需要执行大量的命令，那么就要等待上一条命令应答后再执行，这中间不仅仅多了 RTT（Round Time Trip），而且还频繁调用系统 IO，发送网络请求，同时需要 redis 调用多次 read () 和 write () 系统方法，系统方法会将数据从用户态转移到内核态，这样就会对进程上下文有比较大的影响了，性能不太好
 
@@ -2042,7 +2042,7 @@ QUEUED
 
 - 管道（pipeline）可以一次性发送多条命令给服务端，服务端依次处理完毕后，<font color="red">**通过一条响应一次性将结果返回，通过减少客户端与redis的通信次数来实现降低往返时延时间。**</font>pipeline实现原理是队列，先进先出特性就是保证数据的顺序性
 
-![总结](.\图片\管道\管道实现模型.png)
+![总结](图片\管道\管道实现模型.png)
 
 - 定义：Pipeline是为了解决RTT往返时间，仅仅是将命令打包一次性发送，对整个redis的执行不造成其他任何影响
 - 总结：<font color="red">**批处理命令变种优化措施**</font>，类似redis的原生批命令（mget和mset）
@@ -2108,11 +2108,11 @@ errors: 0, replies: 6
 - 能干嘛： redis客户端可以订阅任意数量的频道，就像微信关注多个公众号
   - 当有新消息通过publish命令发送给频道channel1时，客户端就可以接收到
 
-![总结](.\图片\发布订阅\发布订阅1.png)
+![总结](图片\发布订阅\发布订阅1.png)
 
 - 发布订阅其实就是一个轻量的队列，只不过数据不会被持久化，一般用来处理**实时性较高的异步消息**
 
-![总结](.\图片\发布订阅\发布订阅2.png)
+![总结](图片\发布订阅\发布订阅2.png)
 
 
 
@@ -2133,7 +2133,7 @@ errors: 0, replies: 6
 - 主从复制：<font color="red">**master以写为主，slave以读为主**</font>
 - <font color="red">**当master数据变化的时候，自动将新的数据异步同步到其他slave数据库**</font>
 
-![总结](.\图片\主从复制\基本架构.png)
+![总结](图片\主从复制\基本架构.png)
 
 - 能干嘛
   - 读写分离
