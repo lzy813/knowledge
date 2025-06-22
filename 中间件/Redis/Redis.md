@@ -1334,6 +1334,10 @@ pfmerge hll03 hll01 hll02
 # 结果：OK
 pfcount hll03
 # 结果：(integer) 9
+
+# 类型
+type hll03
+# 结果：string
 ~~~
 
 
@@ -1348,7 +1352,132 @@ pfcount hll03
 
 ### 3.10 GEO
 
+- 主要用于存储地理位置信息，并对存储的信息进行操作，包括
 
+  - 添加地理位置的坐标
+
+  - 获取地理位置的坐标
+
+  - 计算两个位置之间的距离
+
+  - 根据用户给定的经纬度坐标来获取指定范围内的地理位置集合
+
+
+
+#### 3.10.1 出现背景
+
+- 移动互联网时代LBS应用越来越多，高德地图附近的核酸点、附近美食、附近好友都需要地理位置的使用
+  - 传统方式都是使用二维的经纬度表示，经都范围(-180, 180]，纬度范围(-90, 90]，只要确定一个点的经纬度就可以取得在地球上的位置
+  - 例如滴滴打车，最直观的操作就是实时记录各个车的位置
+  - 要找车的时候，就在数据库中查找距离我们(x0, y0)附近r公里范围内的车辆
+  - 使用select taxi from position where x0-r < x < x0 + r and y0 - r < y < y0 + r					 
+
+- 这样产生的问题
+  - 查询性能问题，如果并发高，数据量大这种查询是要搞垮数据库的
+  - 这个查询是矩形访问，而不是以我为中心r公里为半径的圆形访问
+  - 精准度的问题，地球不是平面坐标系，是一个圆球，这种矩形计算在长距离计算时会有很大误差
+
+
+
+#### 3.10.2 原理
+
+- 核心思想就是将球体转换为平面，区块转为一点
+
+- 主要分三步
+  - 将三维的地球变为二维的坐标
+  - 再将二维的坐标转换为一维的点块
+  - 最后将一维的点块转换为二进制再通过base32编码
+
+
+
+#### 3.10.3 命令
+
+- geoadd 多个经度(longitude)、维度(latitude)、位置名称(member)，添加到指定key中：**geoadd key longitude latitude member [longitude latitude member ...]**
+- geopos：从键里返回所有给定位置元素的位置（经度和维度）：**geopos key member [member ...]**
+- geodist：返回两个给定位置之间的距离：**geodist key member1 member2 [m|km|ft|mi]**，m：米；km：千米；ft：英尺；mi：英里
+- geoRadius：以给定的经纬度为中心，返回与中心的距离不超过给定最大距离的所有位置元素
+  - **geoRadius key 经度(longitude) 维度(latitude) num [m|km|ft|mi] withdist withcoord withhash count 10 desc**
+    - withdist：返回位置的同时，将位置元素与中心之间的距离一并返回，距离单位和用户给定的单位一致
+    - withcoord：将位置元素的经纬度一并返回
+    - withhash：以52位有符号整数的形式，返回未知元素经过geohash编码的有序集合分支
+    - count：限定返回记录数
+- geoRadiusByMember：跟geoRadius类似，这个可以直接用成员member来代替上面的指定经纬度
+  - **geoRadius key member num [m|km|ft|mi] withdist withcoord withhash count 10 desc**
+- geohash：返回一个或多个位置元素的geohash表示，即geohash算法生成base32编码值：**geohash key member [member ...]**
+
+~~~bash
+base32
+geohash # 添加
+127.0.0.1:6379> geoadd city 116.403963 39.915119 "天安门" 116.403414 39.924091 "故宫" 116.024067 40.362639 "长城"
+(integer) 3
+
+# 查看类型:zset
+127.0.0.1:6379> type city  
+zset
+
+# 通过zset命令查看，得到乱码，这时要在客户端启动加个--raw解决
+127.0.0.1:6379> zrange city 0 -1
+1) "\xe5\xa4\xa9\xe5\xae\x89\xe9\x97\xa8"
+2) "\xe6\x95\x85\xe5\xae\xab"
+3) "\xe9\x95\xbf\xe5\x9f\x8e"
+
+# 乱码问题解决
+redis-cli -a li998813 -p 6379 --raw
+127.0.0.1:6379> zrange city 0 -1
+天安门
+故宫
+长城
+
+# 返回经纬度
+127.0.0.1:6379> geopos city 天安门 故宫 长城
+116.40396326780319214
+39.91511970338637383
+116.40341609716415405
+39.92409008156928252
+116.02406591176986694
+40.36263993239462167
+
+# 返回base32
+127.0.0.1:6379> geohash city 天安门 故宫 长城
+wx4g0f6f2v0
+wx4g0gfqsj0
+wx4t85y1kt0
+
+# 计算两个位置之间的距离
+127.0.0.1:6379> geodist city 天安门 长城 km
+0.9988
+127.0.0.1:6379> geodist city 天安门 长城 km
+59.3390
+
+# 当前位置在王府井：(116.418017 39.914402)
+georadius city 116.418017 39.914402 10 km withdist withcoord count 10 asc
+天安门
+1.2016
+116.40396326780319214
+39.91511970338637383
+故宫
+1.6470
+116.40341609716415405
+39.92409008156928252
+
+# 以故宫为中心返回
+georadiusbymember city 故宫 10 km withdist withcoord count 10 asc
+天安门
+1.2016
+116.40396326780319214
+39.91511970338637383
+~~~
+
+
+
+#### 3.10.4 常用场景
+
+- 美团地图位置附近的酒店推送
+- 高德地图附近的核酸检测点
+
+
+
+### 3.11 Stream
 
 
 
@@ -2153,4 +2282,27 @@ errors: 0, replies: 6
 
 
 
-8.2 
+### 8.2 配置步骤
+
+- 主机master：将默认的redis.conf复制一份，修改配置
+  - 开启daemonize yes：后台运行，意思是改为后台服务端启动
+  - 注释掉bind 127.0.0.1 -::1：让别的机器也可以访问
+  - protected-mode no：保护模式关闭，让别人也访问连接
+  - port 6379：指定端口
+  - dir ./myredis/6379：指定当前工作目录
+  - pidfile /var/run/redis_6379.pid：pid文件名字
+  - logfile /opt/redis-7.4.0/myredis/6379/6379.log：日志路径
+  - requirepass li998813：设置密码
+  - dbfilename dump6379.rdb：dump文件名
+- 从机slave：前面的保持一致，记得不同的文件将6379全部换了，换成对应的端口
+  - replicaof 111.231.33.58 6379：认主机的ip和端口
+  - masterauth li998813：认主机也要密码认证
+
+
+
+### 8.3 启动
+
+- 进入到/opt/redis-7.4.0/目录
+  - 先启动master：redis-server myredis/redis6379.conf
+  - 启动slave1：redis-server myredis/redis6380.conf
+  - 启动slave2：redis-server myredis/redis6381.conf
