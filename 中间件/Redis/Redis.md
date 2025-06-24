@@ -1477,7 +1477,65 @@ georadiusbymember city 故宫 10 km withdist withcoord count 10 asc
 
 
 
-### 3.11 Stream
+### 3.11 Stream流
+
+#### 3.11.1 是什么
+
+- Redis5.0 之前的痛点，Redis消息队列的2种方案：
+
+  - List实现消息队列，List实现方式其实就是点对点的模式
+
+  ![stream1](图片/数据类型/stream1.png)
+
+  - Pub/Sub
+
+  ![stream2](图片/数据类型/stream2.png)
+
+  - Redis5.0版本新增了一个更强大的数据结构---Stream
+
+- **Stream流就是Redis版的MQ消息中间件+阻塞队列**
+
+
+
+#### 3.11.2 能干嘛
+
+- 实现消息队列，它支持消息的持久化、支持自动生成全局唯一ID、支持ack确认消息的模式、支持消费组模式等，让消息队列更加的稳定和可靠
+- 底层原理说明
+
+![stream底层原理](图片/数据类型/stream底层原理.png)
+
+
+
+#### 3.11.3 命令
+
+- 队列指令
+
+![队列指令](图片/数据类型/队列指令.png)
+
+- 消费组指令
+  - XINFO GROUPS 打印消费组的详细信息
+  - XINFO STREAM 打印stream的详细信息
+
+![消费组相关指令](图片/数据类型/消费组相关指令.png)
+
+- 四个特殊符号
+
+![四个特殊符号](图片/数据类型/四个特殊符号.png)
+
+
+
+
+
+#### 3.11.4 实操
+
+~~~bash
+~~~
+
+
+
+
+
+
 
 
 
@@ -1581,7 +1639,7 @@ georadiusbymember city 故宫 10 km withdist withcoord count 10 asc
 
   - 因此，**Redis 引入了按时间和数据修改次数双重限制的快照保存机制，以在灵活性和效率之间取得平衡**。如果在 5 秒内修改的次数超过 2 次，则说明数据的变化较快，在此情况下保存快照并不会带来明显的性能问题。因此，Redis 将其纳入保存快照的范围，以保证数据的安全和一致性	
 
-- 总结：<font color="red">**每5s检查够不够2次操作**</font>font>
+- 总结：<font color="red">**每5s检查够不够2次操作**</font>
 
 
 
@@ -1909,7 +1967,7 @@ redis-check-rdb /opt/redis-7.4.0/myredis/dumpfiles/dump6379.rdb
 - **官方建议两者配合使用：aof-use-rdb-preamble yes**
 - 混合方式：**RDB做全量持久化，AOF做增量持久化**
   - 先使用RDB进行快照存储，然后使用AOF持久化记录所有的写操作，当重写策略满足或手动触发重写的时候，<font color="red">**将最新的数据存储为新的rdb记录**</font>。这样重启的话，服务会从rdb和aof两部分恢复数据，既保证了数据完整性，又提高了恢复数据的性能。
-  - 简单来说，混合方式产生的文件一部分时rdb格式，一部分时aof格式。<font color="red">**AOF包括了RDB头部+AOF混写**</font>
+  - 简单来说，混合方式产生的文件一部分是rdb格式，一部分是aof格式。<font color="red">**AOF包括了RDB头部+AOF混写**</font>
 
 
 
@@ -2282,7 +2340,13 @@ errors: 0, replies: 6
 
 
 
-### 8.2 配置步骤
+### 8.2 一主二仆之配置文件
+
+![一主二仆](图片/主从复制/一主二仆.png)
+
+
+
+#### 8.2.1 配置步骤
 
 - 主机master：将默认的redis.conf复制一份，修改配置
   - 开启daemonize yes：后台运行，意思是改为后台服务端启动
@@ -2300,9 +2364,334 @@ errors: 0, replies: 6
 
 
 
-### 8.3 启动
+#### 8.2.2 启动
 
 - 进入到/opt/redis-7.4.0/目录
   - 先启动master：redis-server myredis/redis6379.conf
   - 启动slave1：redis-server myredis/redis6380.conf
   - 启动slave2：redis-server myredis/redis6381.conf
+
+- 查看主机日志看是否成功
+
+![主机日志显示成功](图片/主从复制/主机日志显示成功.png)
+
+- 查看从机日志查看是否成功
+
+![从机日志显示成功](图片/主从复制/从机日志显示成功.png)
+
+- 主机命令查看是否成功：**info replication**
+
+![主机命令查看是否成功](图片/主从复制/主机命令查看是否成功.png)
+
+- 从机命令查看是否成功：**info replication**
+
+![从机命令查看是否成功](图片/主从复制/从机命令查看是否成功.png)
+
+- 通过在6379上写入命令，在6380和6381上查看是否有
+
+~~~bash
+# 在6379上设置k1 v1
+set k1 v1
+
+# 在6380上获取k1
+get k1 
+# 结果：v1
+
+# 在6381上获取k1
+get k1 
+# 结果：v1
+~~~
+
+
+
+#### 8.2.3 问题总结
+
+- **从机不能执行写操作**，会报错：(error) READONLY You can't write against a read only replica.
+- **slave如果掉队是从开始复制还是从切入点开始复制**：<font color="red">**首次从开始复制，后续跟随，master写，slave跟**</font>
+  - master启动，写到k3
+  - slave1跟着master同时启动，跟着写到k3
+  - **slave2在master写到k3后再启动，之前的也可以复制**
+- **主机shutdown后，从机不动，原地待命，从机数据可以正常使用，等待主机重启归来**
+
+![从机命令查看是否成功](图片/主从复制/主机宕机.png)
+
+- 主机shutdown后，重启后主从关系还在，从机还是能够顺利复制
+
+![从机命令查看是否成功](图片/主从复制/主机宕机重启.png)
+
+- 从机shutdown后，master继续，从机重启后还是能跟上大部队
+
+
+
+
+
+### 8.3 一主二仆之命令
+
+- 步骤
+
+  - 注释还原从机6380和6381的两个配置文件，将这两行配置挂载主机的配置注释
+    - replicaof 111.231.33.58 6379：认主机的ip和端口
+    - masterauth li998813：认主机也要密码认证
+  - 启动三台redis服务
+    - redis-server myredis/redis6379.conf
+    - redis-server myredis/redis6380.conf
+    - redis-server myredis/redis6381.conf
+  - 分别查看三台主机是否都是master主机：info replication
+
+  ![默认三台主机](图片/主从复制/默认三台主机.png)
+
+  - 在6380和6381中执行命令：<font color="red">**slaveof 111.231.33.58 6379**</font>
+  - 稍等片刻分别查看状态是否已经挂载到主机
+
+![命令挂载](图片/主从复制/命令挂载.png)
+
+- 注意：<font color="red">**手动命令执行后，若从机shutdown重启后，主从关系就会失效**</font>
+
+
+
+### 8.4 薪火相传
+
+- 上一个slave可以是下一个slave的master，slave同样可以接收其他slave的连接和同步请求，那么该slave作为链条中的下一个master，可以有效减轻主master的写压力
+- <font color="red">**中途变更转向，会清除之前的数据，重新建立拷贝最新的**</font>
+
+![薪火相传](图片/主从复制/薪火相传.png)
+
+- 在6381中将挂载主机换到6380：slaveof 111.231.33.58 6380
+
+![薪火相传结果](图片/主从复制/薪火相传结果.png)
+
+- 注意：<font color="red">**6380此时还是不能写操作**</font>
+
+
+
+### 8.5 反客为主
+
+- slaveof no one：脱离现有体系，自己变为master
+
+![反客为主](图片/主从复制/反客为主.png)
+
+
+
+### 8.6 复制原理和工作流程
+
+- slave启动，同步初请
+  - slave启动成功连接到master后会发送一个sync命令
+  - slave首次全新连接master，一次完全同步（全量复制）将被自动执行，slave自身原有数据会被master数据覆盖清除
+
+- 首次连接，全量复制
+  - master节点收到sync命令后会在后台开始保存快照（即RDB持久化，主从复制会触发RDB），同时收集所有接收到的用于修改数据集命令缓存起来，master节点执行RDB持久化后，master将rdb快照文件和缓存的命令发送到所有slave，已完成一次完全同步
+  - 而slave服务在接收到数据库文件数据后，将其存盘并加载到内存中，从而完成复制初始化
+- 心跳持续，保持通信
+  - repl-ping-replica-period 10
+  - master发出PING包的周期，默认是10秒
+- 进入平稳，增量复制
+  - master 继续将新的所有收集到的修改命令自动一次传给slave，完成同步
+- 从机下线，重连续传
+  - master 会检查backlog里面的offset，master和slave都会保存一个复制的offset怀有一个masterId
+  - offset 是保存在backlog 中的。master只会把已经复制的offset后面的数据赋值给slave，类似断电续传
+
+
+
+### 8.7 缺点
+
+- 复制延时，信号衰减
+  - 由于所有的写操作都是先在Master上操作，然后同步更新到Slave上，所以从Master同步到Slave机器有一定的延迟，当系统很繁忙的时候，延迟问题会更加严重，Slave机器数量的增加也会使这个问题更加严重。
+
+![主从复制延迟](图片/主从复制/主从复制延迟.png)
+
+- master挂了
+  - 默认情况下不会在slave节点自动重选一个master
+  - 需要人工干预
+
+
+
+## 9、哨兵sentinel
+
+### 9.1 概念
+
+- 是什么：吹哨人巡查监控后台master主机是否故障，如果故障了根据<font color="red">**投票数**</font>自动将某一个从库转换为新主库，继续对外服务
+- 作用：俗称无人值守运维
+  - 监控redis运行状态，包括master和slave
+  - 当master宕机后，自动将slave切换为新的master
+
+![哨兵](图片/哨兵/哨兵.png)
+
+
+
+### 9.2 能干嘛
+
+- 主从监控：监控主从redis库运行是否正常
+- 消息通知：哨兵可以将故障转移的结果发送给客户端
+- 故障转移：如果master异常，则会进行主从切换，将其中一个slave作为新的master
+- 配置中心：客户端通过连接哨兵来获得当前redis服务的主节点
+
+
+
+### 9.3 案例
+
+#### 9.3.1 架构
+
+- 3个哨兵：自动监控和维护集群，不存放数据，只是吹哨人
+- 一主二从：用于数据读取和存放
+
+![哨兵案例架构](图片/哨兵/哨兵案例架构.png)
+
+
+
+#### 9.3.2 sentinel.conf配置文件
+
+- 常见配置
+
+  - protected-mode no：安全保护模式，如果想要让别人访问连接，这里的保护模式就得禁用掉
+
+  - bind：服务监听地址，用于客户端连接，默认本机地址
+
+  - daemonize yes：是否以后台daemon方式运行
+
+  - port 26379：端口
+
+  - logfile ""：日志文件路径
+
+  - pidfile /var/run/redis-sentinel.pid：pid文件路径
+
+  - dir /temp：工作目录
+
+- 重要配置
+
+  - <font color="red">**sentinel monitor master-name ip port quorum**</font>
+    - 设置要监控的master服务器
+    - quorum表示最少有几个哨兵认为可客观下线，同意故障迁移的法定票数，即：<font color="red">**确认客观下线的最少的哨兵数量**</font>
+    - 网络是不可靠的，有时候一个 sentinel 会因为网络堵塞而误以为一个 master redis 已经死掉了，在 sentinel 集群环境下需要多个 sentinel 互相沟通来确认某个 master 是否真的死了，quorum 这个参数是进行客观下线的一个依据，意思是至少有 quorum 个 sentinel 认为这个 master 有故障，才会对这个 master 进行下线以及故障转移。因为有的时候，某个 sentinel 节点可能因为自身网络原因，导致无法连接 master，而此时 master 并没有出现故障，所以，这就<font color="red">**需要多个 sentinel 都一致认为该 master 有问题**</font>，才可以进行下一步操作，这就保证了公平性和高可用。
+
+  - <font color="red">**sentinel auth-pass master-name password**</font>：master设置了密码，连接master服务的密码
+
+- 其他配置
+
+  - sentinel down-after-milliseconds <master-name> <milliseconds>：指定多少毫秒之后，主节点没有应答哨兵，此时哨兵主观上认为主节点下线
+  - sentinel parallel-syncs <master-name> <nums>：表示允许并行同步的 slave 个数，当 Master 挂了后，哨兵会选出新的 Master, 此时，剩余的 slave 会向新的 master 发起同步数据
+  - sentinel failover-timeout <master-name> <milliseconds>：故障转移的超时时间，进行故障转移时，如果超过设置的毫秒，表示故障转移失败
+  - sentinel notification-script <master-name> <script-path> ：配置当某一事件发生时所需要执行的脚本
+  - sentinel client-reconfig-script <master-name> <script-path>：客户端重新配置主节点参数脚本
+
+
+
+#### 9.3.3 案例配置步骤
+
+- 将redis解压包中的默认sentinel.conf配置文件拷贝到myredis下，复制三份
+- sentinel26379.conf
+
+~~~bash
+bind 0.0.0.0
+daemonize yes
+protected-mode no
+port 26379
+logfile /opt/redis-7.4.0/myredis/sentinel26379.log
+pidfile /var/run/redis-sentinel26379.pid
+dir /opt/redis-7.4.0/myredis
+sentinel monitor mymaster 111.231.33.58 6379 2
+sentinel auth-pass mymaster li998813
+~~~
+
+- sentinel26380.conf
+
+~~~bash
+bind 0.0.0.0
+daemonize yes
+protected-mode no
+port 26380
+logfile /opt/redis-7.4.0/myredis/sentinel26380.log
+pidfile /var/run/redis-sentinel26380.pid
+dir /opt/redis-7.4.0/myredis
+sentinel monitor mymaster 111.231.33.58 6379 2
+sentinel auth-pass mymaster li998813
+~~~
+
+- sentinel26381.conf
+
+~~~bash
+bind 0.0.0.0
+daemonize yes
+protected-mode no
+port 26381
+logfile /opt/redis-7.4.0/myredis/sentinel26381.log
+pidfile /var/run/redis-sentinel26381.pid
+dir /opt/redis-7.4.0/myredis
+sentinel monitor mymaster 111.231.33.58 6379 2
+sentinel auth-pass mymaster li998813
+~~~
+
+- 因为6379主master后续可能会变成从机，所以需要设置访问主机的密码，即：masterauth li998813，<font color="red">**不然后续可能报错master-link-status:down**</font>
+- 按照之前一主二仆的方式配置启动三台redis服务器，info replication检查是否正常并且能够正常复制同步
+  - redis-server myredis/redis6379.conf
+  - redis-server myredis/redis6380.conf
+  - redis-server myredis/redis6381.conf
+
+- 启动三个哨兵：<font color="red">**redis-sentinel /path/to/sentinel.conf --sentinel**</font>，--sentinel 可选
+  - redis-sentinel myredis/sentinel26379.conf --sentinel
+  - redis-sentinel myredis/sentinel26380.conf --sentinel
+  - redis-sentinel myredis/sentinel26381.conf --sentinel
+
+![sentinel三个启动进程](图片/哨兵/sentinel三个启动进程.png)
+
+- info replication再检查一次各个服务是否正常，并看主从能否正常同步命令
+
+- 哨兵日志：这里看26379，其他两个是一样，只不过哨兵ID和兄弟节点换了位置
+
+![哨兵日志](图片/哨兵/哨兵日志.png)
+
+- 成功启动后，会在原有sentinel.conf配置文件上追加内容，这里以26379举例
+
+![哨兵配置文件](图片/哨兵/哨兵配置文件.png)
+
+
+
+#### 9.3.4 模拟master宕机
+
+- 手动shutdown主机6379
+- <font color="red">**两台从机数据是否是OK的：是**</font>
+- <font color="red">**是否会从剩下2台机器上选出新的master：是**</font>
+
+![新master](图片/哨兵/新master.png)
+
+
+
+- <font color="red">**之前宕机的master主机重启回来，会变成salve从机**</font>
+
+![老主机变成从机](图片/哨兵/老主机变成从机.png)
+
+- **sentinel.log分析**
+
+![更换master日志](图片/哨兵/更换master日志.png)
+
+- **redis.conf配置文件**
+
+  - redis6379.conf：添加指向6381的配置和rdb
+
+  ![老master配置文件](图片/哨兵/老master配置文件.png)
+
+  - redis6381.conf：注释之前指向6379的配置，末尾加上rdb的配置
+
+  ![新master配置文件](图片/哨兵/新master配置文件.png)
+
+- 总结：
+  - <font color="red">**文件的内容，在运行期间会被 sentinel 动态进行更改**</font>
+  - <font color="red">**Master-Slave 切换后，master_redis.conf、slave_redis.conf 和 sentinel.conf 的内容都会发生改变，即 master_redis.conf 中会多一行 slaveof 的配置，sentinel.conf 的监控目标会随之调换**</font>
+
+
+
+#### 9.3.5 两个小坑
+
+- 6379宕机后，从机可能会短暂的出现Borken Pipe失败，这是正常现象，因为可能还没来得及建立新的连接
+
+![Broken Pipe](图片/哨兵/Broken Pipe.png)
+
+- 因为6379主master后续可能会变成从机，所以需要设置访问主机的密码，即：masterauth li998813，<font color="red">**不然后续可能报错master-link-status:down**</font>
+
+
+
+#### 9.3.6 其他问题
+
+- 生产上都是不同机房不同服务器，很少出现3个哨兵全部挂掉的情况
+- 可以同时监控多个master，一行一个
+
+![监控多个master](图片/哨兵/监控多个master.png)
