@@ -1495,6 +1495,8 @@ georadiusbymember city 故宫 10 km withdist withcoord count 10 asc
 
 - **Stream流就是Redis版的MQ消息中间件+阻塞队列**
 
+- **type stream：返回stream，证明他的类型是单独的stream类型**
+
 
 
 #### 3.11.2 能干嘛
@@ -1524,20 +1526,740 @@ georadiusbymember city 故宫 10 km withdist withcoord count 10 asc
 
 
 
+#### 3.11.4 队列相关指令
 
+##### 3.11.4.1 添加消息到队列末尾
 
-#### 3.11.4 实操
+- XADD 队列名 * key value [key value]
+  - 用于向stream队列中添加消息，如果指定的stream队列不存在，则该命令执行时会新建一个stream队列
+  - *号表示服务器自动生成MessageID（类似MySQL里主键auto_increment）,后面再接一堆业务key/value
+
+![XADD添加消息](图片/数据类型/XADD添加消息.png)
 
 ~~~bash
+# 用*号自增添加
+127.0.0.1:6379> xadd mystream * id 001 name lzy
+"1751084823740-0"
+127.0.0.1:6379> xadd mystream * id 002 name lsq
+"1751084832498-0"
+
+# 自定义添加相同的messageID：报错
+127.0.0.1:6379> xadd mystream 1751084832498-0 id 001 name lzy
+(error) ERR The ID specified in XADD is equal or smaller than the target stream top item
+
+# 自定义添加比之前小的messageID：报错
+127.0.0.1:6379> xadd mystream 1751084832497-0 id 001 name lzy
+(error) ERR The ID specified in XADD is equal or smaller than the target stream top item
+
+# 自定义添加比之前大的messageID：成功
+127.0.0.1:6379> xadd mystream 1751084832500-0 id 001 name lzy
+"1751084832500-0"
+~~~
+
+
+
+##### 3.11.4.2 升序获取消息列表
+
+- xrange stream名 start end：用于获取消息列表（可以指定范围），忽略删除的消息，**升序**
+- start表示开始值，-代表最小值
+- end表示结束值，+代表最大值
+- count表示最多获取多少个值
+
+~~~bash
+# 用-+获取所有，-代表最小值，+代表最大值，升序
+127.0.0.1:6379> xrange mystream - +
+1) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+2) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
+3) 1) "1751084832500-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+      
+      
+# 用count获取指定个数的值，-代表最小值，+代表最大值
+127.0.0.1:6379> xrange mystream - + count 1
+1) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+
+
+# 获取指定区间的值，小值在前，大值在后
+127.0.0.1:6379> xrange mystream 1751084823740-0 1751084832499-0
+1) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+2) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
 ~~~
 
 
 
 
 
+##### 3.11.4.3 降序获取消息列表
+
+- xrevrange stream名 end start：用于获取消息列表（可以指定范围），忽略删除的消息，**降序**
+- end表示开始值，+代表最大值
+- start表示结束值，-代表最小值
+- count表示最多获取多少个值
+
+~~~bash
+# 获取指定区间的值，大值在前，小值在后
+127.0.0.1:6379> xrevrange mystream 1751084832499-0 1751084823740-0
+1) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
+2) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+      
+      
+# 用count获取指定个数的值，-代表最小值，+代表最大值
+127.0.0.1:6379> xrevrange mystream + - count 1
+1) 1) "1751084832500-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+
+
+# 获取指定区间的值，降序
+127.0.0.1:6379> xrevrange mystream + -
+1) 1) "1751084832500-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+2) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
+3) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+~~~
 
 
 
+##### 3.11.4.4 删除
+
+- xdel stream名 messageID：根据消息主键ID删除
+
+~~~bash
+127.0.0.1:6379> xrevrange mystream + -
+1) 1) "1751084832500-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+2) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
+3) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+127.0.0.1:6379> xdel mystream 1751084832500-0
+(integer) 1
+~~~
+
+
+
+##### 3.11.4.5 获取有多少个记录
+
+- xlen stream名
+
+~~~bash
+127.0.0.1:6379> xlen mystream
+(integer) 2
+~~~
+
+
+
+##### 3.11.4.6 截取
+
+- xtrim stream名 maxlen count minid messageID：用于对stream的长度进行截取，如超长会进行截取
+  - maxlen：允许的最大长度，对流进行修建限制长度
+  - minid：允许的最小id，从某个id值开始比该id值小的将会抛弃
+
+~~~bash
+127.0.0.1:6379> xrange mystream - +
+1) 1) "1751084823740-0"
+   2) 1) "id"
+      2) "001"
+      3) "name"
+      4) "lzy"
+2) 1) "1751084832498-0"
+   2) 1) "id"
+      2) "002"
+      3) "name"
+      4) "lsq"
+3) 1) "1751108838302-0"
+   2) 1) "k1"
+      2) "v1"
+4) 1) "1751108841955-0"
+   2) 1) "k2"
+      2) "v2"
+      
+# 限制stream的流长度为2，从后面选ID值较大的两个
+127.0.0.1:6379> xtrim mystream maxlen 2
+(integer) 2
+127.0.0.1:6379> xrange mystream - +
+1) 1) "1751108838302-0"
+   2) 1) "k1"
+      2) "v1"
+2) 1) "1751108841955-0"
+   2) 1) "k2"
+      2) "v2"
+
+# 用minid限制抛弃比指定值还小的ID，若没有比其还小的，则不截取，有比其小的就截取
+127.0.0.1:6379> xtrim mystream minid 1751108838302-0
+(integer) 0
+127.0.0.1:6379> xtrim mystream minid 1751108838303-0
+(integer) 1
+127.0.0.1:6379> xrange mystream - +
+1) 1) "1751108841955-0"
+   2) 1) "k2"
+      2) "v2"
+~~~
+
+
+
+##### 3.11.4.7 获取消息
+
+- xread [count count] [block milliseconds] streams key [key...] id [id ...]：用于获取消息（阻塞/非阻塞），只会返回大于指定ID的消息
+  - count：最多读取多少条消息
+  - block：是否以阻塞的方式获取消息，默认不阻塞，如果milliseconds设置为0，代表永远阻塞
+
+- 非阻塞方式
+
+  - $代表特殊ID，表示以当前stream已经存储的最大ID作为最后一个ID，当前stream中不存在大于当前最大ID的消息，因此返回nil
+  - 0-0代表从最小的ID开始获取stream的消息，当不指定count，那么返回stream中的所有消息，注意也可以使用0（00/000也可以）
+
+  ~~~bash
+  127.0.0.1:6379> xrange mystream - +
+  1) 1) "1751109813700-0"
+     2) 1) "k1"
+        2) "v1"
+  2) 1) "1751109816036-0"
+     2) 1) "k2"
+        2) "v2"
+  3) 1) "1751109819377-0"
+     2) 1) "k3"
+        2) "v3"
+  4) 1) "1751109822388-0"
+     2) 1) "k4"
+        2) "v4"
+  5) 1) "1751109825422-0"
+     2) 1) "k5"
+        2) "v5"
+        
+  # $代表特殊ID，表示以当前stream已经存储的最大ID作为最后一个ID，当前stream中不存在大于当前最大ID的消息，因此返回nil
+  # = xread count 2 streams mystream 1751109825422-0（队列中的最大值）
+  127.0.0.1:6379> xread count 2 streams mystream $
+  (nil)
+  
+  # 0-0代表从最小的ID开始获取stream的消息，当不指定count，那么返回stream中的所有消息，注意也可以使用0（00/000也可以）
+  127.0.0.1:6379> xread count 2 streams mystream 000
+  1) 1) "mystream"
+     2) 1) 1) "1751109813700-0"
+           2) 1) "k1"
+              2) "v1"
+        2) 1) "1751109816036-0"
+           2) 1) "k2"
+              2) "v2"
+              
+  # 获取比1751109819377-0大的两个
+  127.0.0.1:6379> xread count 2 streams mystream 1751109819377-0
+  1) 1) "mystream"
+     2) 1) 1) "1751109822388-0"
+           2) 1) "k4"
+              2) "v4"
+        2) 1) "1751109825422-0"
+           2) 1) "k5"
+              2) "v5"
+  ~~~
+
+- 阻塞方式：若设置block 0，则会永久阻塞，一直等待有符合条件的消息读出
+
+  - 这里客户端1执行命令后，会一直阻塞，没有输出，直到客户端2添加一个新的消息后，才会有比当前队列中最大ID值还大的消息，才会有所输出，所用时间36.89s
+
+  ~~~bash
+  # 客户端1
+  127.0.0.1:6379> xread count 1 block 0 streams mystream $
+  1) 1) "mystream"
+     2) 1) 1) "1751110987694-0"
+           2) 1) "k6"
+              2) "v6"
+  (36.89s)
+  
+  
+  # 客户端2
+  127.0.0.1:6379> xadd mystream * k6 v6
+  "1751110987694-0"
+  ~~~
+
+  ![xread](图片/数据类型/xread.png)
+
+
+
+#### 3.11.5 消费组相关指令
+
+##### 3.11.5.1 创建消费组
+
+- xgroup create stream名 消费组名 $|0
+  - $表示从stream尾部开始消费
+  - 0表示从stream头部开始消费
+- 创建消费组的时候必须指定ID，ID为0表示从头开始消费，**为$表示只消费新的消息**，队尾新来
+
+~~~bash
+127.0.0.1:6379> xgroup create mystream groupA 0
+OK
+127.0.0.1:6379> xgroup create mystream groupB $
+OK
+~~~
+
+
+
+##### 3.11.5.2 消费消息
+
+- xreadgroup group 消费组名 消费者名 [count count] [block milliseconds] [noack] streams key [key...] id  [id...] >
+  - \>表示从第一条尚未被消费的消息开始读取
+  - 消费组groupA内的消费者consumer1从mystrean消息队列中读取所有消息
+  - <font color="red">**同一消费组的消费者只能消费一次同一条消息，不同消费组的消费者可以消费同一条消息**</font>
+  - <font color="red">**消费组的目的：为了负载均衡，一个消费组多个消费者一人消费一点，免得同一个消费者压力太大**</font>
+
+~~~bash
+# A组的consumer1读完全部消息
+127.0.0.1:6379> xreadgroup group groupA consumer1 streams mystream >
+1) 1) "mystream"
+   2) 1) 1) "1751109813700-0"
+         2) 1) "k1"
+            2) "v1"
+      2) 1) "1751109816036-0"
+         2) 1) "k2"
+            2) "v2"
+      3) 1) "1751109819377-0"
+         2) 1) "k3"
+            2) "v3"
+      4) 1) "1751109822388-0"
+         2) 1) "k4"
+            2) "v4"
+      5) 1) "1751109825422-0"
+         2) 1) "k5"
+            2) "v5"
+      6) 1) "1751110987694-0"
+         2) 1) "k6"
+            2) "v6"
+
+# A组的consumer1读完全部消息,A组其他消费者就不能再消费了
+127.0.0.1:6379> xreadgroup group groupA consumer2 streams mystream >
+(nil)
+
+# B组的consumer1消费消息
+127.0.0.1:6379> xreadgroup group groupB consumer1 streams mystream >
+1) 1) "mystream"
+   2) 1) 1) "1751119008135-0"
+         2) 1) "k1"
+            2) "v1"
+      2) 1) "1751119010955-0"
+         2) 1) "k2"
+            2) "v2"
+      3) 1) "1751119013495-0"
+         2) 1) "k3"
+            2) "v3"
+      4) 1) "1751119015867-0"
+         2) 1) "k4"
+            2) "v4"
+      5) 1) "1751119018787-0"
+         2) 1) "k5"
+            2) "v5"
+      6) 1) "1751119021492-0"
+         2) 1) "k6"
+            2) "v6"
+
+# C组的consumer1、consumer2、consumer3各消费2个
+127.0.0.1:6379> xgroup create mystream groupC 0 
+OK
+127.0.0.1:6379> xreadgroup group groupC consumer1 count 2 streams mystream > 
+1) 1) "mystream"
+   2) 1) 1) "1751119157540-0"
+         2) 1) "k1"
+            2) "v1"
+      2) 1) "1751119160085-0"
+         2) 1) "k2"
+            2) "v2"
+127.0.0.1:6379> xreadgroup group groupC consumer2 count 2 streams mystream > 
+1) 1) "mystream"
+   2) 1) 1) "1751119163205-0"
+         2) 1) "k3"
+            2) "v3"
+      2) 1) "1751119166034-0"
+         2) 1) "k4"
+            2) "v4"
+127.0.0.1:6379> xreadgroup group groupC consumer3 count 2 streams mystream > 
+1) 1) "mystream"
+   2) 1) 1) "1751119168814-0"
+         2) 1) "k5"
+            2) "v5"
+      2) 1) "1751119172257-0"
+         2) 1) "k6"
+            2) "v6"
+            
+            
+# $创建的消费组只会从队尾消费，即新创建的消息
+127.0.0.1:6379> xgroup create mystream groupD $
+OK
+127.0.0.1:6379> xreadgroup group groupD consumer1 streams mystream >
+(nil)
+127.0.0.1:6379> xadd mystream * k7 v7
+"1751119503701-0"
+127.0.0.1:6379> xreadgroup group groupD consumer1 streams mystream >
+1) 1) "mystream"
+   2) 1) 1) "1751119503701-0"
+         2) 1) "k7"
+            2) "v7"
+~~~
+
+![消费问题](图片/数据类型/消费问题.png)
+
+
+
+##### 3.11.5.3 查询消费情况
+
+- xpending stream名 组名：查询每个消费组内所有的消费者 <font color="red">**已读取、但尚未确认** </font>的消息
+- xpending stream名 组名 start end count consumer1：查询某个消费者具体读取了哪些数据
+  - start：开始索引，-为最小值
+  - end：结束索引，+为最大值
+  - count为查看数量
+
+~~~BASH
+127.0.0.1:6379> xrange mystream - +
+1) 1) "1751119157540-0"
+   2) 1) "k1"
+      2) "v1"
+2) 1) "1751119160085-0"
+   2) 1) "k2"
+      2) "v2"
+3) 1) "1751119163205-0"
+   2) 1) "k3"
+      2) "v3"
+4) 1) "1751119166034-0"
+   2) 1) "k4"
+      2) "v4"
+5) 1) "1751119168814-0"
+   2) 1) "k5"
+      2) "v5"
+6) 1) "1751119172257-0"
+   2) 1) "k6"
+      2) "v6"
+7) 1) "1751119503701-0"
+   2) 1) "k7"
+      2) "v7"
+
+# 查看消费组所有的消费者 已读取、但尚未确认 的消息
+127.0.0.1:6379> xpending mystream groupC
+1) (integer) 6
+2) "1751119157540-0"
+3) "1751119172257-0"
+4) 1) 1) "consumer1"
+      2) "2"
+   2) 1) "consumer2"
+      2) "2"
+   3) 1) "consumer3"
+      2) "2"
+      
+# 查看某个消费者的消费情况
+127.0.0.1:6379> xpending mystream groupC - + 10 consumer1
+1) 1) "1751119157540-0"
+   2) "consumer1"
+   3) (integer) 1606416
+   4) (integer) 1
+2) 1) "1751119160085-0"
+   2) "consumer1"
+   3) (integer) 1606416
+   4) (integer) 1
+~~~
+
+
+
+##### 3.11.5.4 ack发送确认签收
+
+- xack stream名 组名 messageID：确认签收某个组名中stream消息
+
+~~~bash
+# groupC中consumer1已读未签收的消息有两条
+127.0.0.1:6379> xpending mystream groupC - + 10 consumer1
+1) 1) "1751119157540-0"
+   2) "consumer1"
+   3) (integer) 2317604
+   4) (integer) 1
+2) 1) "1751119160085-0"
+   2) "consumer1"
+   3) (integer) 2317604
+   4) (integer) 1
+   
+# 发送已读已确认
+127.0.0.1:6379> xack mystream groupC 1751119157540-0
+(integer) 1
+
+# 已读已确认后再查看已读未签收的消息只有1条
+127.0.0.1:6379> xpending mystream groupC - + 10 consumer1
+1) 1) "1751119160085-0"
+   2) "consumer1"
+   3) (integer) 2335937
+   4) (integer) 1
+~~~
+
+
+
+#### 3.11.6 xinfo打印情况
+
+- xinfo stream stream名：打印出stream的详细信息
+- xinfo groups stream名：打印出消费组的详细信息
+- xinfo consumers stream名 组名：打印出消费组中消费者的情况
+
+~~~bash
+# 打印stream的详细信息
+127.0.0.1:6379> xinfo stream mystream
+ 1) "length"
+ 2) (integer) 7
+ 3) "radix-tree-keys"
+ 4) (integer) 1
+ 5) "radix-tree-nodes"
+ 6) (integer) 2
+ 7) "last-generated-id"
+ 8) "1751119503701-0"
+ 9) "max-deleted-entry-id"
+10) "0-0"
+11) "entries-added"
+12) (integer) 7
+13) "recorded-first-entry-id"
+14) "1751119157540-0"
+15) "groups"
+16) (integer) 4
+17) "first-entry"
+18) 1) "1751119157540-0"
+    2) 1) "k1"
+       2) "v1"
+19) "last-entry"
+20) 1) "1751119503701-0"
+    2) 1) "k7"
+       2) "v7"
+       
+#  打印group的详细信息
+127.0.0.1:6379> xinfo groups mystream
+1)  1) "name"
+    2) "groupA"
+    3) "consumers"
+    4) (integer) 0
+    5) "pending"
+    6) (integer) 0
+    7) "last-delivered-id"
+    8) "0-0"
+    9) "entries-read"
+   10) (nil)
+   11) "lag"
+   12) (integer) 7
+2)  1) "name"
+    2) "groupB"
+    3) "consumers"
+    4) (integer) 0
+    5) "pending"
+    6) (integer) 0
+    7) "last-delivered-id"
+    8) "0-0"
+    9) "entries-read"
+   10) (nil)
+   11) "lag"
+   12) (integer) 7
+3)  1) "name"
+    2) "groupC"
+    3) "consumers"
+    4) (integer) 3
+    5) "pending"
+    6) (integer) 5
+    7) "last-delivered-id"
+    8) "1751119172257-0"
+    9) "entries-read"
+   10) (integer) 6
+   11) "lag"
+   12) (integer) 1
+4)  1) "name"
+    2) "groupD"
+    3) "consumers"
+    4) (integer) 1
+    5) "pending"
+    6) (integer) 1
+    7) "last-delivered-id"
+    8) "1751119503701-0"
+    9) "entries-read"
+   10) (integer) 7
+   11) "lag"
+   12) (integer) 0
+   
+
+# 查看消费者情况
+127.0.0.1:6379> xinfo consumers mystream groupC
+1) 1) "name"
+   2) "consumer1"
+   3) "pending"
+   4) (integer) 1
+   5) "idle"
+   6) (integer) 2839131
+   7) "inactive"
+   8) (integer) 2839131
+2) 1) "name"
+   2) "consumer2"
+   3) "pending"
+   4) (integer) 2
+   5) "idle"
+   6) (integer) 2835056
+   7) "inactive"
+   8) (integer) 2835056
+3) 1) "name"
+   2) "consumer3"
+   3) "pending"
+   4) (integer) 2
+   5) "idle"
+   6) (integer) 2831191
+   7) "inactive"
+   8) (integer) 2831191
+~~~
+
+
+
+### 3.12 bitfields位域(了解)
+
+#### 3.12.1 概念
+
+- **位域是一种特殊的数据结构，用于存储和操作二进制位数据**
+- 字符串与位域：虽然Redis字符串是最基本的数据类型之一，支持丰富的操作，但在处理位级数据时，字符串的效率较低。相比之下，位域通过压缩存储多个小的整数或状态信息，极大地提高了内存的使用效率
+
+- 一句话：<font color="red">**将redis字符串看作是一个由二进制位组成的数据，并能对边长位宽和任意没有字节对齐的指定整型位域进行寻址和修改**</font>
+
+
+
+#### 3.12.2 作用
+
+- 位域修改
+- 溢出控制
+
+
+
+#### 3.12.3 命令
+
+- **BITFIELD key [GET type offset]**：获取指定键的位域值。
+  - key：要操作的Redis键。
+  - GET：表示要从字符串值中读取位。
+  - type：指定读取数据的类型（u表示无符号整数，i表示有符号整数）。
+  - offset：位字段的起始偏移位置，从0开始计数。
+- **BITFIELD key [SET type offset value]**：设置指定位域的值并返回其原值
+  - SET：表示要设置字符串值中的位。
+  - type：指定读取数据的类型（u表示无符号整数，i表示有符号整数）。
+  - offset：位字段的起始偏移位置，从0开始计数。
+  - value：是要设置的值。
+- **BITFIELD key [INCRBY type offset increment]**：对指定位域的值进行自增操作
+  - key：要操作的Redis键。
+  - INCRBY：表示自增。
+  - type：指定读取数据的类型（u表示无符号整数，i表示有符号整数）。
+  - offset：位字段的起始偏移位置，从0开始计数。
+  - increment：是自增的数值。
+
+~~~bash
+# 设置一个bitkey，值为hello，h：104，e：101，l：108，o：111
+127.0.0.1:6379> set bitkey hello
+OK
+
+# 获取每个位上的值
+127.0.0.1:6379> bitfield bitkey get u8 0
+1) (integer) 104
+127.0.0.1:6379> bitfield bitkey get u8 8
+1) (integer) 101
+127.0.0.1:6379> bitfield bitkey get u8 16
+1) (integer) 108
+127.0.0.1:6379> bitfield bitkey get u8 24
+1) (integer) 108
+127.0.0.1:6379> bitfield bitkey get u8 32
+1) (integer) 111
+
+# 设置第8位开始，u8无符号整数120：x
+127.0.0.1:6379> bitfield bitkey set i8 8 120
+1) (integer) 101
+127.0.0.1:6379> get bitkey
+"hxllo"
+
+# 设置第8位开始自增，u8无符号整数121：y
+127.0.0.1:6379> bitfield bitkey incrby u8 8 1
+1) (integer) 121
+127.0.0.1:6379> get bitkey
+"hyllo"
+~~~
+
+
+
+#### 3.12.4 溢出控制
+
+- bitfield mykey overflow 溢出类型 操作
+
+  - WRAP：使用回绕方法处理有符号整数和无符号整数的溢出情况。（默认方式，不写即为WRAP）
+
+  - SAT：使用饱和计算方法处理溢出，超过最大值再增加则数值不变。下溢计算的结果为最小的整数值，而上溢计算的结果为最大的整数值。
+
+  - FAIL：命令将拒绝执行那些会导致上溢或者下溢情况出现的计算，并向用户返回空值表示计算未被执行。
+
+~~~bash
+# 回绕方法：数据范围是[-128, 127]，如果溢出就加1继续计算，比如127：01111111，继续加1就是10000000，变成了-128；129就相当于加2，那就是10000001，-127
+127.0.0.1:6379> bitfield bitkey overflow wrap set i8 0 129
+1) (integer) 104
+127.0.0.1:6379> bitfield bitkey get i8 0
+1) (integer) -127
+# 回绕方法：数据范围是[-128, 127]，-128是10000000，-129就相当于-1，即：01111111，127
+127.0.0.1:6379> bitfield bitkey overflow wrap set i8 0 -129
+1) (integer) -127
+127.0.0.1:6379> bitfield bitkey get i8 0
+1) (integer) 127
+
+# 饱和计算方法：数据范围是[-128, 127]，超过127就是127，低于-128，就是-128
+127.0.0.1:6379> bitfield bitkey overflow sat set i8 0 -130
+1) (integer) 126
+127.0.0.1:6379> bitfield bitkey get i8 0
+1) (integer) -128
+127.0.0.1:6379> bitfield bitkey overflow sat set i8 0 130
+1) (integer) -128
+127.0.0.1:6379> bitfield bitkey get i8 0
+1) (integer) 127
+
+# 拒绝访问：不在范围就直接拒绝操作
+127.0.0.1:6379> bitfield bitkey overflow fail set i8 0 130
+1) (nil)
+~~~
 
 
 
@@ -2286,7 +3008,7 @@ errors: 0, replies: 6
 
 
 
-## 7、发布订阅
+## 7、发布订阅（了解）
 
 ### 7.1 概念
 
@@ -2305,11 +3027,180 @@ errors: 0, replies: 6
 
 ### 7.2 常用命令
 
-- psubscribe pattern [pattern ...]：订阅一个或多个符合给定模式的频道
+| 命令         | 用法                                        | 描述                             |
+| :----------- | :------------------------------------------ | :------------------------------- |
+| PSUBSCRIBE   | PSUBSCRIBE pattern [pattern ...]            | 订阅一个或多个符合给定模式的频道 |
+| PUBSUB       | PUBSUB subcommand [argument [argument ...]] | 查看订阅与发布系统状态           |
+| PUBLISH      | PUBLISH channel message                     | 将信息发送到指定的频道           |
+| PUNSUBSCRIBE | PUNSUBSCRIBE [pattern [pattern ...]]        | 退订所有给定模式的频道           |
+| SUBSCRIBE    | SUBSCRIBE channel [channel ...]             | 订阅给定的一个或多个频道的信息   |
+| UNSUBSCRIBE  | UNSUBSCRIBE [channel [channel ...]]         | 退订给定的频道                   |
 
 
 
+### 7.3 订阅频道
 
+- SUBSCRIBE channel [channel ...]：订阅一个或多个符合给定模式的频道
+- <font color="red">**推荐先执行订阅后再进行发布，订阅成功之前发布的消息是收不到的**</font>
+- 订阅的客户端每次可以收到一个3个参数的消息
+  - 消息的种类
+  - 始发频道的名称
+  - 消息的实际内容
+
+~~~bash
+# 客户端1
+127.0.0.1:6379> subscribe c1
+1) "subscribe"
+2) "c1"
+3) (integer) 1
+
+# 客户端2
+127.0.0.1:6379> subscribe c1 c2
+1) "subscribe"
+2) "c1"
+3) (integer) 1
+1) "subscribe"
+2) "c2"
+3) (integer) 2
+~~~
+
+
+
+### 7.4 发送消息到指定频道
+
+-  PUBLISH channel message：发送消息到指定频道
+
+~~~bash
+# 客户端3：返回2个订阅客户端收到
+127.0.0.1:6379> publish c1 hello-c1
+(integer) 2
+
+# 客户端1
+1) "message"
+2) "c1"
+3) "hello-c1"
+
+# 客户端2
+1) "message"
+2) "c1"
+3) "hello-c1"
+~~~
+
+
+
+### 7.5 按模式批量订阅
+
+- PSUBSCRIBE pattern [pattern ...]：订阅一个或多个符合给定模式的频道
+  - *是所有，?是占位符
+  - 接收消息时会接收到4个参数的消息
+    - 消息类型
+    - 订阅频道
+    - 发送消息频道
+    - 消息内容
+
+~~~bash
+# 客户端1：订阅了c开头的所有，d开头后占一位的频道
+127.0.0.1:6379> psubscribe c* d?
+1) "psubscribe"
+2) "c*"
+3) (integer) 1
+1) "psubscribe"
+2) "d?"
+3) (integer) 2
+
+# 客户端2：订阅了c1
+127.0.0.1:6379> subscribe c1
+1) "subscribe"
+2) "c1"
+3) (integer) 1
+
+# 客户端3：发送消息
+127.0.0.1:6379> publish c1 hello-c1		# 客户端1、2都能接收
+(integer) 2
+127.0.0.1:6379> publish c11 hello-c11	# 客户端1接收
+(integer) 1
+127.0.0.1:6379> publish d1 hello-d1		# 客户端1接收
+(integer) 1
+127.0.0.1:6379> publish d11 hello-d11	# 都不能接收
+(integer) 0
+
+# 客户端1接收
+1) "pmessage"
+2) "c*"
+3) "c1"
+4) "hello-c1"
+1) "pmessage"
+2) "c*"
+3) "c11"
+4) "hello-c11"
+1) "pmessage"
+2) "d?"
+3) "d1"
+4) "hello-d1"
+
+# 客户端2接收
+1) "message"
+2) "c1"
+3) "hello-c1"
+~~~
+
+
+
+### 7.6 查看订阅与发布系统状态
+
+- PUBSUB channels：有活跃频道组成的列表
+- PUBSUB numsub channel：某个频道有几个订阅者
+- PUBSUB numpat：只统计psubscribe命令执行的，返回客户端订阅的唯一<font color="red">**模式的数量**</font>
+
+~~~bash
+# 有活跃频道组成的列表：客户端2订阅了c1
+127.0.0.1:6379> PUBSUB channels
+1) "c1"
+
+# 某个频道有几个订阅者：客户端2订阅了c1
+127.0.0.1:6379> pubsub numsub c1
+1) "c1"
+2) (integer) 
+
+# 只统计psubscribe命令执行的：客户端1订阅了两种：c*和d?
+127.0.0.1:6379> pubsub numpat
+(integer) 2
+~~~
+
+
+
+### 7.7 取消订阅
+
+- ctrl+c退出等待模式后，输入命令取消订阅
+
+  - UNSUBSCRIBE [channel [channel ...]]：指退订给定的频道
+
+  - PUNSUBSCRIBE [pattern [pattern ...]]：推定通配符频道
+
+~~~bash
+# 客户端1：退订通配符频道
+127.0.0.1:6379> punsubscribe d? c*
+1) "punsubscribe"
+2) "d?"
+3) (integer) 0
+1) "punsubscribe"
+2) "c*"
+3) (integer) 0
+
+# 客户端2：退订指定频道
+127.0.0.1:6379> unsubscribe c1
+1) "unsubscribe"
+2) "c1"
+3) (integer) 0
+~~~
+
+
+
+### 7.7 总结
+
+- **发布的消息在 Redis 系统中不能持久化**，因此，必须先执行订阅，再等待消息发布。如果先发布了消息，那么该消息由于没有订阅者，消息将被直接丢弃
+- 消息只管发送对于发布者而言消息是即发即失的，不管接收，也没有 ACK 机制，无法保证消息的消费成功。
+- 以上的缺点导致 Redis 的 Pub/Sub 模式就像个小玩具，在生产环境中几乎无用武之地，为此Redis5.0 版本新增了 Stream 数据结构，不但支持多播，还支持数据持久化，相比 Pub/Sub 更加的强大
 
 
 
@@ -2806,7 +3697,9 @@ sentinel auth-pass mymaster li998813
 
 
 
-#### 10.1.3 redis集群的槽位slot
+### 10.2 哈希槽
+
+#### 10.2.1 redis集群的槽位slot
 
 - <font color="red">**redis集群没有使用一致性hash，而是引入了哈希槽的概念。**</font>举个例子，去学校报到，学校会在每个门设置一个接待点，那么这个槽位就跟这个接待点一样，对外开放，最终反正都能让你登记进入学校
 - redis集群有16384个哈希槽，每个key通过CRC16校验后对16384取模来决定放置哪个槽，集群的每个节点负责一部分的hash槽
@@ -2816,7 +3709,7 @@ sentinel auth-pass mymaster li998813
 
 
 
-#### 10.1.4 redis集群的分片
+#### 10.2.2 redis集群的分片
 
 - 分片是什么：**使用redis集群时会将存储的数据分散到多台redis机器上，这成为分片**。简言之，集群中的每个redis实例都被认为是整个数据的一个分片
 - 举个例子：一个城市有多个全季，入住的旅客根据自己的距离到最近的全季入住，这每个全季就类似一个分片，整个城市的全季加起来就是一个整体集群
@@ -2826,9 +3719,639 @@ sentinel auth-pass mymaster li998813
 
 
 
-#### 10.1.5 分片+槽位优势
+#### 10.2.3 分片+槽位优势
 
 - <font color="red">**最大优势，方便扩缩容和数据分派查找**</font>
 - 这种结构很容易添加或者删除节点。比如如果我想新添加个节点 D, 我需要从节点 A,B,C 中得部分槽到 D 上。如果我想移除节点 A, 需要将 A 中的槽移到 B 和 C 节点上，然后将没有任何槽的 A 节点从集群中移除即可。由于从一个节点将哈希槽移动到另一个节点并不会停止服务，所以无论添加删除或者改变某个节点的哈希槽的数量都不会造成集群不可用的状态.
 
 ![哈希槽](图片/集群/哈希槽.png)
+
+
+
+#### 10.2.4 slot槽位映射
+
+##### 10.2.4.1 哈希槽取余分区
+
+![哈希取余分区](图片/集群/哈希取余分区.png)
+
+- 2亿条记录就是2亿个kv，单机不行必须要分布式多机，假设有3台机器构成一个集群，用户每次读写操作都根据公式：hash(key) % N个机器台数，计算出哈希值，用来决定数据映射到那个节点上
+- 优点：简单粗暴，直接有效，只需要预估好数据规划好节点，例如3台，8台，10台，就能保证一段时间的数据支撑。使用hash算法让固定的一部分请求落到同一台服务器上，这样每台服务器固定处理一部分请求（并维护这些请求的信息），起到负载均衡+分而治之的作用
+- 缺点：原来规划好的节点，进行扩容或缩容就比较麻烦，不断扩缩，每次数据变动导致节点有变动，映射关系需要重新进行计算，在服务器个数固定不变时没有问题，如果需要弹性扩容或故障停机的情况下，原来的取模公式就会发生变化：hash(key)/3会变成hash(key)/?。此时地址经过取余运算的结果将发生很大变化，根据公式获得的服务器也会变得不可控。
+  - 某个redis机器宕机，由于台数数量变化，会导致hash取余全部数据重新洗牌
+
+
+
+
+##### 10.2.4.2 一致性哈希算法分区
+
+- 是什么：设计目标是<font color="red">**为了解决分布式缓存数据变动和映射问题，某个机器宕机了，分母数量改变了，自然取余数就不行了**</font>
+
+- 能干嘛：当服务器个数发生变化时，尽量减少影响客户端到服务器的映射关系
+
+- 3大步骤
+
+  - 算法构建一致性哈希环
+    - 一致性哈希算法必然有个 hash 函数并按照算法产生 hash 值，这个算法的所有可能哈希值会构成一个全量集，这个集合可以成为一个 hash 空间 [0,2^32-1]，这个是一个线性空间，但是在算法中，我们通过适当的逻辑控制将它首尾相连 (0 = 2^32), 这样让它逻辑上形成了一个环形空间。
+    - 它也是按照使用取模的方法，<font color="red">**前面笔记介绍的节点取模法是对节点（服务器）的数量进行取模。而一致性 Hash 算法是对 2^32 取模**</font>，简单来说，<font color="red">**一致性 Hash 算法将整个哈希值空间组织成一个虚拟的圆环**</font>，如假设某哈希函数 H 的值空间为 0-2^32-1（即哈希值是一个 32 位无符号整形），整个哈希环如下图：整个空间按顺时针方向组织，圆环的正上方的点代表 0，0 点右侧的第一个点代表 1，以此类推，2、3、4、…… 直到 2^32-1，也就是说 0 点左侧的第一个点代表 2^32-1，0 和 2^32-1 在零点中方向重合，我们把这个由 2^32 个点组成的圆环称为 Hash 环。
+
+  ![一致性哈希环](图片/集群/一致性哈希环.png)
+
+  - redis服务器IP节点映射
+    - 将集群中各个IP节点映射到环上的某一位置
+    - 将各个服务器使用hash进行一次哈希，具体可以选择服务器的IP或主机名作为关键字进行哈希，这样每台服务器就能确定其在哈希环上的位置。
+    - 假如4个节点NodeA、B、C、D经过IP地址的哈希函数计算(hash(IP))，使用IP地址哈希后在环空间的位置如下
+
+  ![redis服务器IP节点映射](图片/集群/redis服务器IP节点映射.png)
+
+  - key落到服务器的落键规则
+    - 当我们需要存储一个 kv 键值对时，首先计算 key 的 hash 值hash (key)，将这个 key 使用相同的函数 Hash 计算出哈希值并确定此数据在环上的位置，<font color="red">**从此位置沿环顺时针 “行走”，第一台遇到的服务器就是其应该定位到的服务器**</font>，并将该键值对存储在该节点上。
+    - 如我们有 Object A、Object B、Object C、Object D 四个数据对象，经过哈希计算后，在环空间上的位置如下：根据一致性 Hash 算法，数据 A 会被定为到 Node A 上，B 被定为到 Node B 上，C 被定为到 Node C 上，D 被定为到 Node D 上。
+  
+  ![key落到服务器的落键规则](图片/集群/key落到服务器的落键规则.png)
+
+- 优点
+
+  - <font color="red">**容错性**</font>：假设 Node C 宕机，可以看到此时对象 A、B、D 不会受到影响。一般的，在一致性 Hash 算法中，如果一台服务器不可用，则<font color="red">**受影响的数据仅仅是此服务器到其环空间中前一台服务器（即沿着逆时针方向行走遇到的第一台服务器）之间数据**</font>，其它不会受到影响。简单说，<font color="red">**就是 C 挂了，受到影响的只是 B、C 之间的数据且这些数据会转移到 D 进行存储**</font>。
+
+  ![一致性哈希算法的容错性](图片/集群/一致性哈希算法的容错性.png)
+
+  - <font color="red">**扩展性**</font>：数据量增加了，需要增加一台节点 NodeX，X 的位置在 A 和 B 之间，那收到影响的也就是 A 到 X 之间的数据，重新把 A 到 X 的数据录入到 X 上即可，不会导致 hash 取余全部数据重新洗牌。
+
+  ![一致性哈希算法的扩展性](图片/集群/一致性哈希算法的扩展性.png)
+
+- 缺点：<font color="red">**Hash环的数据倾斜问题**</font>。一致性 Hash 算法在<font color="red">**服务节点太少**</font>时，容易因为节点分布不均匀而造成<font color="red">**数据倾斜**</font>（被缓存的对象大部分集中缓存在某一台服务器上）问题，例如系统中只有两台服务器，大部分数据都会在A上，少部分才会落到B
+
+![一致性哈希算法的缺点](图片/集群/一致性哈希算法的缺点.png)
+
+
+
+##### 10.2.4.3 哈希槽分区
+
+- 为什么出现：为了解决一致性哈希算法的数据倾斜问题
+- 是什么：哈希槽实质就是一个数组，数组[0, 2^14 - 1]形成的hash slot空间
+- 能干什么：解决均匀分配问题，<font color="red">**在数据和节点之间又加了一层，把这层称为哈希槽（slot），用于管理数据和节点之间的关系**</font>，现在就相当于节点上放的是槽，槽里放的是数据
+
+![哈希槽架构](图片/集群/哈希槽架构.png)
+
+- 槽解决的是粒度问题，相当于把粒度变大了，这样便于数据移动。哈希解决的是映射问题，使用key的哈希值来计算所在的槽，便于数据分配
+- <font color="red">**一个集群只能有16384个槽**</font>，编号0~16383(0 ~ 2^14 - 1)。这些槽会分配给集群中的所有主节点，分配策略没有要求
+- <font color="red">**集群会记录节点和槽的对应关系**</font>，解决了节点和槽的关系后，接下来就要对key求哈希值，然后对16384取模，余数是几，key就会落入到对应的槽里。
+- HASH_SLOT = CRC16(key) mod 16384，以槽为单位移动数据，因为槽的数目是固定的，处理起来比较容易，这样数据移动问题就解决了
+
+![哈希槽计算](图片/集群/哈希槽计算.png)
+
+
+
+##### 10.2.4.4 哈希槽为什么是16384个
+
+- CRC16 算法产生的 hash 值有 16bit，该算法可以产生 2^16=65536 个值。换句话说值是分布在 0~65535 之间，有更大的 65536 不用为什么只用 16384 就够？作者在做 mod 运算的时候，为什么不 mod65536，而选择 mod16384？HASH_SLOT = CRC16 (key) mod 65536
+
+![心跳包结构体](图片/集群/心跳包结构体.png)
+
+- **如果槽位为 65536，发送心跳信息的消息头达 8k，发送的心跳包过于庞大。**
+  - 在消息头中最占空间的是 myslots [CLUSTER_SLOTS/8]。当槽位为 65536 时，这块的大小是：65536÷8÷1024=8kb
+  - 在消息头中最占空间的是 myslots [CLUSTER_SLOTS/8]。当槽位为 16384 时，这块的大小是：16384÷8÷1024=2kb
+  - 因为每秒钟，redis 节点需要发送一定数量的 ping 消息作为心跳包，如果槽位为 65536，这个 ping 消息的消息头太大了，浪费带宽
+- **redis 的集群主节点数量基本不可能超过 1000 个。**
+  - 集群节点越多，心跳包的消息体内携带的数据越多。如果节点过 1000 个，也会导致网络拥堵。因此 redis 作者不建议 redis cluster 节点数量超过 1000 个。 那么，对于节点数在 1000 以内的 redis cluster 集群，16384 个槽位够用了。没有必要拓展到 65536 个。
+- **槽位越小，节点少的情况下，压缩比高，容易传输**
+  - Redis 主节点的配置信息中它所负责的哈希槽是通过一张 bitmap 的形式来保存的，在传输过程中会对 bitmap 进行压缩，但是如果 bitmap 的填充率 slots / N 很高的话 (N 表示节点数)，bitmap 的压缩率就很低。 如果节点数很少，而哈希槽数量很多的话，bitmap 的压缩率就很低。
+
+
+
+##### 10.2.4.5 三者总结
+
+- 哈希槽取余算法分区就是对redis服务器个数固定取余，然后数据节点信息落到服务器上
+
+- 一致性哈希算法分区是构建哈希环，然后看数据节点离哪个服务器近就落在哪，即：数据节点信息还是直接落到服务器上
+- 哈希槽分区是在服务器前面加一层，所有数据节点落在哈希槽上，然后根据集群记录的哈希槽和服务器的对应关系，数据再映射到对应的服务器上
+
+
+
+#### 10.2.5 redis集群不保证强一致性
+
+- <font color="red">**Redis 集群不保证强一致性**</font>，这意味着在特定的条件下，Redis 集群可能会丢掉一些被系统收到的写入请求命令
+- 比如：M1现在有3条写命令，但是S1只同步了2条，这个时候M1挂了，那么将会提S1上来作为新的master，此时S1只有2条写命令，这个时候数据一致性就没法保证了
+
+![集群架构](图片/集群/集群架构.png)
+
+
+
+### 10.3 集群搭建
+
+- 配置架构：三主三从
+
+![三主三从](图片/集群/三主三从.png)
+
+- 配置命令解释
+
+  - cluster-enabled yes：开启集群模式
+  - cluster-config-file nodes-6381.conf：集群的配置文件
+  - cluster-node-timeout 5000：超时时间
+
+- 配置步骤
+
+  - 新建：mkdir -p /myredis/cluster
+
+    - 然后同时在cluster分别新建6381、6382、6383、6384、6385、6386目录
+
+  - 新建配置文件，以6381为例，其他的都照着一样写就行，记得端口改下
+
+    - redisCluster6381.conf
+
+    ~~~bash
+    bind 0.0.0.0
+    daemonize yes
+    protected-mode no
+    port 6381
+    logfile /opt/redis-7.4.0/myredis/cluster/6381/cluster6381.log
+    pidfile /opt/redis-7.4.0/myredis/cluster/6381/cluster6381.pid
+    dir ./myredis/cluster/6381
+    dbfilename dump6381.rdb
+    appendonly yes
+    appendfilename "appendonly6381.aof"
+    requirepass li998813
+    masterauth li998813
+    
+    cluster-enabled yes
+    cluster-config-file nodes-6381.conf
+    cluster-node-timeout 5000
+    ~~~
+
+  - 分别启动6个实例：
+
+    - redis-server myredis/cluster/redisCluster6381.conf
+    - redis-server myredis/cluster/redisCluster6382.conf
+    - redis-server myredis/cluster/redisCluster6383.conf
+    - redis-server myredis/cluster/redisCluster6384.conf
+    - redis-server myredis/cluster/redisCluster6385.conf
+    - redis-server myredis/cluster/redisCluster6386.conf
+
+    ![6个实例以集群模式启动](图片/集群/6个实例以集群模式启动.png)
+
+  - <font color="red">**通过redis-cli命令为6台主机构建集群关系**</font>
+
+    - --cluster- replicas 1 表示为每个master创建一一个slave节点，写在前面的几个就是master，后面的就是slave，而且master和slave对应的这个关系会随机分配，每次都不一样，可能这次是：主6381--->从6384、主6382-->从6385、主6383-->从6386，下次就不一样了
+    - 注意端口要关防火墙
+    - 云服务器要开两种端口
+      - 客户端端口：即你启动 Redis 实例时配置的端口（如 `6381、6382` 等 ）。
+      - 集群总线端口：**客户端端口 + 10000** ，比如客户端端口是 `6381`，总线端口就是 `16381` ；端口 `6384` 对应总线端口 `16384` ，以此类推。
+    - 对应关系就是前面的几个为master，后面的为salve
+  
+  ~~~bash
+  # 一定要注意，此处要修改自己的IP为真实IP
+  redis-cli -a li998813 --cluster create --cluster-replicas 1 111.231.33.58:6381 111.231.33.58:6384 111.231.33.58:6382 111.231.33.58:6385 111.231.33.58:6383 111.231.33.58:6386
+  
+  
+  # 这是测试主从关系的，本知识中内容是基于上面的命令做的，这个命令不用管，一主一从
+  # 设置对应关系
+  redis-cli -a li998813 --cluster create --cluster-replicas 1 111.231.33.58:6381 111.231.33.58:6382 111.231.33.58:6383 111.231.33.58:6384 111.231.33.58:6385 111.231.33.58:6386 111.231.33.58:6387 111.231.33.58:6388
+  # 对应关系
+  6381 -> 6388
+  6382 -> 6386
+  6383 -> 6383
+  6384 -> 6384
+  ~~~
+  
+  - 正常情况下，会让输入yes
+  
+  ![集群搭建输入yes](图片/集群/集群搭建输入yes.png)
+  
+  - 出现这些就是搭建成功
+  
+  ![集群搭建成功](图片/集群/集群搭建成功.png)
+  
+  
+
+### 10.4 检验集群状态
+
+- 搭建成功会产生node文件
+
+![搭建成功会产生node文件](图片/集群/搭建成功会产生node文件.png)
+
+- 连入6381：redis-cli -a li998813 -p 6381
+- **info replication查看master状态**
+
+![inforeplication](图片/集群/inforeplication.png)
+
+- **cluster nodes查看集群主从关系**
+  - 6381:master —> 6383:slave
+  - 6382:master —> 6385:slave
+  - 6384:master —> 6386:slave
+
+![clusternodes](图片/集群/clusternodes.png)
+
+- **cluster info查看集群相关情况**
+
+![clusterinfo](图片/集群/clusterinfo.png)
+
+
+
+### 10.5 集群读写
+
+- 直接在6381上写命令，可能会报错
+
+~~~bash
+127.0.0.1:6381> set k1 v1
+(error) MOVED 12706 111.231.33.58:6382
+~~~
+
+![读写路由到位](图片/集群/读写路由到位.png)
+
+- <font color="red">**要注意槽位的区间，需要路由到位**</font>
+- 解决方案：<font color="red">**防止路由失效加参数-c**</font>
+  - redis-cli -a li998813 -p 6381 -c
+- 重新设置key
+
+~~~bash
+127.0.0.1:6381> set k1 v1
+-> Redirected to slot [12706] located at 111.231.33.58:6382   # 重定向到6382
+OK
+111.231.33.58:6382> set k2 v2
+-> Redirected to slot [449] located at 111.231.33.58:6381		# 重定向到6381
+OK
+~~~
+
+- 查看某个key该属于对应的槽位值：cluster keyslot 键名称
+
+~~~bash
+111.231.33.58:6381> cluster keyslot k1
+(integer) 12706
+111.231.33.58:6381> cluster keyslot k2
+(integer) 449
+~~~
+
+
+
+### 11.6 容错切换迁移
+
+- **现在cluster nodes查看集群主从关系**
+  - 6381:master —> 6383:slave
+  - 6382:master —> 6385:slave
+  - 6384:master —> 6386:slave
+- <font color="red">**如果6381挂了，6383会上位变成master**</font>
+
+![容错迁移](图片/集群/容错迁移.png)
+
+- <font color="red">**随后6381回来的话，会变成slave**</font>
+
+![master重启变slave](图片/集群/master重启变slave.png)
+
+- <font color="red">**Redis 集群不保证强一致性**</font>，这意味着在特定的条件下，Redis 集群可能会丢掉一些被系统收到的写入请求命令
+  - 比如：M1现在有3条写命令，但是S1只同步了2条，这个时候M1挂了，那么将会提S1上来作为新的master，此时S1只有2条写命令，这个时候数据一致性就没法保证了
+- <font color="red">**手动故障迁移 or 节点从属调整**</font>
+  - 6381现在是slave，6383是master，现在想换一下位置
+  - 重新登录6381，执行：<font color="red">**cluster failover**</font>
+
+![节点从属调整](图片/集群/节点从属调整.png)
+
+
+
+### 11.7 主从扩容
+
+- 按照之前的配置文件新建redisCluster6387和redisCluster6388两个实例，此时他们俩都是master
+
+- 将新增的6387节点（空槽号）作为master节点加入原集群
+  - <font color="red">**redis-cli -a 密码 --cluster add-node 自己实际 IP 地址：6387 自己实际 IP 地址：6381**</font>
+  - 6387 就是将要作为 master 新增节点
+  - 6381 就是原来集群节点里面的领路人，相当于 6387 拜拜 6381 的码头从而找到组织加入集群
+  - redis-cli -a li998813 --cluster add-node 111.231.33.58:6387 111.231.33.58:6381
+
+![集群扩容1](图片/集群/集群扩容1.png)
+
+- 第一次检查集群情况：redis-cli -a li998813 --cluster check 111.231.33.58:6381
+
+![集群扩容2](图片/集群/集群扩容2.png)
+
+- 槽位重新分配
+  - <font color="red">**命令:redis-cli -a 密码 --cluster reshard IP 地址：端口号**</font>
+  - redis-cli -a li998813 --cluster reshard 111.231.33.58:6381
+
+![集群扩容3](图片/集群/集群扩容3.png)
+
+- 第二次检查集群情况：redis-cli -a li998813 --cluster check 111.231.33.58:6381
+  - <font color="red">**前三个master的槽位号都是连续的，但是6387新增的则是3段**</font>
+  - 因为重新分配成本太高，所以前三家各自匀点出来，才凑够了6387这个节点的槽位
+
+![集群扩容4](图片/集群/集群扩容4.png)
+
+- 将新的slave机器加入到集群中
+  - <font color="red">**redis-cli -a 密码 --cluster add-node ip: 新 slave 端口 ip: 新 master 端口 --cluster-slave --cluster-master-id 新主机节点 ID**</font>
+  - redis-cli -a li998813 --cluster add-node 111.231.33.58:6388 111.231.33.58:6387 --cluster-slave --cluster-master-id 8cfa71f4c835e0b75491929a019c8ff0bab9cb49
+
+![集群扩容5](图片/集群/集群扩容5.png)
+
+- 查看节点配置
+  - cluster nodes
+
+![集群扩容6](图片/集群/集群扩容6.png)
+
+
+
+### 11.8 集群缩容
+
+- 6387和6388下线
+- 检查集群情况第一次，redis-cli -a li998813 --cluster check 111.231.33.58:6381
+  - 先获得从节点6388的节点ID：ff0a2d165993b99a87177aacfbe2f121f9477ddc
+
+![集群缩容1](图片/集群/集群缩容1.png)
+
+- 从集群中将4号从节点6388删除
+  - <font color="red">**命令：redis-cli -a 密码 --cluster del-node ip: 从机端口 从机 6388 节点 ID**</font>
+  - redis-cli -a li998813 --cluster del-node 111.231.33.58:6388 ff0a2d165993b99a87177aacfbe2f121f9477ddc
+
+![集群缩容2](图片/集群/集群缩容2.png)
+
+- 检查集群情况第二次，redis-cli -a li998813 --cluster check 111.231.33.58:6381
+
+![集群缩容3](图片/集群/集群缩容3.png)
+
+- 将6387的槽号清空，重新分配，本例是全部给6381
+  - <font color="red">**命令:redis-cli -a 密码 --cluster reshard IP 地址：端口号**</font>
+  - redis-cli -a li998813 --cluster reshard 111.231.33.58:6381
+
+
+![集群缩容4](图片/集群/集群缩容4.png)
+
+- 检查集群情况第三次，redis-cli -a li998813 --cluster check 111.231.33.58:6381
+  - 6381现在是8192个，6387变为0个
+
+![集群缩容5](图片/集群/集群缩容5.png)
+
+- 删除6387
+  - <font color="red">**命令：redis-cli -a 密码 --cluster del-node ip: 从机端口 从机 6387 节点 ID**</font>
+  - redis-cli -a li998813 --cluster del-node 111.231.33.58:6387 8cfa71f4c835e0b75491929a019c8ff0bab9cb49
+- 最后一次检查：redis-cli -a li998813 --cluster check 111.231.33.58:6381
+
+![集群缩容6](图片/集群/集群缩容6.png)
+
+
+
+### 11.9 通识占位符
+
+- 不在同一个slot槽位下的多键操作支持不好，这个时候就要用到通识占位符
+- 例子：比如在6381上设置多个值，这多个值会落到不同的槽位上，然后映射到不同节点，如果直接用mget批量获取，不在同一个槽位范围内是会报错的
+
+~~~bash
+127.0.0.1:6381> set k1 v1
+-> Redirected to slot [16287] located at 111.231.33.58:6382
+OK
+127.0.0.1:6381> set k2 v3
+OK
+127.0.0.1:6381> set k3 v3
+OK
+127.0.0.1:6381> set k4 v4
+-> Redirected to slot [16287] located at 111.231.33.58:6382
+OK
+127.0.0.1:6381> mget k1 k2 k3 k4
+(error) CROSSSLOT Keys in request don't hash to the same slot
+~~~
+
+- <font color="red">**不在同一个 slot 槽位下的键值无法使用 mset、mget 等多键操作**</font>
+- <font color="red">**可以通过 {} 来定义同一个组的概念，使 key 中 {} 内相同内容的键值对放到一个 slot 槽位去**</font>，对照下图类似 k1k2k3 都映射为 x，自然槽位一样
+  - mset key{组} 值 ...
+  - mget key{组} ...
+
+~~~bash
+[root@k8s-master ~]# redis-cli -a li998813 -p 6381 -c
+Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.
+127.0.0.1:6381> set k1{x} v1
+-> Redirected to slot [16287] located at 111.231.33.58:6382
+OK
+111.231.33.58:6382> set k2{x} v2
+OK
+111.231.33.58:6382> set k3{x} v3
+OK
+111.231.33.58:6382> set k4{x} v4
+OK
+111.231.33.58:6382> mget k1{x} k2{x} k3{x} k4{x}
+1) "v1"
+2) "v2"
+3) "v3"
+4) "v4"
+~~~
+
+
+
+### 11.10 常用命令
+
+- <font color="red">**集群是否完整才能对外提供服务：cluster - require - full - coverage**</font>
+  - 默认 YES，现在集群架构是 3 主 3 从的 redis cluster 由 3 个 master 平分 16384 个 slot，每个 master 的小集群负责 1/3 的 slot，对应一部分数据。
+    cluster - require - full - coverage：默认值 yes，即需要集群完整性，方可对外提供服务。**通常情况，如果这 3 个小集群中，任何一个（1 主 1 从）挂了，你这个集群对外可提供的数据只有 2/3 了，整个集群是不完整的，redis 默认在这种情况下，是不会对外提供服务的**。
+  - 如果你的诉求是，集群不完整的话也需要对外提供服务，需要将该参数设置为 no，这样的话你挂了的那个小集群是不行了，但是其他的小集群仍然可以对外提供服务。
+
+![集群是否完整才能对外提供服务](图片/集群/集群是否完整才能对外提供服务.png)
+
+- cluster countKeySinSlot 槽位数字编号：查看槽位是否被占用
+  - 1：被占用
+  - 0：没有被占用
+
+~~~bash
+111.231.33.58:6382> cluster countKeySinSlot 1033			# 没有占用
+(integer) 0
+111.231.33.58:6382> set k2 v2
+-> Redirected to slot [449] located at 111.231.33.58:6381
+OK
+111.231.33.58:6381> cluster countKeySinSlot 449				# 被占用
+(integer) 1
+~~~
+
+- cluster keyslot 键名称：查看键的槽位
+
+~~~bash
+111.231.33.58:6381> cluster keyslot k2
+(integer) 449
+~~~
+
+
+
+## 11、集成SpringBoot
+
+### 11.1 注意事项
+
+- bind配置注释掉
+- 保护模式设置为no
+- linux系统防火墙设置
+- redis服务器的IP地址和密码是否正确
+- 忘记写访问redis的服务端口号和auth密码
+
+
+
+### 11.2 集成Jedis
+
+- **Redis Client是Redis官网推荐的一个面向Java客户端，库文件实现了对各类API进行封装调用**，即把前面的十大类型的操作命令封装成API，可以直接通过Java API实现之前的命令操作
+
+- 实现步骤
+
+  - pom文件
+
+  ~~~xml
+  <dependencies>
+      <!-- Spring Boot 核心依赖 -->
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter</artifactId>
+          <version>3.3.4</version>
+      </dependency>
+      <!-- Jedis -->
+      <dependency>
+          <groupId>redis.clients</groupId>
+          <artifactId>jedis</artifactId>
+          <version>5.2.0</version>
+      </dependency>
+  </dependencies>
+  ~~~
+  
+  - jedis使用
+  
+  ~~~java
+  package org.example.demo;
+  
+  import redis.clients.jedis.Jedis;
+  
+  import java.util.Set;
+  
+  /**
+   * 测试Jedis
+   */
+  public class JedisDemo {
+      public static void main(String[] args) {
+          // 通过IP和端口获取connection连接
+          Jedis jedis = new Jedis("111.231.33.58", 6379);
+          // 指定访问服务器的密码
+          jedis.auth("li998813");
+          // 获得了jedis客户端，就可以像jdbc一样访问redis
+          System.out.println(jedis.ping());
+  
+          // keys *
+          Set<String> keys = jedis.keys("*");
+          System.out.println(keys);
+  
+          // string
+          jedis.set("k1", "v1");
+          System.out.println(jedis.get("k1"));
+  
+          // list
+          jedis.lpush("list", "11", "22", "33");
+          System.out.println(jedis.lrange("list", 0, -1));
+  
+          // 设置有效时间
+          jedis.expire("k1", 120);
+          System.out.println(jedis.ttl("k1"));
+      }
+  }
+  
+  // 输出结果
+  PONG
+  [k1, bitkey, mystream, list]
+  v1
+  [33, 22, 11, 33, 22, 11]
+  120
+  ~~~
+
+
+
+### 11.3 集成lettuce
+
+- 是什么：Redis的Java驱动包
+- Jedis 和 Lettuce 的区别：
+  - jedis 和 Lettuce 都是 Redis 的客户端，它们都可以连接 Redis 服务器，但是在 SpringBoot2.0 之后默认都是使用的 Lettuce 这个客户端连接 Redis 服务器。<font color="red">**因为当使用 Jedis 客户端连接 Redis 服务器的时候，每个线程都要拿自己创建的 Jedis 实例去连接 Redis 客户端，当有很多个线程的时候，不仅开销大需要反复的创建关闭一个 Jedis 连接，而且也是线程不安全的，一个线程通过 Jedis 实例更改 Redis 服务器中的数据之后会影响另一个线程**</font>
+  - 但是如果使用 Lettuce 这个客户端连接 Redis 服务器的时候，就不会出现上面的情况，<font color="red">**Lettuce 底层使用的是 Netty，当有多个线程都需要连接 Redis 服务器的时候，可以保证只创建一个 Lettuce 连接，使所有的线程共享这一个 Lettuce 连接，这样可以减少创建关闭一个 Lettuce 连接时候的开销；而且这种方式也是线程安全的，不会出现一个线程通过 Lettuce 更改 Redis 服务器中的数据之后而影响另一个线程的情况；**</font>
+
+- pom文件
+
+~~~xml
+<!-- lettuce -->
+<dependency>
+    <groupId>io.lettuce</groupId>
+    <artifactId>lettuce-core</artifactId>
+    <version>6.3.2.RELEASE</version>
+</dependency>
+~~~
+
+- 业务类
+
+~~~java
+package org.example.demo;
+
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisURI;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
+
+/**
+ * lettuce业务类
+ */
+public class LettuceDemo {
+    public static void main(String[] args) {
+        // 使用构建器链式编程来build一个RedisURI对象
+        RedisURI uri = RedisURI.builder()
+                .redis("111.231.33.58")
+                .withPort(6379)
+                .withAuthentication("default", "li998813")
+                .build();
+
+        // 连接客户端
+        RedisClient redisClient = RedisClient.create(uri);
+        StatefulRedisConnection<String, String> conn = redisClient.connect();
+
+        // 通过conn创建操作的command
+        RedisCommands<String, String> command = conn.sync();
+
+        // 操作
+        command.set("k1", "11");
+        command.set("k2", "22");
+        System.out.println(command.get("k1"));
+        System.out.println(command.get("k2"));
+
+        // 关闭释放连接
+        conn.close();
+        redisClient.shutdown();
+    }
+}
+
+// 打印结果
+11
+22
+~~~
+
+
+
+### 11.4 RedisTemplate
+
+#### 11.4.1 单机版
+
+- pom文件
+
+~~~xml
+<!-- RedisTemplate -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+    <version>3.3.4</version>
+</dependency>
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-pool2</artifactId>
+    <version>2.12.0</version>
+</dependency>
+~~~
+
+- yml
+
+~~~yml
+spring:
+  redis:
+    host: 111.231.33.58  # Redis服务器的IP地址，若Redis部署在其他机器，改成对应的IP
+    port: 6379  # Redis服务器的端口号，默认是6379
+    password:li998813  # 如果Redis设置了密码，在这里填写密码，没有密码则留空
+    database: 0  # 使用的Redis数据库索引，Redis有0 - 15共16个数据库，默认使用0号库
+    lettuce:
+      pool:
+        max-active: 8  # 连接池最大连接数（使用负值表示没有限制）
+        max-wait: -1ms  # 连接池最大阻塞等待时间（使用负值表示没有限制）
+        max-idle: 8  # 连接池中的最大空闲连接
+        min-idle: 0  # 连接池中的最小空闲连接
+    timeout: 5000ms  # 连接超时时间（毫秒）
+~~~
+
