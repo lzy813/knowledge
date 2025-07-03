@@ -4341,17 +4341,269 @@ public class LettuceDemo {
 
 ~~~yml
 spring:
-  redis:
-    host: 111.231.33.58  # Redis服务器的IP地址，若Redis部署在其他机器，改成对应的IP
-    port: 6379  # Redis服务器的端口号，默认是6379
-    password:li998813  # 如果Redis设置了密码，在这里填写密码，没有密码则留空
-    database: 0  # 使用的Redis数据库索引，Redis有0 - 15共16个数据库，默认使用0号库
-    lettuce:
-      pool:
-        max-active: 8  # 连接池最大连接数（使用负值表示没有限制）
-        max-wait: -1ms  # 连接池最大阻塞等待时间（使用负值表示没有限制）
-        max-idle: 8  # 连接池中的最大空闲连接
-        min-idle: 0  # 连接池中的最小空闲连接
-    timeout: 5000ms  # 连接超时时间（毫秒）
+  data:
+    redis:
+      host: 111.231.33.58  # Redis服务器的IP地址，若Redis部署在其他机器，改成对应的IP
+      port: 6379  # Redis服务器的端口号，默认是6379
+      password: li998813 # 如果Redis设置了密码，在这里填写密码，没有密码则留空
+      database: 0  # 使用的Redis数据库索引，Redis有0 - 15共16个数据库，默认使用0号库
+      lettuce:
+        pool:
+          max-active: 8  # 连接池最大连接数（使用负值表示没有限制）
+          max-wait: -1ms  # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-idle: 8  # 连接池中的最大空闲连接
+          min-idle: 0  # 连接池中的最小空闲连接
+      timeout: 5000ms  # 连接超时时间（毫秒）
 ~~~
 
+- RedisConfig配置
+
+~~~java
+package org.example.config;
+
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * redis的config配置文件
+ */
+@Configuration
+public class RedisConfig {
+}
+~~~
+
+- RedisService业务代码
+
+```java
+package org.example.service;
+
+import org.example.config.RedisConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+/**
+ * redis业务代码
+ */
+@Service
+public class RedisService {
+
+    @Autowired
+    private RedisTemplate redisTemplate;
+
+    /**
+     * 添加key
+     * @param key
+     * @param value
+     */
+    public void addKey(String key, String value) {
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    /**
+     * 获得key
+     * @param key
+     * @return
+     */
+    public String getKey(String key) {
+        return (String) redisTemplate.opsForValue().get(key);
+    }
+}
+```
+
+- controller
+
+~~~java
+package org.example.controller;
+
+
+import org.example.service.RedisService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+
+@RestController
+public class RedisController {
+
+    @Autowired
+    private RedisService redisService;
+
+    @RequestMapping(value = "/addKey/{key}/{value}", method = RequestMethod.GET)
+    public void addKey(@PathVariable String key, @PathVariable String value) {
+        redisService.addKey(key, value);
+    }
+
+    @RequestMapping(value = "/getKey/{key}", method = RequestMethod.GET)
+    public String getKey(@PathVariable String key) {
+        return redisService.getKey(key);
+    }
+}
+~~~
+
+- 测试
+  - localhost:8080/addKey/k9/v9：添加key
+  - localhost:8080/getKey/k9：获取key
+
+- 问题：设置值都是正常的，取值也是正常的，只不过在redis客户端中查看的时候会有乱码
+  - 键（key）和值（value）都是通过 Spring 提供的 Serializer 序列化到数据库的。
+  - <font color="red">**RedisTemplate 默认使用的是 JdkSerializationRedisSerializer，StringRedisTemplate 默认使用的是 StringRedisSerializer**</font>
+  - **KEY 被序列化成这样，线上通过 KEY 去查询对应的 VALUE 非常不方便**。
+
+![集成springboot错误](图片/基础/集成springboot错误.png)
+
+- 解决方案1：<font color="red">**将service中的RedisTemplate换成StringRedisTemplate**</font>
+
+  - 如果有中文，就要加--raw参数启动客户端：redis-cli -a li998813 -p 6379 --raw
+
+  ![设置中文](图片/基础/设置中文.png)
+
+~~~java
+package org.example.service;
+
+import org.example.config.RedisConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Service;
+
+/**
+ * redis业务代码
+ */
+@Service
+public class RedisService {
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+//    private RedisTemplate redisTemplate;
+
+    /**
+     * 添加key
+     * @param key
+     * @param value
+     */
+    public void addKey(String key, String value) {
+        stringRedisTemplate.opsForValue().set(key, value);
+    }
+
+    /**
+     * 获得key
+     * @param key
+     * @return
+     */
+    public String getKey(String key) {
+        return stringRedisTemplate.opsForValue().get(key);
+    }
+}
+~~~
+
+- 解决方式2：<font color="red">**RedisTemplate 默认使用的是 JdkSerializationRedisSerializer，所以初始化设置RedisTemplate **</font>
+
+![JDK序列化方式](图片/基础/JDK序列化方式.png)
+
+- RedisTemplate配置类
+
+~~~java
+package org.example.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+/**
+ * redis的config配置文件
+ */
+@Configuration
+public class RedisConfig {
+
+    /**
+     * *redis序列化的工具定置类，下面这个请一定开启配置
+     * *127.0.0.1:6379> keys *
+     * *1) “ord:102” 序列化过
+     * *2)“\xaclxedlxeelx05tixeelaord:102” 野生，没有序列化过
+     * *this.redisTemplate.opsForValue(); //提供了操作string类型的所有方法
+     * *this.redisTemplate.opsForList();// 提供了操作List类型的所有方法
+     * *this.redisTemplate.opsForset(); //提供了操作set类型的所有方法
+     * *this.redisTemplate.opsForHash(); //提供了操作hash类型的所有方认
+     * *this.redisTemplate.opsForZSet(); //提供了操作zset类型的所有方法
+     * param RedisConnectionFactory
+     * return
+     */
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String,Object> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
+        // 设置key序列化方式string
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        // 设置value的序列化方式json，使用GenericJackson2JsonRedisSerializer替换默认序列化
+        redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+
+        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+        redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
+    }
+
+}
+~~~
+
+![redisTemplate配置](图片/基础/redisTemplate配置.png)
+
+
+
+#### 11.4.2 集群版
+
+- yml
+
+~~~yml
+# 集群版
+spring:
+  # redis-cluster配置
+  data:
+    redis:
+      host: 111.231.33.58
+      database: 0
+      password: li998813
+      time-out: 1000
+      # 集群节点
+      cluster:
+        nodes: 111.231.33.58:6381,111.231.33.58:6382,111.231.33.58:6383,111.231.33.58:6384,111.231.33.58:6385,111.231.33.58:6386,111.231.33.58:6387,111.231.33.58:6388
+        # 重定向最大次数
+        max-redirects: 4
+      lettuce:
+        cluster:
+          refresh:
+            # 集群拓扑自适应刷新
+            adaptive: true
+            # 集群拓扑刷新周期 毫秒
+            period: 3000
+        pool:
+          # 最大链接数量
+          max-active: 8
+          # 最大阻塞时间 负数没有限制
+          max-wait: -1
+          # 最大空闲链接
+          max-idle: 8
+          # 最小空闲链接
+          min-idle: 0
+~~~
+
+- 测试：localhost:8080/addKey/k6/我是v6
+
+~~~bash
+111.231.33.58:6382> get k6
+-> Redirected to slot [325] located at 111.231.33.58:6381
+"我是v6"
+~~~
+
+- 注意：如果没有加集群拓扑自适应刷新，即：lettuce.cluster.refresh.adaptive这个，那么springboot是没法感知集群节点变化的
+  - 比如：当6381挂了的时候，即便6388从机上位，springboot还是会报连接不上
+  - 原因：<font color="red">**redis默认的连接池采用Lettuce，默认不会刷新节点拓扑**</font>
+
+
+
+# 二、高级篇
