@@ -4607,3 +4607,419 @@ spring:
 
 
 # 二、高级篇
+
+## 1、单线程&多线程
+
+### 1.1 为什么选择单线程
+
+- 版本更新节点
+  - 版本3.x ，最早版本，也就是大家口口相传的redis是单线程。
+  - 版本4.x，严格意义来说也不是单线程，而是<font color="red">**负责处理客户端请求的线程是单线程，但是开始加了点多线程的东西(异步删除)**</font>
+  - 2020年5月版本的6.0.x后及2022年出的7.0版本后，告别了大家印象中的单线程，用一种全新的多线程来解决问题。
+
+![时间节点](图片/高级/时间节点.png)
+
+- Redis的单线程
+
+  - <font color="red">**Redis是单线程主要是指Redis的网络IO和键值对读写是由一个线程来完成的，Redis在处理客户端的请求时包括获取(socket 读)、解析、执行、内容返回(socket 写) 等都由一个顺序串行的主线程处理，这就是所谓的“单线程”。这也是Redis对外提供键值存储服务的主要流程。**</font>
+
+  ![redis单线程](图片/高级/redis单线程.png)
+
+  - <font color="red">**但Redis的其他功能，比如持久化RDB、AOF、异步删除、集群数据同步等等，其实是由额外的线程执行的。**</font>
+  - <font color="red">**Redis命令工作线程是单线程的，但是，整个Redis来说，是多线程的；**</font>
+
+- Redis3.X单线程时代但是性能依旧很快的主要原因？
+
+  - **基于内存操作**: Redis 的所有数据都存在内存中，因此所有的运算都是内存级别的，所以他的性能比较高； 
+  - **数据结构简单**: Redis 的数据结构是专门设计的，而这些简单的数据结构的查找和操作的时间大部分复杂度都是 0(1)，因此性能比较高；
+  - **多路复用和非阻塞 I/O**: <font color="red">**Redis使用 I/O多路复用功能来监听多个 socket连接客户端**</font>，这样就可以使用一个线程连接来处理多个请求，减少线程切换带来的开销，同时也避免了 I/O 阻塞操作；
+  - **避免上下文切换**: 因为是单线程模型，因此就避免了不必要的上下文切换和多线程竞争，这就省去了多线程切换带来的时间和性能上的消耗，而且单线程不会导致死锁问题的发生
+
+- **Redis是单线程的。如何利用多个CPU /内核?** CPU并不是您使用Redis的瓶颈，因为通常Redis要么受内存限制，要么受网络限制。例如，使用在平均Linux系统上运行的流水线Redis每秒可以发送一百万个请求，因此，如果您的应用程序主要使用O(N)或O(log(N) )命令，则几乎不会使用过多的CPU。
+  - 但是，为了最大程度地利用CPU，您可以在同一框中启动多个Redis实例，并将它们视为不同的服务器。在某个时候，单个盒子可能还不够，因此，如果您要使用多个CPU，则可以开始考虑更早地进行分片的某种方法。您可以在“分区”页面中找到有关使用多个Redis实例的更多信息。
+  - 但是，在Redis 4.0中，我们开始使Redis具有更多线程，目前，这仅限于在后台删除对象，以及阻塞正通过Redis模块实现的命令。对于将来的版本，计划是使Redis越来越线程化。
+  - 他的大体意思是说 Redis 是基于内存操作的，因此他的瓶颈可能是机器的内存或者网络带宽而并非 CPU，既然 CPU 不是瓶颈，那么自然就采用单线程的解决方案了，况且使用多线程比较麻烦。但是在 Redis 4.0 中开始支持多线程了，例如后台删除、备份等功能
+  - 新版本Redis官网原话，去掉了单线程的
+- <font color="red">**Redis4.0之前一直采用单线程的主要原因有以下三个**</font>
+  1. 使用单线程模型是 Redis 的开发和维护更简单，因为单线程模型方便开发和调试;
+  2. 即使使用单线程模型也并发的处理多客户端的请求，主要使用的是IO多路复用和非阻塞IO；
+  3. 对于Redis系统来说，主要的性能瓶颈是内存或者网络带宽而并非 CPU。
+
+
+
+
+
+
+
+## 2、BigKey
+
+### 2.1 面试题
+
+- 海量数据里查询某一固定前缀的 key
+- 如何生产上限制 keys */flushdb/flushall 等危险命令以防止误删误用？
+- MEMORY USAGE 命令你用过吗？
+- BigKey问题，多大算 big？你如何发现？如何删除？如何处理？
+- BigKey你做过调优吗？惰性释放 lazyfree 了解过吗？
+- Morekey问题，生产上redis 数据库有 100W 记录，你如何遍历？key * 可以吗？
+
+
+
+### 2.2 Morekey案例
+
+- 大批量往redis里面插入100w测试数据key
+
+  - Linux Bash下面执行，生成一个插入100w数据的shell脚本
+
+  ~~~bash
+  # 生成100w条redis批量设置kv的语句（key=kn，value=vn），写入到/tmp目录下的redisTest.txt文件中
+  # 即：往/tmp目录下的redisTest.txt文件中写入set k v这样的命令100w条
+  for((i=1;i<=100*10000;i++)); do echo "set k$i v$i" >> /tmp/redisTest.txt ; done;
+  ~~~
+
+  - 通过redis管道--pipe命令插入100w大批量数据
+
+  ~~~bash
+  # cat展示所有的数据
+  # 通过|管道符将前面的输出作为下一个命令的入参执行
+  # 即：通过管道执行/tmp/redisTest.txt中所有的命令
+  cat /tmp/redisTest.txt | redis-cli -h 127.0.0.1 -p 6379 -a li998813 --pipe
+  ~~~
+
+  ![100w数据插入成功1](图片/高级/100w数据插入成功1.png)
+
+- 测试100w数据是否插入成功
+
+![100w数据插入成功2](图片/高级/100w数据插入成功2.png)
+
+
+
+### 2.3 禁用命令
+
+- 线上redis是不能执行keys *相关命令的
+  - 这个指令没有 offset、limit 参数，是要一次性吐出所有满足条件的 key，由于 redis 是单线程的，其所有操作都是原子的，而 keys 算法是遍历算法，复杂度是 O (n)，如果实例中有千万级以上的 key，这个指令就会导致 Redis 服务卡顿，所有读写 Redis 的其它的指令都会被延后甚至会超时报错，可能会引起缓存雪崩甚至数据库宕机。
+  - 在生产环境上建议直接禁用或者重命名
+
+- 通过配置设置禁用危险命令：redis.conf在SECURITY这一项中，<font color="red">**rename-command**</font>
+
+~~~bash
+rename-command keys ""
+rename-command flushdb ""
+rename-command flushall ""
+~~~
+
+![禁用命令](图片/高级/禁用命令.png)
+
+- 重启服务测试：redis-server myredis/redis6379.conf
+
+![禁用命令成功](图片/高级/禁用命令成功.png)
+
+
+
+### 2.4 scan命令
+
+- Redis SCAN 命令及其相关命令 SSCAN, HSCAN ZSCAN 命令都是用于增量遍历集合中的元素。
+  - SCAN 命令用于迭代当前数据库中的数据库键
+  - SSCAN 命令用于迭代集合键中的元素。
+  - HSCAN 命令用于迭代哈希键中的键值对。
+  - ZSCAN 命令用于迭代有序集合中的元素（包括元素成员和元素分值）。
+- <font color="red">**基于游标的迭代器，需要基于上一次的游标延续之前的迭代过程，以 0 作为游标开始一次新的迭代，直到命令返回游标 0 完成一次遍历，不保证每次执行都返回某个给定数量的元素，支持模糊查询一次返回的数量不可控，只能是大概率符合 count 参数**</font>
+
+- redis Scan 命令基本语法如下：SCAN cursor [MATCH pattern] [COUNT count]
+  - cursor - 游标
+  - pattern - 匹配的模式
+  - count - 指定从数据集中返回多少元素，默认值为 10 
+- <font color="red">**SCAN 命令是一个基于游标的迭代器，每次被调用之后，都会向用户返回一个新的游标，用户在下次迭代时需要使用这个新游标作为 SCAN 命令的游标参数，以此来延续之前的迭代过程。**</font>
+- SCAN 返回一个包含两个元素的数组：
+  - 第一个元素是用于进行下一次迭代的新游标
+  - 第二个元素则是一个数组，这个数组中包含了所有被迭代的元素。如果新游标返回零表示迭代已结束
+
+- SCAN 的遍历顺序
+  - <font color="red">**非常特别，它不是从第一维数组的第零位一直遍历到末尾，而是采用了高位进位加法来遍历。之所以使用这样特殊的方式进行遍历，是考虑到字典的扩容和缩容时避免槽位的遍历重复和遗漏。**</font>
+
+![scan使用](图片/高级/scan使用.png)
+
+- 例子：上一个游标的返回是下一个游标的开始，直到最终返回0，则证明全部遍历完成
+
+~~~bash
+127.0.0.1:6379> scan 0 match k* count 10
+1) "983040"
+2)  1) "k936840"
+    2) "k87383"
+    3) "k373464"
+    4) "k343989"
+    5) "k442785"
+    6) "k768139"
+    7) "k979974"
+    8) "k277928"
+    9) "k692950"
+   10) "k815668"
+   11) "k956129"
+127.0.0.1:6379> scan 983040 match k* count 10
+1) "425984"
+2)  1) "k761923"
+    2) "k551615"
+    3) "k514600"
+    4) "k876275"
+    5) "k175761"
+    6) "k115369"
+    7) "k345756"
+    8) "k64048"
+    9) "k98439"
+   10) "k44135"
+127.0.0.1:6379> scan 425984 match k* count 10
+1) "16384"
+2)  1) "k423654"
+    2) "k791822"
+    3) "k805770"
+    4) "k493836"
+    5) "k965986"
+    6) "k135888"
+    7) "k449174"
+    8) "k158366"
+    9) "k166045"
+   10) "k242564"
+~~~
+
+
+
+### 2.5 BigKey相关问题
+
+#### 2.5.1 多大算大key
+
+- 阿里云规范：
+  - 【强制】：拒绝 bigkey (防止网卡流量、慢查询)
+    - <font color="red">**string 类型控制在 10KB 以内，hash、list、set、zset 元素个数不要超过 5000。**</font>
+  - 反例：一个包含 200 万个元素的 list。
+    - <font color="red">**非字符串的 bigkey，不要使用 del 删除，使用 hscan、sscan、zscan 方式渐进式删除**</font>
+    - <font color="red">**同时要注意防止 bigkey 过期时间自动删除问题 **</font>(例如一个 200 万的 zset 设置 1 小时过期，会触发del操作，造成阻塞，而且该操作不会出现在慢查询中 (latency 可查))，
+
+- <font color="red">**string是value，最大512MB但是>=10KB就是BigKey**</font>
+- <font color="red">**hash、list、set、zset 元素个数超过5000就是BigKey**</font>
+
+
+
+#### 2.5.2 那些危害
+
+- 1.超时阻塞（慢查询）
+  - 由于Redis单线程的特性，操作bigkey的通常比较耗时，也就意味着阻塞Redis可能性越大，这样会造成客户端阻塞或者引起故障切换，它们通常出现在慢查询中。
+
+- 2.网络拥塞
+  - bigkey也就意味着每次获取要产生的网络流量较大，假设一个bigkey为1MB，客户端每秒访问量为1000，那么每秒产生1000MB的流量，对于普通的千兆网卡(按照字节算是128MB/s)的服务器是不堪重负的。
+
+- 3.过期删除阻塞
+  - 有个bigkey，它安分守己（只执行简单的命令，例如hget、lpop、zscore等），但它设置了过期时间，当它过期后，会被删除，如果没有使用Redis 4.0的过期异步删除(lazyfree-lazy-expire yes)，就会存在阻塞Redis的可能性，而且这个过期删除不会从主节点的慢查询发现（因为这个删除不是客户端产生的，是内部循环事件，可以从latency命令中获取或者从slave节点慢查询发现）。
+
+- 4.迁移困难（迁移中阻塞）
+  - Redis 部署方式为 redis cluster的并迁移slot，当实际上是通过migrate命令来完成的，migrate实际上是通过dump + restore + del三个命令组合成原子命令完成，如果是bigkey，可能会使迁移失败，而且较慢的migrate会阻塞Redis。
+
+- 5.内存空间不均匀
+  - 在 Redis cluster集群中，会造成节点的内存使用不均匀。存在丢失数据的隐患。
+
+
+
+
+#### 2.5.3 如何产生
+
+- 一般来说，bigkey的产生都是由于程序设计不当，或者对于数据规模预料不清楚造成的，来看几个例子：
+  - 社交类：粉丝列表，如果某些明星的粉丝数据，如果不精心设计下，一个明星的粉丝 百万很少了吧，你都把这百万的>粉丝数据放到一个key中存储，毫无疑问是bigkey
+  - 统计类：比如按天存储某项功能或者网站的用户集合，用户很少，倒是没多大问题，一旦用户多了起来，必是bigkey
+  - 缓存类：将数据从数据库加载出来以后序列化放到Redis里，这个方式非常常用，但有两个地方需要注意:
+    - 第一，是不>是有必要把所有字段都缓存；
+    - 第二，有没有相关关联的数据，不要为了图方便把相关数据都存一个key下，产生bigkey。
+
+
+
+#### 2.5.4 如何发现
+
+- <font color="red">**redis-cli --bigkeys**</font>
+
+  - 好处：给出每种数据结构Top 1 bigkey，同时给出每种数据类型的键值个数+平均大小
+  - 缺点：想查询大于10kb的所有key，--bigkeys就无能为力，需要用到memory usage来计算每个键值的字节数
+  - <font color="red">**参数加上-i 0.1，就是每隔100条scan指令就会休眠0.1s，ops就不会剧烈抬升，但是扫描的时间会变长**</font>
+
+  ~~~bash
+  redis-cli -h 127.0.0.1 -p 6379 -a li998813 --bigkeys -i 0.1
+  ~~~
+
+  ![bigkey](图片/高级/bigkey.png)
+
+  - 上图string的Top 1 bigkey是k1000000，占8个字节，还有平均大小
+
+- <font color="red">**memory usage key [samples count]**</font>
+
+  - MEMORY USAGE 命令给出一个 key 和它的值在 RAM 中所占用的字节数。返回的结果是 key 的值以及为管理该 key 分配的内存总字节数。对于嵌套数据类型，可以使用选项SAMPLES，其中 count 表示抽样的元素个数，默认值为 5。当需要抽样所有元素时，使用 SAMPLES 0。
+
+  ~~~bash
+  127.0.0.1:6379> memory usage k1000000
+  (integer) 72
+  ~~~
+
+  
+
+#### 2.5.5 如何删除
+
+- <font color="red">**非字符串的 bigkey，不要使用 del 删除，使用 hscan、sscan、zscan 方式渐进式删除**</font>
+
+- String：一般用del，如果过于庞大用unlink
+
+- hash
+
+  - 使用hscan每次获取少量的field-value，让hash里面的元素个数变少之后，再使用hdel删除每个field
+  - hscan key cursor [MATCH pattern] [COUNT count]
+    - cursor - 游标
+    - pattern - 匹配的模式
+    - count - 指定从数据集中返回多少元素，默认值为 10 
+  - 返回每个元素都是一个元组，每一个元组元素由一个字段field和value组成
+
+  ~~~java
+  // hscan + hdel
+  public void delBigHash(String host, int port, String password, String bigHashKey) {
+      Jedis jedis = new Jedis(host, port);
+      if (password != null && !"".equals(password)) {
+          jedis.auth(password);
+      }
+  
+      ScanParams scanParams = new ScanParams().count(100);
+      String cursor = "0";
+      do {
+          ScanResult<Entry<String, String>> scanResult = jedis.hscan(bigHashKey, cursor, scanParams);
+          List<Entry<String, String>> entryList = scanResult.getResult();
+          if (entryList != null && !entryList.isEmpty()) {
+              for (Entry<String, String> entry : entryList) {
+                  jedis.hdel(bigHashKey, entry.getKey());
+              }
+          }
+          cursor = scanResult.getStringCursor();
+      } while (!"0".equals(cursor));
+  
+      // 删除 bigkey
+      jedis.del(bigHashKey);
+  }
+  ~~~
+
+- list
+
+  - 使用ltrim渐进式逐步删除，直到全部删除完成
+
+  - ltrim key start stop
+
+    - Redis ltrim 对一个列表进行修剪 (trim)，就是说，让列表只保留指定区间内的元素，不在指定区间之内的元素都将被删除。
+    - 下标 0 表示列表的第一个元素，以 1 表示列表的第二个元素，以此类推。你也可以使用负数下标，以 -1 表示列表的最后一个元素，-2 表示列表
+      的倒数第二个元素，以此类推。
+
+    ![ltrim](图片/高级/ltrim.png)
+
+    ~~~java
+    // ltrim
+    public void delBigList(String host, int port, String password, String bigListKey) {
+        Jedis jedis = new Jedis(host, port);
+        if (password != null && !"".equals(password)) {
+            jedis.auth(password);
+        }
+        long llen = jedis.llen(bigListKey);
+        int counter = 0;
+        int left = 100;
+        while (counter < llen) {
+            // 每次从左侧截掉100个
+            jedis.ltrim(bigListKey, left, llen);
+            counter += left;
+        }
+        // 最终删除key
+        jedis.del(bigListKey);
+    }
+    ~~~
+
+- set
+
+  - 使用sscan每次获取部分元素，再使用srem命令删除每个元素
+  - sscan key cursor [MATCH pattern] [COUNT count]
+    - cursor - 游标
+    - pattern - 匹配的模式
+    - count - 指定从数据集中返回多少元素，默认值为 10 
+
+  ~~~java
+  // sscan + srem
+  public void delBigSet(String host, int port, String password, String bigSetKey) {
+      Jedis jedis = new Jedis(host, port);
+      if (password != null && !"".equals(password)) {
+          jedis.auth(password);
+      }
+      ScanParams scanParams = new ScanParams().count(100);
+      String cursor = "0";
+      do {
+          ScanResult<String> scanResult = jedis.sscan(bigSetKey, cursor, scanParams);
+          List<String> memberList = scanResult.getResult();
+          if (memberList != null && !memberList.isEmpty()) {
+              for (String member : memberList) {
+                  jedis.srem(bigSetKey, member);
+              }
+          }
+          cursor = scanResult.getStringCursor();
+      } while (!"0".equals(cursor));
+  
+      // 删除 bigkey
+      jedis.del(bigSetKey);
+  }
+  ~~~
+
+- zset
+
+  - 使用zscan每次获取部分元素，再使用sremrangebyrank命令删除每个元素
+  - zscan key cursor [MATCH pattern] [COUNT count]
+    - cursor - 游标
+    - pattern - 匹配的模式
+    - count - 指定从数据集中返回多少元素，默认值为 10 
+
+  ~~~java
+  // zscan + srem
+  public void delBigZset(String host, int port, String password, String bigZsetKey) {
+      Jedis jedis = new Jedis(host, port);
+      if (password != null && !"".equals(password)) {
+          jedis.auth(password);
+      }
+      ScanParams scanParams = new ScanParams().count(100);
+      String cursor = "0";
+      do {
+          ScanResult<Tuple> scanResult = jedis.zscan(bigZsetKey, cursor, scanParams);
+          List<Tuple> tupleList = scanResult.getResult();
+          if (tupleList != null && !tupleList.isEmpty()) {
+              for (Tuple tuple : tupleList) {
+                  jedis.zrem(bigZsetKey, tuple.getElement());
+              }
+          }
+          cursor = scanResult.getStringCursor();
+      } while (!"0".equals(cursor));
+  
+      // 删除 bigkey
+      jedis.del(bigZsetKey);
+  }
+  ~~~
+
+  
+
+### 2.6 BigKey生产调优
+
+- 涉及到数据删除的场景有很多，盘点有如下场景：
+  - 场景一：客户端执行的显示删除/清除命令，比如 del，flushdb 等；
+  - 场景二：某些指令带有的隐式删除命令，比如 move , rename 等；
+  - 场景三：到达过期时间的数据需要删除；
+  - 场景四：使用内存达到 maxmemory 后被选出来要淘汰的数据需要删除；
+  - 场景五：在主从同步全量同步阶段，从库收到主库的 RDB 文件后要先删除现有的数据再加载 RDB 文件；
+- 而这些删除场景其实都存在阻塞主线程的风险：
+  - big-key 带来的阻塞风险：在删除单个键值对的场景下，如果这个键值对小一般没什么问题，但是如果要删除的是一个 big-key，阻塞时间可能比较长，这对于响应时效性要求高的场景是不可以接受的；
+  - 同时删除多个 key 带来的阻塞风险：即使没有 big-key 的存在，如果同一时间要删除的是多个键，阻塞时间也不可忽略。
+
+- redis 是用 c 语言实现的，而我们知道 c 语言是没有垃圾回收的，也就说对于程序申请的内存是需要程序来释放的，因此，在 redis 中删除数据包含两个步骤：
+  - 步骤一：将待删除数据对从字典表中删除；
+  - 步骤二：释放待删除数据所占用的内存空间。
+- 如果这两个步骤同步执行，就叫<font color="red">**同步删除**</font>；而如果只执行步骤一，将来通过后台线程来执行步骤二，就叫<font color="red">**异步删除**</font>。而<font color="red">**惰性删除**</font>里的惰性其实指的就是 删除时只执行步骤一，而将步骤二 "延迟" 到后台线程执行。
+- 优化配置：开启惰性删除，<font color="red">**即使开启了惰性删除，并不代表着就一定会执行异步删除，redis 还会先评估删除开销，如果开销较小，会直接做同步删除**</font>。
+
+~~~bash
+lazyfree-lazy-user-del / lazyfree_lazy_user_flush  #（6.0 新增）: 对应场景一显示删除/清除命令场景；（改为yes）
+lazyfree-lazy-server-del 						   # 对应场景二会隐式进行删除操作的命令执行场景；（改为yes）
+lazyfree-lazy-expire							   # 对应场景三过期数据的删除场景；
+lazyfree-lazy-eviction 							   # 对应场景四缓存淘汰时的数据删除场景。
+replica-lazy-flush								   # 对应场景五从节点完成全量同步后，删除原有旧数据的场景。（改为yes）
+~~~
+
