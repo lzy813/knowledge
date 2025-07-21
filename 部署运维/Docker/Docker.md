@@ -2,7 +2,7 @@
 
 ## 1、为什么会出现docker
 
-![docker出现前后对比](图片\基础知识\docker出现前后对比.png)
+![docker出现前后对比](图片/基础知识/docker出现前后对比.png)
 
 - 出现之前
   - 开发提交src代码，在本地可以运行，但是在运维部署服务器上环境可能导致不一致，就会发生启动不了的情况
@@ -24,13 +24,13 @@
 - **docker打破了过去程序即应用的观念。通过镜像(images)将作业系统核心除外，运作应用程序所需要的系统环境，由下而上打包，达到应用程序跨平台间的无缝接轨运作**
 
 
-![镜像文件的作用](图片\基础知识\镜像文件的作用.png)
+![镜像文件的作用](图片/基础知识/镜像文件的作用.png)
 
 
 
 ## 3、docker理念
 
-![docker理念](图片\基础知识\docker理念.png)
+![docker理念](图片/基础知识/docker理念.png)
 
 - 跟linux虚拟机差不多，在VMware上面运行centos7.iso镜像，就可以保证环境全部迁移
 - **类比过来，docker就是就是把软件代码以及运行环境啥的全部打包成镜像文件，然后交给docker运行，就可以实现一步启动项目**
@@ -69,7 +69,7 @@
 - **应用程序对此毫无感知，因为虚拟机看上去跟真实系统一模一样，而对于底层系统来说，虚拟机就是一个普通文件，不需要了就删除，对其他部分毫无影响。**
 - 这类虚拟机完美的运行了另一套系统，能够使应用程序，操作系统和硬件三者之间的逻辑不变
 
-![传统虚拟机](图片\基础知识\传统虚拟机.png)
+![传统虚拟机](图片/基础知识/传统虚拟机.png)
 
 - 缺点：
   - **资源占用多**：因为他模拟了从内核、硬件、软件的所有资源，很大
@@ -84,7 +84,7 @@
 - Linux容器是与系统其他部分隔离开的一系列进程，从另一个镜像运行，并由该镜像提供支持进程所需的全部文件。**容器提供的镜像包含了应用的所有依赖项，因而在从开发到测试再到生产的整个过程中，它都具有可移植性和一致性**
 - **Linux容器不是模拟一个完整的操作系统而是对进程进行隔离**。有了容器，就可以将软件运行所需要的所有资源打包到一个隔离的容器中。**容器和虚拟机不同，不需要捆绑一整套操作系统，只需要软件工作所需要的库资源和设置**。系统因此而变得高效轻量并保证部署在任何环境中的软件都能始终如一地运行
 
-![容器](图片\基础知识\容器.png)
+![容器](图片/基础知识/容器.png)
 
 
 
@@ -159,13 +159,13 @@
 - 仓库
   - 就是放一堆镜像文件的地方，我们可以把镜像文件发布到仓库中，需要的时候再从仓库中拉出来就行
 
-![三要素](图片\基础知识\三要素.png)
+![三要素](图片/基础知识/三要素.png)
 
 
 
 ## 2、docker运行图解（入门版）
 
-![docker工作原理](图片\基础知识\docker工作原理.png)
+![docker工作原理](图片/基础知识/docker工作原理.png)
 
 - docker是一个Client-Server结构的系统
 - **docker守护进程运行在主机上，然后通过Socket连接客户端访问，守护进程从客户端接受命令并管理运行在主机上的容器**
@@ -186,7 +186,7 @@
   - 当需要限制Docker容器运行资源或执行用户指令等操作时，则通过Exec driver来完成
   - Libcontainer是一项独立的容器管理包，Network driverl以及Exec driver都是通过Libcontainer来实现具体对容器进行的操作
 
-![docker架构](图片\基础知识\docker架构.png)
+![docker架构](图片/基础知识/docker架构.png)
 
 
 
@@ -315,7 +315,7 @@ sudo systemctl restart docker
 
 ## 6、docker run的流程
 
-![docker run的工作流程](图片\基础知识\docker run的工作流程.png)
+![docker run的工作流程](图片/基础知识/docker run的工作流程.png)
 
 
 
@@ -326,7 +326,7 @@ sudo systemctl restart docker
 - **docker利用的是宿主机的内核，而不需要加载操作系统OS内核**
   - 当新建一个容器时，docker不需要和虚拟机一样重新加载一个操作系统内核。进而避免引寻、加载操作系统内核返回等比较费时费资源的过程，当新建一个虚拟机时，虚拟机软件需要加载OS，返回新建过程是分钟级别的。而docker由于直接利用宿主机的操作系统，则省略了返回过程，因此新建一个docker容器只需要几秒钟
 
-![docker和虚拟机比较](图片\基础知识\docker和虚拟机比较.png)
+![docker和虚拟机比较](图片/基础知识/docker和虚拟机比较.png)
 
 
 
@@ -411,7 +411,7 @@ docker 具体命令 -help
   - CREATED：镜像创建时间
   - SIZE：镜像大小
 
-![docker images](图片\命令\docker images.png)
+![docker images](图片/命令/docker images.png)
 
 - 同一个仓库源可以有多个TAG版本，代表这个仓库源的不同个版本，我们使用REPOSITORY:TAG来定义不同的镜像。
 - 如果不指定一个镜像的版本标签，例如使用ubuntu，docker默认使用ubuntu:latest镜像（最新版）
@@ -433,7 +433,7 @@ docker 具体命令 -help
   - OFFICIAL：是否是官方的
   - AUTOMATED：是否是自动构建的
 
-![docker search](图片\命令\docker search.png)
+![docker search](图片/命令/docker search.png)
 
 
 
@@ -444,7 +444,7 @@ docker 具体命令 -help
   - docker pull 镜像名字[:tag]      							——指定版本下载
   - docker pull 镜像名字 == docker pull 镜像名字:lateset          ——下载最新版本
 
-![docker pull](图片\命令\docker pull.png)
+![docker pull](图片/命令/docker pull.png)
 
 
 
@@ -452,7 +452,7 @@ docker 具体命令 -help
 
 - 作用：**查看镜像/容器/数据卷所占的空间**
 
-![docker system df](图片\命令\docker system df.png)
+![docker system df](图片/命令/docker system df.png)
 
 
 
@@ -466,11 +466,11 @@ docker 具体命令 -help
 - options:
   - **--f：强制删除**
 
-![docker rmi](图片\命令\docker rmi.png)
+![docker rmi](图片/命令/docker rmi.png)
 
 - 删除所有
 
-![docker rmi -qa](图片\命令\docker rmi -qa.png)
+![docker rmi -qa](图片/命令/docker rmi -qa.png)
 
 
 
@@ -478,7 +478,7 @@ docker 具体命令 -help
 
 - 仓库名、标签都是<none>的镜像，俗称虚悬镜像dangling image
 
-![虚悬镜像](图片\命令\虚悬镜像.png)
+![虚悬镜像](图片/命令/虚悬镜像.png)
 
 
 
@@ -489,7 +489,7 @@ docker 具体命令 -help
 - 作用：**启动交互式容器（前台命令行）**
 
 
-- 用法：docker run [options] images \[COMMAN\][ARG...]
+- 用法：docker run [options] images /[COMMAN/][ARG...]
 - options
   - 第一组
     - **--name=容器名称：**为容器指定一个名称
@@ -502,7 +502,7 @@ docker 具体命令 -help
     - -P：**随机**端口映射，大写P
     - -p：**指定**端口映射，小写p
 
-![docker run](图片\命令\docker run.png)
+![docker run](图片/命令/docker run.png)
 
 - 例子
   - docker run -it ubuntu /bin/bash
@@ -528,7 +528,7 @@ docker 具体命令 -help
   - **--n：显示最近n个创建的容器**
   - **--q：静默模式，只显示容器编号**
 
-![docker ps](图片\命令\docker ps.png)
+![docker ps](图片/命令/docker ps.png)
 
 
 
@@ -538,15 +538,15 @@ docker 具体命令 -help
 
   - exit：run进去容器，exit退出，容器停止
 
-  ![exit退出容器](图片\命令\exit退出容器.png)
+  ![exit退出容器](图片/命令/exit退出容器.png)
 
   - ctrl+p+q：run进去容器，ctrl+p+q退出，容器不停止
 
-  ![ctrl+p+q退出容器](图片\命令\ctrl+p+q退出容器.png)
+  ![ctrl+p+q退出容器](图片/命令/ctrl+p+q退出容器.png)
 
 - 两种比较
 
-![两种退出比较](图片\命令\两种退出比较.png)
+![两种退出比较](图片/命令/两种退出比较.png)
 
 
 
@@ -569,7 +569,7 @@ docker 具体命令 -help
   - docker rm -f $(dcoker ps -a -q)
   - docker ps -a -q | xargs docker rm
 
-![docker rm](图片\命令\docker rm.png)
+![docker rm](图片/命令/docker rm.png)
 
 
 
@@ -581,7 +581,7 @@ docker 具体命令 -help
   - 很重要的要说明的一点: **Docker容器后台运行,就必须有一个前台进程.**
   - 容器运行的命令如果不是那些一直挂起的命令（比如运行top，tail），就是会自动退出的
 
-![没有前台进程的容器会自动退出](图片\命令\没有前台进程的容器会自动退出.png)
+![没有前台进程的容器会自动退出](图片/命令/没有前台进程的容器会自动退出.png)
 
 - 这个是docker的机制问题,比如你的web容器,我们以nginx为例，正常情况下，配置启动服务只需要启动响应的service即可。例如service nginx start，但是，这样做，nginx为后台进程模式运行，就导致docker前台没有运行的应用，这样的容器后台启动后，会立即自杀因为他觉得他没事可做了
 - 所以，最佳的解决方案是，**将你要运行的程序以前台进程的形式运行，常见就是命令行模式，表示我还有交互操作，别中断。**
@@ -592,11 +592,11 @@ docker 具体命令 -help
 
 - 前台交互式启动：docker run -it redis
 
-![前台启动redis](图片\命令\前台启动redis.png)
+![前台启动redis](图片/命令/前台启动redis.png)
 
 - 后台守护式启动 ：docker run -d redis
 
-![后台运行redis](图片\命令\后台运行redis.png)
+![后台运行redis](图片/命令/后台运行redis.png)
 
 - 两者区别：前台的把服务或者当前的交互式命令终端关闭了，那么这个容器就会停止，后台的则不会
 
@@ -606,7 +606,7 @@ docker 具体命令 -help
 
 - docker logs 容器ID
 
-![docker logs](图片\命令\docker logs.png)
+![docker logs](图片/命令/docker logs.png)
 
 
 
@@ -614,7 +614,7 @@ docker 具体命令 -help
 
 - docker top 容器ID
 
-![docker top](图片\命令\docker top.png)
+![docker top](图片/命令/docker top.png)
 
 
 
@@ -622,7 +622,7 @@ docker 具体命令 -help
 
 - docker inspect 容器ID
 
-![docker inspect](图片\命令\docker inspect.png)
+![docker inspect](图片/命令/docker inspect.png)
 
 
 
@@ -630,28 +630,28 @@ docker 具体命令 -help
 
 - docker exec -it 容器ID bashShell
 
-![docker exec](图片\命令\docker exec.png)
+![docker exec](图片/命令/docker exec.png)
 
 - docker attach 容器ID
 
-![docker attach](图片\命令\docker attach.png)
+![docker attach](图片/命令/docker attach.png)
 
 - 区别：
 
   - **exec是在容器中打开新的终端，并且可以启动新的进程，用exit退出，不会导致容器的停止**
 
-  ![进入容器方式区别1](图片\命令\进入容器方式区别1.png)
+  ![进入容器方式区别1](图片/命令/进入容器方式区别1.png)
 
   - **attach直接进入容器启动命令的终端，不会启动新的进程，用exit退出，会导致容器的停止。**
 
-  ![进入容器方式区别2](图片\命令\进入容器方式区别2.png)
+  ![进入容器方式区别2](图片/命令/进入容器方式区别2.png)
 
 
 - docker exec -it 容器ID /bin/bash
 - docker exec -it 容器ID redis-cli
 - **一般用-d后台启动的程序，再用exec进入对应容器实例**
 
-![docker exec进入redis](图片\命令\docker exec进入redis.png)
+![docker exec进入redis](图片/命令/docker exec进入redis.png)
 
 
 
@@ -662,7 +662,7 @@ docker 具体命令 -help
 
 - docker cp  容器ID:容器内路径 目的主机路径
 
-![docker cp](图片\命令\docker cp.png)
+![docker cp](图片/命令/docker cp.png)
 
 
 
@@ -671,26 +671,26 @@ docker 具体命令 -help
 - export 导出容器的内容留作为一个tar归档文件[对应import命令]
   - **docker export 容器ID > 文件名.tar.gz**
 
-![docker export](图片\命令\docker export.png)
+![docker export](图片/命令/docker export.png)
 
 - import 从tar包中的内容创建一个新的文件系统再导入为镜像[对应export]
   - **cat 文件名.tar.gz | docker import - 镜像用户/镜像名:镜像版本号**
 
-![docker import](图片\命令\docker import.png)
+![docker import](图片/命令/docker import.png)
 
 - 用import生成的镜像文件
 
-![docker import生成的镜像文件](图片\命令\docker import生成的镜像文件.png)
+![docker import生成的镜像文件](图片/命令/docker import生成的镜像文件.png)
 
 - 启动容器发现a.txt文件还在
 
-![启动发现a.txt还在](图片\命令\启动发现a.txt还在.png)
+![启动发现a.txt还在](图片/命令/启动发现a.txt还在.png)
 
 
 
 ### 3.10 命令总结
 
-![命令总结](图片\命令\命令总结.png)
+![命令总结](图片/命令/命令总结.png)
 
 - attach    Attach to a running container                 # 当前 shell 下 attach 连接指定运行镜像
 - build     Build an image from a Dockerfile              # 通过 Dockerfile 定制镜像
@@ -747,7 +747,7 @@ docker 具体命令 -help
 
 - 以pull为例，在下载的过程中可以看到docker的镜像好像是在一层一层的在下载
 
-![分层镜像](图片\docker镜像\分层镜像.png)
+![分层镜像](图片/docker镜像/分层镜像.png)
 
 
 
@@ -764,11 +764,11 @@ docker 具体命令 -help
 - bootfs(boot file system)主要包含bootloader(根加载器)和kernel(linux内核), bootloader主要是引导加载kernel, Linux刚启动时会加载bootfs文件系统，**在Docker镜像的最底层是引导文件系统bootfs**。这一层与我们典型的Linux/Unix系统是一样的，包含boot加载器和内核。当boot加载完成之后整个内核就都在内存中了，此时内存的使用权已由bootfs转交给内核，此时系统也会卸载bootfs。
 - rootfs (root file system) ，在bootfs之上。包含的就是典型 Linux 系统中的 /dev, /proc, /bin, /etc 等标准目录和文件。rootfs就是各种不同的操作系统发行版，比如Ubuntu，Centos等等。 
 
-![docker镜像加载原理](图片\docker镜像\docker镜像加载原理.png)
+![docker镜像加载原理](图片/docker镜像/docker镜像加载原理.png)
 
 -  平时我们安装进虚拟机的CentOS都是好几个G，为什么docker这里才200M？？
 
-![虚拟机内存很小](图片\docker镜像\虚拟机内存很小.png)
+![虚拟机内存很小](图片/docker镜像/虚拟机内存很小.png)
 
 - 对于一个精简的OS，rootfs可以很小，只需要包括最基本的命令、工具和程序库就可以了，因为底层直接用Host的kernel，自己只需要提供 rootfs 就行了。由此可见对于不同的linux发行版, bootfs基本是一致的, rootfs会有差别, 因此不同的发行版可以公用bootfs。
 
@@ -801,7 +801,7 @@ docker 具体命令 -help
 
 - 所有对容器的改动 - 无论添加、删除、还是修改文件都只会发生在容器层中。只有容器层是可写的，容器层下面的所有镜像层都是只读的。
 
-![容器层和镜像层](图片\docker镜像\容器层和镜像层.png)
+![容器层和镜像层](图片/docker镜像/容器层和镜像层.png)
 
 
 
@@ -812,21 +812,21 @@ docker 具体命令 -help
   - docker commit -m="提交的描述信息" -a="作者" 容器ID 要创建的目标镜像名:[标签名]
 - 从Hub上下载ubuntu镜像到本地并成功运行，原始的默认Ubuntu镜像是不带着vim命令的
 
-![默认不带vim](图片\docker镜像\默认不带vim.png)
+![默认不带vim](图片/docker镜像/默认不带vim.png)
 
 - 启动容器并安装vim，docker容器内执行两条命令：
   - **先更新我们的包管理工具：apt-get update**
   - **然后安装我们需要的vim：apt-get -y install vim**
 
-![安装vim](图片\docker镜像\安装vim1.png)
+![安装vim](图片/docker镜像/安装vim1.png)
 
-![安装vim2](图片\docker镜像\安装vim2.png)
+![安装vim2](图片/docker镜像/安装vim2.png)
 
 - 安装完成后，commit我们自己的新镜像：docker commit -m="自定义vim" -a="lzy" 容器ID 要创建的目标镜像名:[标签名]
 
   - docker commit -m="自定义vim" -a="lzy" e23a53a566bc ubuntun_vim:1.1
 
-  ![dokcer commit](图片\docker镜像\dokcer commit.png)
+  ![dokcer commit](图片/docker镜像/dokcer commit.png)
 
 
 
@@ -834,7 +834,7 @@ docker 具体命令 -help
 
 - 地镜像发布到阿里云流程
 
-![阿里云推送生态](图片\推送镜像到本地仓库\阿里云推送生态.png)
+![阿里云推送生态](图片/推送镜像到本地仓库/阿里云推送生态.png)
 
 
 
@@ -842,35 +842,35 @@ docker 具体命令 -help
 
 - 阿里云开发者平台：<https://promotion.aliyun.com/ntms/act/kubernetes.html>
 
-![1](图片\推送镜像到本地仓库\1.png)
+![1](图片/推送镜像到本地仓库/1.png)
 
 - 选择控制台，进入容器镜像服务
 
-![2](图片\推送镜像到本地仓库\2.png)
+![2](图片/推送镜像到本地仓库/2.png)
 
 - 选择个人实例
 
-![3](图片\推送镜像到本地仓库\3.png)
+![3](图片/推送镜像到本地仓库/3.png)
 
 - 命名空间
 
-![4](图片\推送镜像到本地仓库\4.png)
+![4](图片/推送镜像到本地仓库/4.png)
 
-![5](图片\推送镜像到本地仓库\5.png)
+![5](图片/推送镜像到本地仓库/5.png)
 
 - 仓库名称
 
-![6](图片\推送镜像到本地仓库\6.png)
+![6](图片/推送镜像到本地仓库/6.png)
 
-![7](图片\推送镜像到本地仓库\7.png)
+![7](图片/推送镜像到本地仓库/7.png)
 
-![8](图片\推送镜像到本地仓库\8.png)
+![8](图片/推送镜像到本地仓库/8.png)
 
 - 进入管理界面获得脚本
 
-![9](图片\推送镜像到本地仓库\9.png)
+![9](图片/推送镜像到本地仓库/9.png)
 
-![10](图片\推送镜像到本地仓库\10.png)
+![10](图片/推送镜像到本地仓库/10.png)
 
 
 
@@ -884,7 +884,7 @@ docker 具体命令 -help
   - docker tag f9164af54d54 crpi-6iz21bc8tofut1aw.cn-hangzhou.personal.cr.aliyuncs.com/lzy813/myubuntu:1.1
   - docker push crpi-6iz21bc8tofut1aw.cn-hangzhou.personal.cr.aliyuncs.com/lzy813/myubuntu:1.1
 
-![推送到本地仓库](图片\推送镜像到本地仓库\推送到本地仓库.png)
+![推送到本地仓库](图片/推送镜像到本地仓库/推送到本地仓库.png)
 
 
 
@@ -894,7 +894,7 @@ docker 具体命令 -help
 - 例子：运行镜像容器，发现可以直接用vim
   - docker pull crpi-6iz21bc8tofut1aw.cn-hangzhou.personal.cr.aliyuncs.com/lzy813/myubuntu:1.1
 
-![从本地仓库拉取镜像](图片\推送镜像到本地仓库\从本地仓库拉取镜像.png)
+![从本地仓库拉取镜像](图片/推送镜像到本地仓库/从本地仓库拉取镜像.png)
 
 
 
@@ -903,37 +903,37 @@ docker 具体命令 -help
 - 下载镜像Docker Registry
   - docker pull registry
 
-![1](图片\推送镜像到私有库\1.png)
+![1](图片/推送镜像到私有库/1.png)
 
 - 运行私有库Registry，相当于本地有个私有Docker hub
   - docker run -d -p 5000:5000  -v /lzy/myregistry/:/tmp/registry --privileged=true registry
   - 默认情况，仓库被创建在容器的/var/lib/registry目录下，建议自行用容器卷映射，方便于宿主机联调
 
-![2](图片\推送镜像到私有库\2.png)
+![2](图片/推送镜像到私有库/2.png)
 
 - 制作一个带ifconfig的镜像：docker run -it ubuntu /bin/bash
   - apt-get update
   - apt-get install net-tools
   - ifconfig
 
-![3](图片\推送镜像到私有库\3.png)
+![3](图片/推送镜像到私有库/3.png)
 
 - 安装完成后，commit我们自己的新镜像
   - 公式： docker commit -m="提交的描述信息" -a="作者" 容器ID 要创建的目标镜像名:[标签名]
   - 命令：在容器外执行，记得: docker commit -m="ifconfig cmd add" -a="lzy" c6037afa5ed8 lzyubuntu:1.2
 
-![4](图片\推送镜像到私有库\4.png)
+![4](图片/推送镜像到私有库/4.png)
 
 - curl验证私服库上有什么镜像
   -  curl -XGET http://127.0.0.1:5000/v2/_catalog
 
-![5](图片\推送镜像到私有库\5.png)
+![5](图片/推送镜像到私有库/5.png)
 
 - 将新镜像lzyubuntu:1.2修改符合私服规范的Tag
   - 按照公式：docker tag  镜像:Tag  Host:Port/Repository:Tag
   - docker tag  lzyubuntu:1.2  127.0.0.1:5000/lzyubuntu:1.2
 
-![6](图片\推送镜像到私有库\6.png)
+![6](图片/推送镜像到私有库/6.png)
 
 - 修改配置文件使之支持http
 
@@ -949,9 +949,9 @@ docker 具体命令 -help
 
     }
 
-![7](图片\推送镜像到私有库\7.png)
+![7](图片/推送镜像到私有库/7.png)
 
-![8](图片\推送镜像到私有库\8.png)
+![8](图片/推送镜像到私有库/8.png)
 
 - push推送到私服库
   - docker push 127.0.0.1:5000/lzyubuntu:1.2
@@ -960,12 +960,12 @@ docker 具体命令 -help
 - 再次curl验证私服库上有什么镜像
   - curl -XGET http://127.0.0.1:5000/v2/_catalog
 
-![9](图片\推送镜像到私有库\9.png)
+![9](图片/推送镜像到私有库/9.png)
 
 - pull到本地执行，可以直接用ifconfig
   - docker pull 127.0.0.1:5000/lzyubuntu:1.2
 
-![10](图片\推送镜像到私有库\10.png)
+![10](图片/推送镜像到私有库/10.png)
 
 
 
@@ -990,7 +990,7 @@ docker 具体命令 -help
 - 运行一个带有容器卷存储功能的容器实例
   - docker run -it --privileged=true -v /宿主机绝对路径目录:/容器内目录  镜像名
 
-![容器数据卷](图片\容器数据卷\容器数据卷.png)
+![容器数据卷](图片/容器数据卷/容器数据卷.png)
 
 
 
@@ -1019,7 +1019,7 @@ docker 具体命令 -help
 - docker run -it --privileged=true -v /lzy/u1:/lzy/u1 --name=u1 ubuntu /bin/bash
 - 进入容器后，在/lzy/u1创建一个a.txt文件，在宿主机上也会出现；同时在宿主机上创建一个b.txt，容器内也会出现
 
-![运行带数据卷的容器](图片\容器数据卷\运行带数据卷的容器.png)
+![运行带数据卷的容器](图片/容器数据卷/运行带数据卷的容器.png)
 
 
 
@@ -1029,7 +1029,7 @@ docker 具体命令 -help
   - Source：源地址
   - Destination：宿主地址
 
-![查看数据卷是否挂载成功](图片\容器数据卷\查看数据卷是否挂载成功.png)
+![查看数据卷是否挂载成功](图片/容器数据卷/查看数据卷是否挂载成功.png)
 
 
 
@@ -1039,7 +1039,7 @@ docker 具体命令 -help
 - 主机修改，docker同步获得
 - docker容器stop，主机修改，docker容器重启,数据也同步。
 
-![数据卷之间数据共享](图片\容器数据卷\数据卷之间数据共享.png)
+![数据卷之间数据共享](图片/容器数据卷/数据卷之间数据共享.png)
 
 ### 4.4 读写规则映射添加说明
 
@@ -1047,9 +1047,9 @@ docker 具体命令 -help
   - rw = read + write
 - 这时候数据的更新是双向的，即：容器修改宿主机就会同步更新，宿主机修改容器也会同步更新
 
-![读写1](图片\容器数据卷\读写1.png)
+![读写1](图片/容器数据卷/读写1.png)
 
-![读写2](图片\容器数据卷\读写2.png)
+![读写2](图片/容器数据卷/读写2.png)
 
 
 
@@ -1061,11 +1061,11 @@ docker 具体命令 -help
   - ro = readOnly
 - 容器内不能修改，只能读
 
-​     ![只读权限1](图片\容器数据卷\只读权限1.png)
+​     ![只读权限1](图片/容器数据卷/只读权限1.png)
 
 - 宿主机可以修改，容器会实时同步
 
-![只读权限2](图片\容器数据卷\只读权限2.png)
+![只读权限2](图片/容器数据卷/只读权限2.png)
 
 
 
@@ -1077,12 +1077,12 @@ docker 具体命令 -help
 - 容器1完成和宿主机的映射
   - docker run -it --privileged=true -v /lzy/u1:/lzy/u1:rw --name=u1 ubuntu /bin/bash
 
-![映射1](图片\容器数据卷\映射1.png)
+![映射1](图片/容器数据卷/映射1.png)
 
 - 容器2继承容器1的卷规则
   - docker run -it --privileged=true --volumes-from u1 --name=u2 ubuntu /bin/bash
 
-![映射2](图片\容器数据卷\映射2.png)
+![映射2](图片/容器数据卷/映射2.png)
 
 - 注意：
   - 映射关系：宿主机 = u1 = u2，三方互通，一方改动，其他两方都会实时同步
@@ -1126,9 +1126,9 @@ rm -r webapps
 mv webapps.dist webapps
 ~~~
 
-![tomcat安装1](图片\常用软件安装\tomcat安装1.png)
+![tomcat安装1](图片/常用软件安装/tomcat安装1.png)
 
-![tomcat安装2](图片\常用软件安装\tomcat安装2.png)
+![tomcat安装2](图片/常用软件安装/tomcat安装2.png)
 
 - 直接访问可能会报错404
 
@@ -1234,7 +1234,7 @@ SHOW VARIABLES LIKE 'character%';
 
 - 挂载数据卷的好处：即便这个容器被人强删了，只要重新绑定那个数据卷的映射启动就还是能够恢复
 
-![重启之后的数据还是在](图片\常用软件安装\重启之后的数据还是在.png)
+![重启之后的数据还是在](图片/常用软件安装/重启之后的数据还是在.png)
 
 
 
@@ -1263,18 +1263,18 @@ get k1
 
 - 将一个redis.conf文件模板拷贝进/app/redis目录下，要修改的地方如下
 
-![redis配置文件修改](图片\常用软件安装\redis配置文件修改.png)
+![redis配置文件修改](图片/常用软件安装/redis配置文件修改.png)
 
 - 证明用了自定义的配置文件
 
   - 修改配置文件个数为10
 
-  ![redis配置文件修改数据库个数10](图片\常用软件安装\redis配置文件修改数据库个数10.png)
+  ![redis配置文件修改数据库个数10](图片/常用软件安装/redis配置文件修改数据库个数10.png)
 
   - 重启服务：docker restart c112fabb2e32
   - 再登陆进去用select 10验证
 
-  ![select 15报错](图片\常用软件安装\select 15报错.png)
+  ![select 15报错](图片/常用软件安装/select 15报错.png)
 
   ​
 
@@ -1292,7 +1292,7 @@ get k1
 
 - Dockerfile是用来**构建Docker镜像**的文本文件，是由一条条构建镜像所需的指令和参数构成的脚本。
 
-![DockerFile](图片\DockerFile\DockerFile.png)
+![DockerFile](图片/DockerFile/DockerFile.png)
 
 
 
@@ -1309,7 +1309,7 @@ get k1
 - Dockerfile内容基础知识	
   - 每条保留字指令都**必须为大写字母**且后面要跟随至少一个参数
   - 指令按照从上到下，顺序执行
-  - \#表示注释
+  - /#表示注释
   - 每条指令都会创建一个新的镜像层并对镜像进行提交
 - Docker执行Dockerfile的大致流程
   - docker从基础镜像运行一个容器
@@ -1324,7 +1324,7 @@ get k1
     - Docker容器则可以认为是软件镜像的运行态，也即依照镜像运行的容器实例
   - Dockerfile面向开发，Docker镜像成为交付标准，Docker容器则涉及部署与运维，三者缺一不可，合力充当Docker体系的基石。
 
-![dockerFile总结](图片\DockerFile\dockerFile总结.png)
+![dockerFile总结](图片/DockerFile/dockerFile总结.png)
 
 - Dockerfile，需要定义一个Dockerfile，Dockerfile定义了进程需要的一切东西。Dockerfile涉及的内容包括执行代码或者是文件、环境变量、依赖包、运行时环境、动态链接库、操作系统的发行版、服务进程和内核进程(当应用进程需要和系统服务和内核进程打交道，这时需要考虑如何设计namespace的权限控制)等等;
 - Docker镜像，在用Dockerfile定义一个文件之后，docker build时会产生一个Docker镜像，当运行 Docker镜像时会真正开始提供服务;
