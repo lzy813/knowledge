@@ -168,6 +168,9 @@
 ![docker工作原理](图片/基础知识/docker工作原理.png)
 
 - docker是一个Client-Server结构的系统
+
+![CS架构](图片/基础知识/CS架构.png)
+
 - **docker守护进程运行在主机上，然后通过Socket连接客户端访问，守护进程从客户端接受命令并管理运行在主机上的容器**
 - 客户端发送请求，守护进程接收，如果本机有对应的镜像文件，就直接操作，没有就从远程上拉取
 
@@ -192,7 +195,81 @@
 
 
 
-## 4、在ubuntu上安装docker
+## 4、Centos安装docker
+
+- 安装
+
+~~~bash
+# step 1: 确定是centos7及以上版本
+cat /etc/redhat-release
+#结果：CentOS Linux release 7.6.1810 (Core)
+
+# step 2: 卸载旧版本
+sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+   
+# step 3: 安装gcc
+sudo yum -y install gcc
+sudo yum -y install gcc-c++
+                            
+# step 4: 安装必要的一些系统工具
+sudo yum install -y yum-utils
+
+# Step 5: 设置stable镜像仓库
+sudo yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
+# Step 6: 更新yum软件包索引
+sudo yum makecache fast
+
+# Step 7: 安装Docker
+sudo yum install docker-ce docker-ce-cli containerd.io
+
+# Step 8: 开启Docker服务
+sudo systemctl start docker
+
+# Step 9: 测试，查看docker版本
+docker version
+
+# 注意：
+# 官方软件源默认启用了最新的软件，您可以通过编辑软件源的方式获取各个版本的软件包。例如官方并没有将测试版本的软件源置为可用，您可以通过以下方式开启。同理可以开启各种测试版本等。
+# vim /etc/yum.repos.d/docker-ce.repo
+#   将[docker-ce-test]下方的enabled=0修改为enabled=1
+#
+# 安装指定版本的Docker-CE:
+# Step 1: 查找Docker-CE的版本:
+# yum list docker-ce.x86_64 --showduplicates | sort -r
+#   Loading mirror speeds from cached hostfile
+#   Loaded plugins: branch, fastestmirror, langpacks
+#   docker-ce.x86_64            17.03.1.ce-1.el7.centos            docker-ce-stable
+#   docker-ce.x86_64            17.03.1.ce-1.el7.centos            @docker-ce-stable
+#   docker-ce.x86_64            17.03.0.ce-1.el7.centos            docker-ce-stable
+#   Available Packages
+# Step2: 安装指定版本的Docker-CE: (VERSION例如上面的17.03.0.ce.1-1.el7.centos)
+# sudo yum -y install docker-ce-[VERSION]
+~~~
+
+- 卸载
+
+~~~bash
+# 停止服务
+systemctl stop docker
+# 移除服务
+sudo yum remove docker-ce docker-ce-cli containerd.io
+# 删除docker
+rm -rf /var/lib/docker
+# 删除容器地址
+rm -rf /var/lib/containerd
+~~~
+
+
+
+## 5、在ubuntu上安装docker
 
 - 首先，更新软件包索引，并且安装必要的依赖软件，来添加一个新的 HTTPS 软件源
 
@@ -272,7 +349,7 @@ docker container run hello-world
 
 
 
-## 5、配置阿里云加速器
+## 6、配置阿里云加速器
 
 - 注册一个阿里云账号：<https://cr.console.aliyun.com/cn-hangzhou/instances/mirrors>
 - 输入命令配置
@@ -289,8 +366,6 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
 } 
 EOF
 
-
-
 sudo tee /etc/docker/daemon.json <<-'EOF'
 {
 	"registry-mirrors": [
@@ -304,8 +379,6 @@ sudo tee /etc/docker/daemon.json <<-'EOF'
 }
 EOF
 
-
-
 # 第三步，输入以下指令重新启动服务
 sudo systemctl daemon-reload
 sudo systemctl restart docker
@@ -313,13 +386,13 @@ sudo systemctl restart docker
 
 
 
-## 6、docker run的流程
+## 7、docker run的流程
 
 ![docker run的工作流程](图片/基础知识/docker run的工作流程.png)
 
 
 
-## 7、docker为什么比虚拟机快
+## 8、docker为什么比虚拟机快
 
 - **docker有着比虚拟机更少的抽象层**
   - 由于docker不需要Hypervisor(虚拟机)实现硬件资源虚拟化，运行在docker容器上的程序直接使用的都是实际物理机的硬件资源。因此在CPU、内存利用率上docker将会在效率上有明显优势
@@ -327,45 +400,6 @@ sudo systemctl restart docker
   - 当新建一个容器时，docker不需要和虚拟机一样重新加载一个操作系统内核。进而避免引寻、加载操作系统内核返回等比较费时费资源的过程，当新建一个虚拟机时，虚拟机软件需要加载OS，返回新建过程是分钟级别的。而docker由于直接利用宿主机的操作系统，则省略了返回过程，因此新建一个docker容器只需要几秒钟
 
 ![docker和虚拟机比较](图片/基础知识/docker和虚拟机比较.png)
-
-
-
-## 8、
-
-~~~bash
-# step 1: 安装必要的一些系统工具
-sudo yum install -y yum-utils
-
-# Step 2: 添加软件源信息
-yum-config-manager --add-repo https://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
-
-# 更新yum软件包索引
-yum makecache fast
-
-# Step 3: 安装Docker
-sudo yum install docker-ce docker-ce-cli containerd.io
-
-# Step 4: 开启Docker服务
-sudo service docker start
-
-# 注意：
-# 官方软件源默认启用了最新的软件，您可以通过编辑软件源的方式获取各个版本的软件包。例如官方并没有将测试版本的软件源置为可用，您可以通过以下方式开启。同理可以开启各种测试版本等。
-# vim /etc/yum.repos.d/docker-ce.repo
-#   将[docker-ce-test]下方的enabled=0修改为enabled=1
-#
-# 安装指定版本的Docker-CE:
-# Step 1: 查找Docker-CE的版本:
-# yum list docker-ce.x86_64 --showduplicates | sort -r
-#   Loading mirror speeds from cached hostfile
-#   Loaded plugins: branch, fastestmirror, langpacks
-#   docker-ce.x86_64            17.03.1.ce-1.el7.centos            docker-ce-stable
-#   docker-ce.x86_64            17.03.1.ce-1.el7.centos            @docker-ce-stable
-#   docker-ce.x86_64            17.03.0.ce-1.el7.centos            docker-ce-stable
-#   Available Packages
-# Step2: 安装指定版本的Docker-CE: (VERSION例如上面的17.03.0.ce.1-1.el7.centos)
-# sudo yum -y install docker-ce-[VERSION]
-
-~~~
 
 
 
@@ -415,8 +449,6 @@ docker 具体命令 -help
 
 - 同一个仓库源可以有多个TAG版本，代表这个仓库源的不同个版本，我们使用REPOSITORY:TAG来定义不同的镜像。
 - 如果不指定一个镜像的版本标签，例如使用ubuntu，docker默认使用ubuntu:latest镜像（最新版）
-
-
 
 
 
@@ -489,10 +521,10 @@ docker 具体命令 -help
 - 作用：**启动交互式容器（前台命令行）**
 
 
-- 用法：docker run [options] images /[COMMAN/][ARG...]
+- 用法：docker run [options] images [COMMAND] [ARG...]
 - options
   - 第一组
-    - **--name=容器名称：**为容器指定一个名称
+    - **--name=容器名称：**为容器指定一个名称，不写随机生成一个名字
     - **-d：**后台运行容器并返回容器ID，也即启动守护式容器(后台运行)
   - 第二组
     - **-i：以交互模式运行容器，通常与-t同时使用**
@@ -523,10 +555,10 @@ docker 具体命令 -help
 
 - 用法：docker ps [options]
 - options
-  - **--a：列出当前所有正在运行的容器+历史上运行过的**
-  - **--l：显示最近创建的容器**、
-  - **--n：显示最近n个创建的容器**
-  - **--q：静默模式，只显示容器编号**
+  - **-a：列出当前所有正在运行的容器+历史上运行过的**
+  - **-l：显示最近创建的容器**、
+  - **-n：显示最近n个创建的容器**
+  - **-q：静默模式，只显示容器编号**
 
 ![docker ps](图片/命令/docker ps.png)
 
@@ -944,7 +976,7 @@ docker 具体命令 -help
   - {
 
       	"registry-mirrors": ["https://aa25jngu.mirror.aliyuncs.com"],
-
+    	
       	"insecure-registries": ["127.0.0.1:5000"]
 
     }
@@ -1276,7 +1308,7 @@ get k1
 
   ![select 15报错](图片/常用软件安装/select 15报错.png)
 
-  ​
+  
 
 
 
