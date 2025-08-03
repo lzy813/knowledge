@@ -388,7 +388,7 @@ sudo systemctl restart docker
 
 ## 7、docker run的流程
 
-![docker run的工作流程](图片/基础知识/docker run的工作流程.png)
+![docker run的工作流程](图片/基础知识/dockerrun的工作流程.png) 
 
 
 
@@ -445,7 +445,7 @@ docker 具体命令 -help
   - CREATED：镜像创建时间
   - SIZE：镜像大小
 
-![docker images](图片/命令/docker images.png)
+![docker images](图片/命令/dockerimages.png)
 
 - 同一个仓库源可以有多个TAG版本，代表这个仓库源的不同个版本，我们使用REPOSITORY:TAG来定义不同的镜像。
 - 如果不指定一个镜像的版本标签，例如使用ubuntu，docker默认使用ubuntu:latest镜像（最新版）
@@ -465,7 +465,7 @@ docker 具体命令 -help
   - OFFICIAL：是否是官方的
   - AUTOMATED：是否是自动构建的
 
-![docker search](图片/命令/docker search.png)
+![docker search](图片/命令/dockersearch.png)
 
 
 
@@ -476,7 +476,7 @@ docker 具体命令 -help
   - docker pull 镜像名字[:tag]      							——指定版本下载
   - docker pull 镜像名字 == docker pull 镜像名字:lateset          ——下载最新版本
 
-![docker pull](图片/命令/docker pull.png)
+![docker pull](图片/命令/dockerpull.png)
 
 
 
@@ -484,7 +484,7 @@ docker 具体命令 -help
 
 - 作用：**查看镜像/容器/数据卷所占的空间**
 
-![docker system df](图片/命令/docker system df.png)
+![docker system df](图片/命令/dockersystemdf.png)
 
 
 
@@ -498,11 +498,11 @@ docker 具体命令 -help
 - options:
   - **--f：强制删除**
 
-![docker rmi](图片/命令/docker rmi.png)
+![docker rmi](图片/命令/dockerrmi.png)
 
 - 删除所有
 
-![docker rmi -qa](图片/命令/docker rmi -qa.png)
+![docker rmi -qa](图片/命令/dockerrmi-qa.png)
 
 
 
@@ -534,7 +534,7 @@ docker 具体命令 -help
     - -P：**随机**端口映射，大写P
     - -p：**指定**端口映射，小写p
 
-![docker run](图片/命令/docker run.png)
+![docker run](图片/命令/dockerrun.png)
 
 - 例子
   - docker run -it ubuntu /bin/bash
@@ -560,7 +560,7 @@ docker 具体命令 -help
   - **-n：显示最近n个创建的容器**
   - **-q：静默模式，只显示容器编号**
 
-![docker ps](图片/命令/docker ps.png)
+![docker ps](图片/命令/dockerps.png)
 
 
 
@@ -601,7 +601,7 @@ docker 具体命令 -help
   - docker rm -f $(dcoker ps -a -q)
   - docker ps -a -q | xargs docker rm
 
-![docker rm](图片/命令/docker rm.png)
+![docker rm](图片/命令/dockerrm.png)
 
 
 
@@ -638,7 +638,7 @@ docker 具体命令 -help
 
 - docker logs 容器ID
 
-![docker logs](图片/命令/docker logs.png)
+![docker logs](图片/命令/dockerlogs.png)
 
 
 
@@ -646,7 +646,7 @@ docker 具体命令 -help
 
 - docker top 容器ID
 
-![docker top](图片/命令/docker top.png)
+![docker top](图片/命令/dockertop.png)
 
 
 
@@ -654,7 +654,7 @@ docker 具体命令 -help
 
 - docker inspect 容器ID
 
-![docker inspect](图片/命令/docker inspect.png)
+![docker inspect](图片/命令/dockerinspect.png)
 
 
 
@@ -662,11 +662,11 @@ docker 具体命令 -help
 
 - docker exec -it 容器ID bashShell
 
-![docker exec](图片/命令/docker exec.png)
+![docker exec](图片/命令/dockerexec.png)
 
 - docker attach 容器ID
 
-![docker attach](图片/命令/docker attach.png)
+![docker attach](图片/命令/dockerattach.png)
 
 - 区别：
 
@@ -683,7 +683,7 @@ docker 具体命令 -help
 - docker exec -it 容器ID redis-cli
 - **一般用-d后台启动的程序，再用exec进入对应容器实例**
 
-![docker exec进入redis](图片/命令/docker exec进入redis.png)
+![docker exec进入redis](图片/命令/dockerexec进入redis.png)
 
 
 
@@ -694,7 +694,7 @@ docker 具体命令 -help
 
 - docker cp  容器ID:容器内路径 目的主机路径
 
-![docker cp](图片/命令/docker cp.png)
+![docker cp](图片/命令/dockercp.png)
 
 
 
@@ -703,16 +703,16 @@ docker 具体命令 -help
 - export 导出容器的内容留作为一个tar归档文件[对应import命令]
   - **docker export 容器ID > 文件名.tar.gz**
 
-![docker export](图片/命令/docker export.png)
+![docker export](图片/命令/dockerexport.png)
 
 - import 从tar包中的内容创建一个新的文件系统再导入为镜像[对应export]
   - **cat 文件名.tar.gz | docker import - 镜像用户/镜像名:镜像版本号**
 
-![docker import](图片/命令/docker import.png)
+![docker import](图片/命令/dockerimport.png)
 
 - 用import生成的镜像文件
 
-![docker import生成的镜像文件](图片/命令/docker import生成的镜像文件.png)
+![docker import生成的镜像文件](图片/命令/dockerimport生成的镜像文件.png)
 
 - 启动容器发现a.txt文件还在
 
@@ -858,7 +858,7 @@ docker 具体命令 -help
 
   - docker commit -m="自定义vim" -a="lzy" e23a53a566bc ubuntun_vim:1.1
 
-  ![dokcer commit](图片/docker镜像/dokcer commit.png)
+  ![dokcer commit](图片/docker镜像/dokcercommit.png)
 
 
 
@@ -1306,7 +1306,7 @@ get k1
   - 重启服务：docker restart c112fabb2e32
   - 再登陆进去用select 10验证
 
-  ![select 15报错](图片/常用软件安装/select 15报错.png)
+  ![select 15报错](图片/常用软件安装/select15报错.png)
 
   
 
