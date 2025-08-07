@@ -21,7 +21,7 @@
   - 如果有多个地方要用展示这个功能，只需引入这个组件即可，提高代码复用率
   - 只需要修改组件，便可将所有的地方都进行修改，方便维护
 
-![组件化](D:\work\前端\Vue\图片\组件化.png)
+![组件化](图片/组件化.png)
 
 
 
@@ -64,14 +64,14 @@
   - 在原生的JS里面，他会把里面的数值变为真实DOM直接放到页面上
   - 但是如果一旦数据有了变化，那么之前的数据即使一样，也会丢弃掉然后重新生成新的渲染
 
-![原生JS的DOM](D:\work\前端\Vue\图片\原生JS的DOM.png)
+![原生JS的DOM](图片/原生JS的DOM.png)
 
 - 虚拟DOM
   - 在Vue里面，会经过一层虚拟dom，把数据转化为虚拟dom再转成真实dom渲染到页面
   - 如果数据不变化，那么虚拟dom不会有任何影响
   - 一旦数据变化，就会采用diff算法进行匹配，看是否有一样的，如果有就会复用，只需要添加新的即可，大大提高代码性能
 
-![虚拟DOM](D:\work\前端\Vue\图片\虚拟DOM.png)
+![虚拟DOM](图片/虚拟DOM.png)
 
 
 
@@ -108,7 +108,7 @@ $ npm install vue
 
 ## 4、关闭开发环境警告提示
 
-![生产提示警告](D:\work\前端\Vue\图片\生产提示警告.png)
+![生产提示警告](图片/生产提示警告.png)
 
 ```html
 <script>
@@ -316,7 +316,7 @@ $ npm install vue
   </html>
   ```
 
-  ![v-bind](D:\work\前端\Vue\图片\v-bind.png)
+  ![v-bind](图片/v-bind.png)
 
   ​
 
@@ -451,7 +451,7 @@ $ npm install vue
   - **data中的所有属性，最终都出现在了vm（Vue实例）身上**
   - **vm身上的所有属性 及 Vue原型上所有属性，在Vue模板中都可以直接使用**
 
-![Vue的MVVM](D:\work\前端\Vue\图片\Vue的MVVM.png)
+![Vue的MVVM](图片/Vue的MVVM.png)
 
 
 
@@ -586,7 +586,7 @@ $ npm install vue
 </html>
 ~~~
 
-![Vue中的数据代理](D:\work\前端\Vue\图片\Vue中的数据代理.png)
+![Vue中的数据代理](图片/Vue中的数据代理.png)
 
 
 
@@ -604,7 +604,7 @@ $ npm install vue
   - **方法也可以写在data里，但是不建议这么写，这样会使vue很累，效率很低**
   - 原因：data里面的东西都会进行一次数据代理，但是方法其实是不需要的，放在这里面会使vue对其再进行一次数据劫持和数据代理，这样就多此一举了
 
-![为什么不建议将方法写在data里](D:\work\前端\Vue\图片\为什么不建议将方法写在data里.png)
+![为什么不建议将方法写在data里](图片/为什么不建议将方法写在data里.png)
 
 ```html
 <!DOCTYPE html>
@@ -1687,7 +1687,7 @@ vm.$watch('info', function (newValue, oldValue){
   - 但是如果加上key之后，给每个节点加上key作为一标识，便可在指定的位置直接插入即可
   - key的作用主要是为了高效的更新虚拟DOM
 
-![v-for的key作用](D:\work\前端\Vue\图片\v-for的key作用.png)
+![v-for的key作用](图片/v-for的key作用.png)
 
 ```html
 <!-- 第一个是数字的索引，然后遍历数组输出数组中的每个元素 -->
@@ -1733,7 +1733,7 @@ vm.$watch('info', function (newValue, oldValue){
 </script>
 ```
 
-![v-for打印](D:\work\前端\Vue\图片\v-for打印.png)
+![v-for打印](图片/v-for打印.png)
 
 
 
@@ -1742,7 +1742,7 @@ vm.$watch('info', function (newValue, oldValue){
 - key是index，会造成数据推移，挪空
 - 如果key没写的时候，vue默认会补全一个key，就是index
 
-![v-for的key绑定的是index时](D:\work\前端\Vue\图片\v-for的key绑定的是index时.png)
+![v-for的key绑定的是index时](图片/v-for的key绑定的是index时.png)
 
 
 
@@ -1750,7 +1750,7 @@ vm.$watch('info', function (newValue, oldValue){
 
 - 效率高，且没有数据推移的错误
 
-![唯一标识作为key](D:\work\前端\Vue\图片\唯一标识作为key.png)
+![唯一标识作为key](图片/唯一标识作为key.png)
 
 
 
@@ -1774,7 +1774,7 @@ vm.$watch('info', function (newValue, oldValue){
   - 最好使用每条数据的唯一标识作为key，比如id、手机号、身份证号等
   - 如果不存在对数据的逆序添加、逆序删除等破坏顺序操作，仅用于渲染列表用于展示，使用index作为key时没有问题的
 
-![v-for的key作用](D:\work\前端\Vue\图片\v-for的key作用.png)
+![v-for的key作用](图片/v-for的key作用.png)
 
 
 
@@ -2144,7 +2144,7 @@ console.log(newNums);
 
 - 页面数据没改，但是实际上数组中的数据是改了的
 
-![底层数据的确修改了](D:\work\前端\Vue\图片\底层数据的确修改了.png)
+![底层数据的确修改了](图片/底层数据的确修改了.png)
 
 ### 15.2 监测模拟
 
@@ -2264,13 +2264,13 @@ console.log(newNums);
 
 - 因为Vue._data中没有针对每项的get和set方法，所以当数据项发生变化时，vue监测不到变化，这就是15.1中直接修改对应的数组项整体，页面响应式渲染不生效的原因
 
-![vm._data中数组没有针对每项的get和set](D:\work\前端\Vue\图片\vm._data中数组没有针对每项的get和set.png)
+![vm._data中数组没有针对每项的get和set](图片/vm._data中数组没有针对每项的get和set.png)
 
 - 所以，要想整体更新数组项的值，必须如下考虑。
 
   - **方式一：变更方法。**Vue 将被侦听的数组的变更方法进行了**包裹**，所以它们也将会触发视图更新。这些被包裹过的方法包括：
 
-    ![Vue数组监视的方法更改原理](D:\work\前端\Vue\图片\Vue数组监视的方法更改原理.png)
+    ![Vue数组监视的方法更改原理](图片/Vue数组监视的方法更改原理.png)
 
     - push()
     - pop()
@@ -2382,9 +2382,9 @@ console.log(newNums);
 
 ## 16、收集表单数据
 
-- **\<input type="text"/>**，则v-model收集的是value值，用户输入的就是value值
-- **\<input type="radio"/>**，则v-model收集的是value值，且要给标签配置value值
-- **\<input type="checkbox"/>**
+- **/<input type="text"/>**，则v-model收集的是value值，用户输入的就是value值
+- **/<input type="radio"/>**，则v-model收集的是value值，且要给标签配置value值
+- **/<input type="checkbox"/>**
   - 没有配置input的value属性，那么收集的就是checked（勾选 or 未勾选，是布尔值）
   - 配置input的value属性
     - v-model的初始值是非数组，那么收集的就是checked（勾选 or 未勾选，是布尔值）
@@ -2599,12 +2599,12 @@ console.log(newNums);
   - 在网站上动态渲染任意HTML是非常危险的，容易导致XSS攻击
   - 一定要在可信的内容上使用v-html，永远不要在用户提交的内容上
 
-![cookie](D:\work\前端\Vue\图片\cookie.png)
+![cookie](图片/cookie.png)
 
 - 每次访问服务器，服务器都会给点cookie带回来，然后浏览器会存储在硬盘中，当下次请求发生时，只需要带上cookie，服务器就能识别出身份进行交互
 - 通过document.cookie获取当前网站的所有cookie，但是仅限于没有HttpOnly修饰的，被HttpOnly修饰的cookie，是不可被http协议以外的东西查看或者携带
 
-![获取cookie](D:\work\前端\Vue\图片\获取cookie.png)
+![获取cookie](图片/获取cookie.png)
 
 - 下面的例子：可通过document.cookie获取到当前网站的所有cookie进行跳转，这样信息就会暴露在浏览器的网址上http://www.baidu.com?a=1&b=2，这就很危险了
 
@@ -2684,11 +2684,11 @@ console.log(newNums);
 
 - Vue未介入之前div是有v-cloak属性的
 
-![vue未介入前有v-cloak标签](D:\work\前端\Vue\图片\vue未介入前有v-cloak标签.png)
+![vue未介入前有v-cloak标签](图片/vue未介入前有v-cloak标签.png)
 
 - Vue介入之后会将标签中的v-cloak属性移除
 
-![vue未介入后移除v-cloak标签](D:\work\前端\Vue\图片\vue未介入后移除v-cloak标签.png)
+![vue未介入后移除v-cloak标签](图片/vue未介入后移除v-cloak标签.png)
 
 
 
@@ -2756,7 +2756,7 @@ console.log(newNums);
   - 参数一：真实dom，配置的指令所在的dom
   - 参数二：一个对象，里面包括传入的一些信息，最重要的是value，即配置的值
 
-![自定义指令参数二](D:\work\前端\Vue\图片\自定义指令参数二.png)
+![自定义指令参数二](图片/自定义指令参数二.png)
 
 - 函数什么时候会调用
   - **指令和元素成功绑定时（一上来）**
@@ -2913,7 +2913,7 @@ console.log(newNums);
   </script>
 ~~~
 
-![directives指令方法中的this指代的是windows实例](D:\work\前端\Vue\图片\directives指令方法中的this指代的是windows实例.png)
+![directives指令方法中的this指代的是windows实例](图片/directives指令方法中的this指代的是windows实例.png)
 
 - **自定义指令如果写在vue实例中那就是局部指令了，只在所绑定的vue实例中生效**
   - 如果要在全局中生效，就需要通过Vue.directive配置
@@ -2975,7 +2975,7 @@ console.log(newNums);
 - 生命周期函数的名字不可更改，但函数的具体内容是程序员根据需求编写的
 - 生命周期函数中的this指向vm或组件实例对象
 
-![生命周期](D:\work\前端\Vue\图片\生命周期.png)
+![生命周期](图片/生命周期.png)
 
 
 
@@ -3005,9 +3005,9 @@ console.log(newNums);
     <script>
         const vm = new Vue({
             el: '#root',    // Vue开始解析模板，如果没有el项，就去看vm.$mount('el')，都没有就停在created后
-            template: '<div id="root">\n' +         // template：如果有此配置，template的数据会被解析，然后整个替换掉el所绑定的容器上，注意：template中的只能有一个根节点
-                '        当前n的值为：{{n}}\n' +
-                '        <button @click="add">n++</button>\n' +
+            template: '<div id="root">/n' +         // template：如果有此配置，template的数据会被解析，然后整个替换掉el所绑定的容器上，注意：template中的只能有一个根节点
+                '        当前n的值为：{{n}}/n' +
+                '        <button @click="add">n++</button>/n' +
                 '    </div>',
             data: {
                 n: 1
@@ -3223,7 +3223,7 @@ console.log(newNums);
   - 依赖关系混乱，不好维护。比如js之间存在引入先后问题
   - 代码复用率不高。两个页面都是引入js代码，并不是用的同一个结构
 
-![传统方式编写应用模块化](D:\work\前端\Vue\图片\传统方式编写应用模块化.png)
+![传统方式编写应用模块化](图片/传统方式编写应用模块化.png)
 
 
 
@@ -3236,7 +3236,7 @@ console.log(newNums);
 - 组件化
   - 当应用中的功能都以多组件的方式来编写，那么这个应用就是一个组件化应用
 
-![组件化方式编写应用](D:\work\前端\Vue\图片\组件化方式编写应用.png)
+![组件化方式编写应用](图片/组件化方式编写应用.png)
 
 
 
@@ -3292,7 +3292,7 @@ console.log(newNums);
 
 - 引用组件
 
-  - 编写组件标签：\<school>\</school>
+  - 编写组件标签：/<school>/</school>
 
 ~~~html
 <!DOCTYPE html>
@@ -3380,9 +3380,9 @@ console.log(newNums);
     - 组件名尽可能回避HTML中已有的元素名称，例如：h2和H2都不行
     - 可以使用name配置项指定组件在开发者工具中呈现的名字
 - 关于组件标签
-  - 第一种写法：\<school>\</school>
-  - 第二种写法：\<school />
-  - 备注：不使用脚手架时，\<school />会导致后续组件不能渲染，只会渲染第一个
+  - 第一种写法：/<school>/</school>
+  - 第二种写法：/<school />
+  - 备注：不使用脚手架时，/<school />会导致后续组件不能渲染，只会渲染第一个
 - 一个简写形式：
   - const student = Vue.extend(options)可以写成const student = options
 
@@ -3453,7 +3453,7 @@ console.log(newNums);
       - student
     - hello
 
-![vue实例管理组件](D:\work\前端\Vue\图片\vue实例管理组件.png)
+![vue实例管理组件](图片/vue实例管理组件.png)
 
 ```html
 <!DOCTYPE html>
@@ -3552,9 +3552,9 @@ console.log(newNums);
 
 - school组件本质是一个**名为VueComponent的构造函数**，且不是程序员定义的，是Vue.extend生成的
 
-![school组件是个函数](D:\work\前端\Vue\图片\school组件是个函数.png)
+![school组件是个函数](图片/school组件是个函数.png)
 
-- 只需要写\<school>\</school>或\<school />，Vue解析时会帮我们创建school组件的实例对象，即Vue帮我们执行的：new VueComponent(options)
+- 只需要写/<school>/</school>或/<school />，Vue解析时会帮我们创建school组件的实例对象，即Vue帮我们执行的：new VueComponent(options)
 
 ~~~js
 // 分析源码，写一个组件，都会调用这个方法一次
@@ -3685,7 +3685,7 @@ var Sub = function VueComponent (options) {
 </html>
 ~~~
 
-![原型链](D:\work\前端\Vue\图片\原型链.png)
+![原型链](图片/原型链.png)
 
 
 
@@ -3720,7 +3720,7 @@ var Sub = function VueComponent (options) {
     - **让组件实例对象vc可以访问到Vue原型上的属性、方法**
 
 
-![内置关系](D:\work\前端\Vue\图片\内置关系.png)
+![内置关系](图片/内置关系.png)
 
 ~~~html
 <!DOCTYPE html>
@@ -3777,7 +3777,7 @@ var Sub = function VueComponent (options) {
 </html>
 ~~~
 
-![内置关系](D:\work\前端\Vue\图片\访问x.png)
+![内置关系](图片/访问x.png)
 
 
 
@@ -3786,9 +3786,9 @@ var Sub = function VueComponent (options) {
 
 - **文件后缀名为.vue**
 - 文件中有三部分，三种标签
-  - \<template>：组件的结构
-  - \<script>：组件交互的相关代码（数据方法等）
-  - \<style>：组件的样式
+  - /<template>：组件的结构
+  - /<script>：组件交互的相关代码（数据方法等）
+  - /<style>：组件的样式
 - school组件
 
 ~~~vue
@@ -3959,7 +3959,7 @@ new Vue({
 
 ### 1.3 分析脚手架项目
 
-![脚手架项目目录](D:\work\前端\Vue\图片\脚手架项目目录.png)
+![脚手架项目目录](图片/脚手架项目目录.png)
 
 - .gitignore：git的忽略文件
 - babel.config.js：babel的配置文件，用于配置es6转es5的方式
@@ -4065,11 +4065,11 @@ export default {
 
   - 这行代码指引入Vue的依赖，他只指到vue目录，他的版本由Vue目录下的package.json控制
 
-  ![vue的版本](D:\work\前端\Vue\图片\vue的版本.png)
+  ![vue的版本](图片/vue的版本.png)
 
   - 由上述文件中的moudle控制
 
-  ![vue的版本](D:\work\前端\Vue\图片\vue版本控制.png)
+  ![vue的版本](图片/vue版本控制.png)
 
   - 从上面看到，他引入了阉割版的vue，没有模板解析器，所以如果不加render函数，页面模板就不会被解析
   - 所以第一种方案：直接引入完整版的vue，便可解决没有模板解析器的问题**import Vue from 'vue/dist/vue.js'**
@@ -4131,7 +4131,7 @@ export default {
 
 - 为什么要用render
 
-![为什么要用render](D:\work\前端\Vue\图片\为什么要用render.png)
+![为什么要用render](图片/为什么要用render.png)
 
 - 总结
   - vue.js和vue.runtime.xxx.js的区别
@@ -4180,7 +4180,7 @@ module.exports = {
 - 被用来给元素或者子组件注册引用信息（id的替代者）
 - 应用在html标签上获取的是真实DOM元素，应用在组件标签上是组件实例对象（vc）
 - 使用方式
-  - 打标识：\<h1 ref="xxx">...\</h1> 或 \<School ref="xxx">\</School>
+  - 打标识：/<h1 ref="xxx">.../</h1> 或 /<School ref="xxx">/</School>
   - 获取：this.$refs.xxx
 
 ~~~vue
@@ -4214,7 +4214,7 @@ export default {
 </script>
 ~~~
 
-![ref属性](D:\work\前端\Vue\图片\ref属性.png)
+![ref属性](图片/ref属性.png)
 
 
 
@@ -4222,7 +4222,7 @@ export default {
 
 - 功能：让组件接收外部传过来的数据
 
-  - 传递方：\<Demo name="xxx" />
+  - 传递方：/<Demo name="xxx" />
 
   - 接收方：
 
@@ -4493,7 +4493,7 @@ export default {
 ### 1.11 scoped
 
 - 作用：让样式局部生效，防止冲突
-- 写法：\<style scoped>
+- 写法：/<style scoped>
 
 ~~~vue
 <template>
