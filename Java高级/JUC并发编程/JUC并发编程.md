@@ -45,7 +45,7 @@
 | :--: | :-----: | :-----: | :-----: | :-----: |
 | core |  线程1  |  线程2  |  线程3  |  线程4  |
 
-![并发](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\并发.png)
+![并发](图片/并发.png)
 
 
 
@@ -58,7 +58,7 @@
 | core1 |  线程1  |  线程2  |  线程3  |  线程4  |
 | core2 |  线程2  |  线程4  |  线程2  |  线程4  |
 
-![并行](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\并行.png)
+![并行](图片/并行.png)
 
 
 
@@ -439,7 +439,7 @@ public class TestMultiThread {
 
 - 结果
 
-![多个线程交替运行](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\多个线程交替运行.png)
+![多个线程交替运行](图片/多个线程交替运行.png)
 
 
 
@@ -493,15 +493,15 @@ java
 
 - ​当代码运行起来后，在控制台输入jconsole
 
-![jconsole的使用1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\jconsole的使用1.png)
+![jconsole的使用1](图片/jconsole的使用1.png)
 
 - 然后弹出界面框，选择本地连接或者远程连接
 
-![jconsole的使用2](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\jconsole的使用2.png)
+![jconsole的使用2](图片/jconsole的使用2.png)
 
 - 然后就有图形化界面来显示当前代码的堆内存占用情况
 
-![jconsole图形化界面](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\jconsole图形化界面.png)
+![jconsole图形化界面](图片/jconsole图形化界面.png)
 
 
 
@@ -515,7 +515,7 @@ java
 - 可以通过-Xss256k设置栈内存大小
 - **方法执行完之后，栈帧会自己释放，无需借助垃圾回收机制**
 
-![栈](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\栈.png)
+![栈](图片/栈.png)
 
 ```java
 package com.example.one;
@@ -554,7 +554,7 @@ public class Test5 {
 }
 ```
 
-![栈与栈帧](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\栈与栈帧.png)
+![栈与栈帧](图片/栈与栈帧.png)
 
 
 
@@ -570,7 +570,7 @@ public class Test5 {
   - 状态包括程序计数器、虚拟机栈中每个栈帧的信息，如局部变量、操作数栈、返回地址等
   - **Context Switch频繁发生会影响性能，所以并不是线程越多越好**
 
-![Context Switch](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\Context Switch.png)
+![Context Switch](图片/Context Switch.png)
 
 
 
@@ -1204,7 +1204,7 @@ public class Test14 {
   - 用一个后台的监控线程，去每隔两秒执行一下监控操作
   - 如果有时候不想监控了，点击一个按钮就可以优雅的停止这个监控，这时就需要在另一个线程里停止这个后台线程
 
-![两阶段终止模式](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\两阶段终止模式.png)
+![两阶段终止模式](图片/两阶段终止模式.png)
 
 - 代码实现
 
@@ -1382,7 +1382,7 @@ public class Test17 {
 
 ## 8、线程的五种状态
 
-![线程五种状态](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\线程五种状态.png)
+![线程五种状态](图片/线程五种状态.png)
 
 - 【初始状态】：仅是在语言层面上创建了线程对象，还未与操作系统线程关联
 - 【可运行状态】：（就绪状态）指该线程已经被创建（与操作系统线程关联），可以由CPU调度执行
@@ -1403,7 +1403,7 @@ public class Test17 {
 - **从Java API方式划分**
 - 根据Thread.State枚举，分为六种状态
 
-![线程五种状态](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\线程六种状态.png)
+![线程五种状态](图片/线程六种状态.png)
 
 - NEW：线程刚被创建，但是还没有调用start()方法
 - RUNNABLE：当调用了start()方法之后，注意：Java API层面的RUNNABLE状态涵盖了操作系统层面的【可运行状态】、【运行状态】和【阻塞状态】（由于BIO导致的线程阻塞，在Java里无法区分，仍然认为是可运行）
@@ -1516,7 +1516,7 @@ public class Test18 {
 - 烧水同时洗茶壶，洗茶杯，拿茶叶
 - 两者同步进行
 
-![应用烧水泡茶](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\应用烧水泡茶.png)
+![应用烧水泡茶](图片/应用烧水泡茶.png)
 
 ~~~java
 package com.example.one;
@@ -1573,13 +1573,13 @@ public class Test19 {
 
 ### 1.1 故事
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\故事1.png)
+![故事1](图片/故事1.png)
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\故事2.png)
+![故事1](图片/故事2.png)
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\故事3.png)
+![故事1](图片/故事3.png)
 
-![事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\故事4.png)
+![事1](图片/故事4.png)
 
 
 
@@ -1641,20 +1641,20 @@ putstatic i // 将修改后的值存入静态变量i
 
 - 可以看到`count++` 和 `count--` 操作实际都是需要这个4个指令完成的。Java 的内存模型如下，完成静态变量的自增，自减需要在主内存和工作内存中进行数据交换
 
-![自增自减](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\自增自减.png)
+![自增自减](图片/自增自减.png)
 
 - 如果是单线程以上 8 行代码是**顺序执行（不会交错）**没有问题：
 
-![自增自减单线程](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\自增自减单线程.png)
+![自增自减单线程](图片/自增自减单线程.png)
 
 -  但多线程下这 8 行代码可能交错运行：
 
   - 出现负数的情况：
 
-  ![自增自减多线程负数](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\自增自减多线程负数.png)
+  ![自增自减多线程负数](图片/自增自减多线程负数.png)
   - 出现正数的情况：
 
-  ![自增自减多线程负数](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\自增自减多线程正数.png)
+  ![自增自减多线程负数](图片/自增自减多线程正数.png)
 
   - 总结：**多线程的上下文切换，造成的指令混乱**
 
@@ -1760,7 +1760,7 @@ public class Test1 {
 
 ### 2.3 理解
 
-![synchornized类比理解](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchornized类比理解.png)
+![synchornized类比理解](图片/synchornized类比理解.png)
 
 - 用图来表示
   - 线程2先获取锁，然后执行自减，然后上下文切换，并没有将数据写回
@@ -1768,7 +1768,7 @@ public class Test1 {
   - 线程2再分到时间片，继续刚刚的操作，写回数据，并释放锁
   - 唤醒线程1，拿到锁，并执行自增操作，完事后释放锁
 
-![synchornized图解](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchornized图解.png)
+![synchornized图解](图片/synchornized图解.png)
 
 
 
@@ -2306,7 +2306,7 @@ public static void test() {
 
 - 每个线程调用test()方法时局部变量i，**会在每个线程的栈帧内存中被创建多份**，因此不存在共享
 
-![局部变量线程安全](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\局部变量线程安全.png)
+![局部变量线程安全](图片/局部变量线程安全.png)
 
 
 
@@ -2354,7 +2354,7 @@ class UnsafeTest{
   - 无论哪个线程中的method2引用的都是同一个对象中的list成员变量
   - method3和method2分析相同
 
-![成员变量引用安全分析](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\成员变量引用安全分析.png)、
+![成员变量引用安全分析](图片/成员变量引用安全分析.png)、
 
 - 改进
   - 可以将list修改成局部变量，**局部变量存放在栈帧中，栈帧又存放在虚拟机栈中，虚拟机栈是作为线程私有的**
@@ -2381,7 +2381,7 @@ class SafeTest {
 }
 ~~~
 
-![局部成员变量](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\局部成员变量.png)
+![局部成员变量](图片/局部成员变量.png)
 
 
 
@@ -2485,7 +2485,7 @@ if( table.get("key") == null) {
 - 然后再切换到线程1，这时候执行put，就会把线程2put的值进行覆盖
 - 发生线程安全问题
 
-![组合线程不安全](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\组合线程不安全.png)
+![组合线程不安全](图片/组合线程不安全.png)
 
 
 
@@ -2930,9 +2930,9 @@ class Account {
   - 数组对象：
     - 多一个数组长度的4个字节
 
-![对象头](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\对象头.png)
+![对象头](图片/对象头.png)
 
-![mark word结构](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\mark word结构.png)
+![mark word结构](图片/mark word结构.png)
 
  
 
@@ -2942,7 +2942,7 @@ class Account {
 - 每个Java对象都可以关联一个Monitor对象，如果使用synchronized给对象上锁（重量级）之后，该对象头的Mark Word中就被设置指向Monitor对象的指针
 - 结构如下
 
-![Monitor结构](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\Monitor结构.png)
+![Monitor结构](图片/Monitor结构.png)
 
 - 过程
   - 刚开始Monitor中Owner为null
@@ -2973,7 +2973,7 @@ public static void main(String[] args) {
   - 正常情况：6~16，执行完，就将lock对象的MarkWord重置，并顺着去唤醒Monitor的EntryList
   - 不正常情况：执行6~16出异常，跳到19，同样跟上面一样释放锁，然后抛出异常
 
-![Monitor字节码解释](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\Monitor字节码解释.png)
+![Monitor字节码解释](图片/Monitor字节码解释.png)
 
 
 
@@ -3044,15 +3044,15 @@ public static void method2() {
 
   - 创建 锁记录（Lock Record）对象，每个线程的栈帧都会包含一个**锁记录**的结构，内部可以存储锁定对象的Mark Word 
 
-  ![轻量锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\轻量锁1.png)
+  ![轻量锁1](图片/synchronized/轻量锁1.png)
 
   - 让锁记录中 Object reference 指向锁对象，并尝试用 cas 替换 Object 的 Mark Word，将 Mark Word 的值存入锁记录（互换）
 
-  ![轻量锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\轻量锁2.png)
+  ![轻量锁1](图片/synchronized/轻量锁2.png)
 
   - 如果 cas 替换成功，对象头中存储了 **锁记录地址和状态 00（代表轻量锁）**，表示由该线程给对象加锁，这时图示如下
 
-  ![轻量锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\轻量锁3.png)
+  ![轻量锁1](图片/synchronized/轻量锁3.png)
 
   - 如果 cas 失败，有两种情况 
 
@@ -3060,11 +3060,11 @@ public static void method2() {
   - - 如果是其它线程已经持有了该 Object 的轻量级锁，这时表明有竞争，进入锁膨胀过程 
     - 如果是自己执行了 synchronized 锁重入，那么再添加一条 Lock Record 作为重入的计数
 
-  ![轻量锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\轻量锁4.png)
+  ![轻量锁1](图片/synchronized/轻量锁4.png)
 
   - 当退出 synchronized 代码块（第二个锁解锁时）如果有取值为 null 的锁记录，表示有重入，这时重置锁记录，表示重入计数减一
 
-  ![轻量锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\轻量锁5.png)
+  ![轻量锁1](图片/synchronized/轻量锁5.png)
 
   - 当退出 synchronized 代码块（第一个锁解锁时）锁记录的值不为 null，这时使用 cas 将 Mark Word 的值恢复给对象头 
 
@@ -3091,7 +3091,7 @@ public static void method1() {
 
   - 当 Thread-1 进行轻量级加锁时，Thread-0 已经对该对象加了轻量级锁
 
-  ![锁膨胀1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\锁膨胀1.png)
+  ![锁膨胀1](图片/synchronized/锁膨胀1.png)
 
   - 这时 Thread-1 加轻量级锁失败，进入锁膨胀流程 
 
@@ -3099,7 +3099,7 @@ public static void method1() {
   - - 即为 Object 对象申请 Monitor 锁，让 Object 指向重量级锁地址 
     - 然后自己进入 Monitor 的 EntryList BLOCKED
 
-  ![锁膨胀1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\锁膨胀2.png)
+  ![锁膨胀1](图片/synchronized/锁膨胀2.png)
 
   - 当 Thread-0 退出同步块解锁时，使用 cas 将 Mark Word 的值恢复给对象头，失败。这时会进入重量级解锁流程，即按照 Monitor 地址找到 Monitor 对象，设置 Owner 为 null，唤醒 EntryList 中 BLOCKED 线程
 
@@ -3114,11 +3114,11 @@ public static void method1() {
 
 - 自旋重试成功的情况
 
-![自旋优化1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\自旋优化1.png)
+![自旋优化1](图片/synchronized/自旋优化1.png)
 
 - 自旋重试失败的情况
 
-![自旋优化2](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\自旋优化2.png)
+![自旋优化2](图片/synchronized/自旋优化2.png)
 
 - **自旋会占用 CPU 时间，单核 CPU 自旋就是浪费，多核 CPU 自旋才能发挥优势。** 
 - 在 Java 6 之后自旋锁是自适应的，比如对象刚刚的一次自旋操作成功过，那么认为这次自旋成功的可能性会高，就多自旋几次；反之，就少自旋甚至不自旋，总之，比较智能。 
@@ -3163,11 +3163,11 @@ public static void m3() {
 
   - 轻量锁：每次锁重入都会执行cas操作，即：用锁记录替换markword
 
-    ![偏向锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\偏向锁1.png)
+    ![偏向锁1](图片/synchronized/偏向锁1.png)
 
   - 偏向锁：第一次加锁时，用ThreadID替换markword，后续只需要检查ThreadID是不是自己就可以判断
 
-    ![偏向锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\偏向锁2.png)
+    ![偏向锁1](图片/synchronized/偏向锁2.png)
 
 
 
@@ -3175,7 +3175,7 @@ public static void m3() {
 
 - 对象头格式
 
-![64位对象头](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\64位对象头.png)
+![64位对象头](图片/synchronized/64位对象头.png)
 
 一个对象创建时： 
 
@@ -3396,7 +3396,7 @@ private static void test2() throws InterruptedException {
   - t2上锁时，发现有竞争，偏向锁失效，开始升级为轻量锁，后两位变成00
   - t2解锁时，按照轻量锁解，因为偏向锁已经失效了，所以变为正常状态001
 
-![偏向锁失效1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\偏向锁失效1.png)
+![偏向锁失效1](图片/synchronized/偏向锁失效1.png)
 
 
 
@@ -3468,7 +3468,7 @@ private static void test3() throws InterruptedException {
             Dog d = new Dog();
             list.add(d);
             synchronized (d) {
-                log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+                log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             }
         }
         synchronized (list) {
@@ -3488,11 +3488,11 @@ private static void test3() throws InterruptedException {
         log.debug("===============> ");
         for (int i = 0; i < 30; i++) {
             Dog d = list.get(i);
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             synchronized (d) {
-                log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+                log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             }
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
         }
     }, "t2");
     t2.start();
@@ -3651,7 +3651,7 @@ private static void test4() throws InterruptedException {
             Dog d = new Dog();
             list.add(d);
             synchronized (d) {
-                log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+                log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             }
         }
         LockSupport.unpark(t2);
@@ -3663,11 +3663,11 @@ private static void test4() throws InterruptedException {
         log.debug("===============> ");
         for (int i = 0; i < loopNumber; i++) {
             Dog d = list.get(i);
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             synchronized (d) {
-                log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+                log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             }
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
         }
         LockSupport.unpark(t3);
     }, "t2");
@@ -3678,11 +3678,11 @@ private static void test4() throws InterruptedException {
         log.debug("===============> ");
         for (int i = 0; i < loopNumber; i++) {
             Dog d = list.get(i);
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             synchronized (d) {
-                log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+                log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
             }
-            log.debug(i + "\t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
+            log.debug(i + "/t" + ClassLayout.parseInstance(d).toPrintableSimple(true));
         }
     }, "t3");
     t3.start();
@@ -3786,38 +3786,38 @@ public class MyBenchmark {
 
 - java -jar benchmarks.jar，发现两部分的差别并不大,甚至b加了锁比a没加锁还快
 
-![锁消除1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\锁消除1.png)
+![锁消除1](图片/synchronized/锁消除1.png)
 
 - java -XX:-EliminateLocks -jar benchmarks.jar，使用 -XX:-EliminateLocks禁用锁消除后就会发现 b性能比a差劲多了
 
-  ![锁消除1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\synchronized\锁消除2.png)
+  ![锁消除1](图片/synchronized/锁消除2.png)
 
 
 
 
-## 9、wait\notify
+## 9、wait/notify
 
 ### 9.1 故事类比
 
 - 由于条件不满足，小南不能继续进行计算 
 - 但小南如果一直占用着锁，其它人就得一直阻塞，效率太低
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\故事1.png)
+![故事1](图片/wait/故事1.png)
 
 - 于是老王单开了一间休息室（调用 wait 方法），让小南到休息室（WaitSet）等着去了，但这时锁释放开，其它人可以由老王随机安排进屋 
 - 直到小M将烟送来，大叫一声 [ 你的烟到了 ] （调用 notify 方法）
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\故事2.png)
+![故事1](图片/wait/故事2.png)
 
 - 小南于是可以离开休息室，重新进入竞争锁的队列
 
-![故事1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\故事3.png)
+![故事1](图片/wait/故事3.png)
 
 
 
 ### 9.2 原理
 
-![原理](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\原理.png)
+![原理](图片/wait/原理.png)
 
 - Owner 线程发现条件不满足，调用 wait 方法，即可进入 WaitSet 变为 WAITING 状态 
 - BLOCKED 和 WAITING 的线程都处于阻塞状态，不占用 CPU 时间片 
@@ -4015,7 +4015,7 @@ public class Test1 {
 
 
 
-## 10、wait\sleep
+## 10、wait/sleep
 
 ### 10.1 区别
 
@@ -4477,7 +4477,7 @@ synchronized(lock) {
   - JDK 中，join 的实现、Future 的实现，采用的就是此模式 
   - 因为要等待另一方的结果，因此归类到同步模式 
 
-![同步模式之保护性暂停定义](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\同步模式之保护性暂停定义.png)
+![同步模式之保护性暂停定义](图片/wait/同步模式之保护性暂停定义.png)
 
 
 
@@ -4794,7 +4794,7 @@ throws InterruptedException {
   - 图中 Futures 就好比居民楼一层的信箱（每个信箱有房间编号），左侧的 t0，t2，t4 就好比等待邮件的居民，右侧的 t1，t3，t5 就好比邮递员 
   - 如果需要在多个类之间使用 GuardedObject 对象，作为参数传递不是很方便，因此设计一个用来解耦的中间类，这样不仅能够解耦【结果等待者】和【结果生产者】，还能够同时支持多个任务的管理
 
-![多任务版扩展](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\多任务版扩展.png)
+![多任务版扩展](图片/wait/多任务版扩展.png)
 
 ~~~java
 package com.example.three;
@@ -4978,7 +4978,7 @@ class GuardedObject {
 - 消息队列是有容量限制的，满时不会再加入数据，空时不会再消耗数据 
 - JDK 中各种阻塞队列，采用的就是这种模式
 
-![消费者生产者](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\消费者生产者.png)
+![消费者生产者](图片/wait/消费者生产者.png)
 
 
 
@@ -5195,43 +5195,43 @@ public class Test6 {
 
 #### 14.3.1 先调用park
 
-![park_unpark1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\park_unpark1.png)
+![park_unpark1](图片/wait/park_unpark1.png)
 
-\1. 当前线程调用 Unsafe.park() 方法 
+/1. 当前线程调用 Unsafe.park() 方法 
 
-\2. 检查 _counter ，本情况为 0，这时，获得 _mutex 互斥锁 
+/2. 检查 _counter ，本情况为 0，这时，获得 _mutex 互斥锁 
 
-\3. 线程进入 _cond 条件变量阻塞 
+/3. 线程进入 _cond 条件变量阻塞 
 
-\4. 设置 _counter = 0
+/4. 设置 _counter = 0
 
 
 
 #### 14.3.2 再调用unpark
 
-![park_unpark1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\park_unpark2.png)
+![park_unpark1](图片/wait/park_unpark2.png)
 
-\1. 调用 Unsafe.unpark(Thread_0) 方法，设置 _counter 为 1 
+/1. 调用 Unsafe.unpark(Thread_0) 方法，设置 _counter 为 1 
 
-\2. 唤醒 _cond 条件变量中的 Thread_0 
+/2. 唤醒 _cond 条件变量中的 Thread_0 
 
-\3. Thread_0 恢复运行 
+/3. Thread_0 恢复运行 
 
-\4. 设置 _counter 为 0
+/4. 设置 _counter 为 0
 
 
 
 #### 14.3.3 先调用unpark 再调用park
 
-![park_unpark1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\park_unpark3.png)
+![park_unpark1](图片/wait/park_unpark3.png)
 
-\1. 调用 Unsafe.unpark(Thread_0) 方法，设置 _counter 为 1 
+/1. 调用 Unsafe.unpark(Thread_0) 方法，设置 _counter 为 1 
 
-\2. 当前线程调用 Unsafe.park() 方法 
+/2. 当前线程调用 Unsafe.park() 方法 
 
-\3. 检查 _counter ，本情况为 1，这时线程无需阻塞，继续运行 
+/3. 检查 _counter ，本情况为 1，这时线程无需阻塞，继续运行 
 
-\4. 设置 _counter 为 0 
+/4. 设置 _counter 为 0 
 
 
 
@@ -5239,7 +5239,7 @@ public class Test6 {
 
 - 概览图
 
-![线程状态概览图](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\线程状态概览图.png)
+![线程状态概览图](图片/wait/线程状态概览图.png)
 
 
 
@@ -5518,19 +5518,19 @@ public class Test7 {
 
 - 检测死锁可以使用 jconsole工具，或者使用 jps 定位进程 id，再用 jstack 定位死锁
 
-![定位死锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\定位死锁1.png)
+![定位死锁1](图片/wait/定位死锁1.png)
 
 - 可以查看出线程状态、第几行出的问题、等待11d8的锁，锁住了11e8
 
-![定位死锁2](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\定位死锁2.png)
+![定位死锁2](图片/wait/定位死锁2.png)
 
 - 还会打印一个java级别的死锁信息
 
-![定位死锁3](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\定位死锁3.png)
+![定位死锁3](图片/wait/定位死锁3.png)
 
 - 也可以用jconsole
 
-![定位死锁4](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\定位死锁4.png)
+![定位死锁4](图片/wait/定位死锁4.png)
 
 - **避免死锁要注意加锁顺序** 
 - 另外如果由于某个线程进入了死循环，导致其它线程一直等待，对于这种情况 linux 下可以通过 top 先定位到CPU 占用高的 Java 进程，再利用 **top -Hp 进程id** 来定位是哪个线程，最后再用 jstack 排查
@@ -5539,7 +5539,7 @@ public class Test7 {
 
 #### 16.2.3 哲学家就餐问题
 
-![哲学家就餐](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\哲学家就餐.png)
+![哲学家就餐](图片/wait/哲学家就餐.png)
 
 - 有五位哲学家，围坐在圆桌旁。 
   - 他们只做两件事，思考和吃饭，思考一会吃口饭，吃完饭后接着思考。 
@@ -5729,11 +5729,11 @@ public class TestLiveLock {
 - 很多教程中把饥饿定义为，一个线程由于优先级太低，始终得不到 CPU 调度执行，也不能够结束
 - 先来看看使用顺序加锁的方式解决之前的死锁问题
 
-![顺序加锁1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\顺序加锁1.png)
+![顺序加锁1](图片/wait/顺序加锁1.png)
 
 - 顺序加锁的解决方案
 
-![顺序枷锁2](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\wait\顺序枷锁2.png)
+![顺序枷锁2](图片/wait/顺序枷锁2.png)
 
 - 但顺序加锁容易产生饥饿问题，例如：哲学家就餐时
 
@@ -6590,14 +6590,14 @@ public class Test1 {
 
   - 初始状态， t 线程刚开始从主内存读取了 run 的值到工作内存。
 
-    ![可见性1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\可见性1.png)
+    ![可见性1](图片/共享模型之内存/可见性1.png)
 
   - 因为 t 线程要频繁从主内存中读取 run 的值，**JIT 编译器会将 run 的值缓存至自己工作内存中的高速缓存中，减少对主存中 run 的访问，提高效率**
 
-  ![可见性1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\可见性2.png)
+  ![可见性1](图片/共享模型之内存/可见性2.png)
   - 1 秒之后，main 线程修改了 run 的值，并同步至主存，而 t 是从自己工作内存中的高速缓存中读取这个变量的值，结果永远是旧值
 
-  ![可见性1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\可见性3.png)
+  ![可见性1](图片/共享模型之内存/可见性3.png)
 
 - **总结：一个线程对主存的数据进行了修改，对于另外一个线程不可见**
 
@@ -6672,18 +6672,18 @@ public class Test2 {
 - 前面例子体现的实际就是可见性，它保证的是在多个线程之间，一个线程对 volatile 变量的修改对另一个线程可见，不能保证原子性，仅用在一个写线程，多个读线程的情况： 
   - 上例从字节码理解是这样的：
 
-![可见性vs原子性1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\可见性vs原子性1.png)
+![可见性vs原子性1](图片/共享模型之内存/可见性vs原子性1.png)
 
 - 比较一下之前线程安全时举的例子：两个线程一个 i++ 一个 i-- ，volatile只能保证看到最新值，不能解决指令交错
 
-![可见性vs原子性1](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\可见性vs原子性2.png)
+![可见性vs原子性1](图片/共享模型之内存/可见性vs原子性2.png)
 
 - **注意**  
   - **synchronized 语句块既可以保证代码块的原子性，也同时保证代码块内变量的可见性。但缺点是synchronized 是属于重量级操作，性能相对更低** 
   - 如果在前面示例的死循环中加入 System.out.println() 会发现即使不加 volatile 修饰符，线程 t 也能正确看到对 run 变量的修改了，想一想为什么？
     - **因为其内部包含了synchronized 的使用**
 
-![sout](C:\Users\lzy\Desktop\work\Java高级\JUC并发编程\图片\共享模型之内存\sout.png)
+![sout](图片/共享模型之内存/sout.png)
 
 
 
