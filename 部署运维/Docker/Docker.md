@@ -1341,7 +1341,7 @@ get k1
 - Dockerfile内容基础知识	
   - 每条保留字指令都**必须为大写字母**且后面要跟随至少一个参数
   - 指令按照从上到下，顺序执行
-  - /#表示注释
+  - \#表示注释
   - 每条指令都会创建一个新的镜像层并对镜像进行提交
 - Docker执行Dockerfile的大致流程
   - docker从基础镜像运行一个容器
@@ -1368,7 +1368,156 @@ get k1
 
 - FROM：基础镜像，当前新镜像是基于哪个镜像的，指定一个已经存在的镜像作为模板，第一条必须是from
 - MAINTAINER：镜像维护者的姓名和邮箱地址
-- RUN：
+- **RUN：容器构建的时候需要执行的命令，RUN是在 docker build时运行**，他有两种格式：
+
+  - shell格式：RUN [命令行命令]，# 等同于在终端操作的shell命令
+    - 例子：RUN yum -y install vim
+
+  - exec格式：RUN ["可执行文件","参数1","参数2"]
+    - 例子：RUN ["./test.php", "dev", "offline"] 等价于  RUN ./test.php dev offline
+
+- EXPOSE：当前容器对外暴露出的端口
+- **WORKDIR： 指定在创建容器后，终端默认登陆的进来工作目录，一个落脚点**，比如下面两个镜像启动容器，登录的根目录不一样，就是由这个控制的
+
+  - ubuntu落脚点
+
+  ![ubuntu落脚点](图片/DockerFile/ubuntu落脚点.png)
+
+  - tomcat落脚点
+
+  ![tomcat落脚点](图片/DockerFile/tomcat落脚点.png)
+- USER： 指定该镜像以什么样的用户去执行，如果都不指定，默认是root
+- **ENV：用来在构建镜像过程中设置环境变量**
+
+~~~bash
+ENV MY_PATH /usr/mytest
+这个环境变量可以在后续的任何RUN指令中使用，这就如同在命令前面指定了环境变量前缀一样；
+也可以在其它指令中直接使用这些环境变量，
+ 
+比如：WORKDIR $MY_PATH
+~~~
+
+- **ADD：将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包**
+
+- ##### **COPY：类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置**
+
+~~~bash
+COPY src dest
+COPY ["src", "dest"]
+<src源路径>：源文件或者源目录
+<dest目标路径>：容器内的指定路径，该路径不用事先建好，路径不存在的话，会自动创建。
+~~~
+
+- **VOLUME: 容器数据卷，用于数据保存和持久化工作**
+
+- ##### **CMD: 指定容器启动后的要干的事情**
+
+  - ##### 注意：**Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会被 docker run 之后的参数替换**
+
+  ~~~bash
+  比如：在tomcat的dockerFile 最后一行是： CMD ["catalina.sh","run"]
+  但是你在docker run这个命令后面加一个/bin/bash ，虽然成功启动了，但是相当于在DockerFile后面又加了一个CMD ["/bin/bash","run"]；会导致前面的CMD被覆盖了。这个时候去浏览器就看不到猫了。
+  ~~~
+
+  - 它和前面RUN命令的区别：
+
+    - CMD是在docker run 时运行。
+
+    - **RUN是在 docker build时运行。**
+
+- ##### ENTRYPOINT ：类似于 CMD 指令，但是ENTRYPOINT不会被docker run后面的命令覆盖， 而且这些命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序
+
+  - ##### 命令格式和案例说明：命令格式：ENTRYPOINT ["\<executeable>","\<param1>","\<param2>",...]
+
+  - ENTRYPOINT可以和CMD一起用，一般是变参才会使用 CMD ，这里的 CMD 等于是在给 ENTRYPOINT 传参。
+    当指定了ENTRYPOINT后，CMD的含义就发生了变化，不再是直接运行其命令而是将CMD的内容作为参数传递给ENTRYPOINT指令，他两个组合会变成 \<ENTRTPOINT>"\<CMD>"
+
+  - **优点**：**在执行docker run的时候可以指定 ENTRYPOINT 运行所需的参数。**
+
+  - **注意**：**如果 Dockerfile 中如果存在多个 ENTRYPOINT 指令，仅最后一个生效**
+
+  ~~~bash
+  案例如下：假设已通过 Dockerfile 构建了 nginx:test 镜像：
+  FROM nginx
+  ENTRYPOINT ["nginx","-c"] # 定参
+  CMD ["etc/nginx/nginx.conf"] #变参
+  ~~~
+
+| **是否传参**     | **按照dockerfile编写执行，不传参** | **传参运行**                                 |
+| ---------------- | ---------------------------------- | -------------------------------------------- |
+| Docker命令       | docker run nginx:test              | docker run nginx:test -c /etc/nginx/new.conf |
+| 衍生出的实际命令 | nginx -c /etc/nginx/nginx.conf     | nginx -c /etc/nginx/new.conf                 |
+
+![常用dockerfile指令](图片/DockerFile/常用dockerfile指令.png)
+
+
+
+## 5、案例
+
+- 要求：Centos7镜像具备 vim+ifconfig+jdk8 这三个功能
+- 编写dockerFile文件
+
+~~~bash
+FROM centos:7
+MAINTAINER lzy
+ 
+ENV MYPATH /usr/local
+WORKDIR $MYPATH
+ 
+#安装vim编辑器
+RUN yum -y install vim
+#安装ifconfig命令查看网络IP
+RUN yum -y install net-tools...
+#安装Java8及lib库
+RUN yun -y install glibc.1686
+RUN mkdir /usr/local/java
+#ADD 是相对路径jar,把jdk-8u171-inux-x64.tar.gz添加到容器中,安装包必须要和Dockerfile文件在同一位置 自己复制自己所下载jdk的名字，add会自己解压
+ADD jdk-8u171-linux-x64.tar.gz /usr/local/java/ 
+#配置java环境变量
+ENV JAVA_HOME /usr/local/java/jdk1.8.0171
+ENV JRE_HOME $JAVA_HOME/jre
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib: $CLASSPATH
+ENV PATH $JAVA_HOME/bin:$PATH
+
+EXPOSE 80
+
+CMD echo $MYPATH
+CMD echo "success------------------------ok"
+CMD /bin/bash
+~~~
+
+- 构建命令：docker build -t 镜像名字:tag .
+  - 注意后面有个点
+  - docker build -t centos-lzy:latest .-
+- 运行：docker run -it 镜像名:tag /bin/bash
+
+
+
+## 6、虚悬镜像
+
+- 是什么：仓库名、标签都是\<nono>的镜像，俗称dangling image
+
+- Dockerfile写一个
+
+  - Dockerfile文件
+
+  ~~~bash
+  from ubuntu
+  CMD echo 'action is success'
+  ~~~
+
+  - docker build .
+
+  ![虚悬镜像](图片/DockerFile/虚玄镜像.png)
+
+- 查看
+  - docker image ls -f dangling=true
+- 删除：虚悬镜像已经失去了存在价值，可以删除
+  - docker image prune
+
+![虚悬镜像删除](图片/DockerFile/虚玄镜像删除.png)
+
+
 
 
 
