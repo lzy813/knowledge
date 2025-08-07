@@ -1398,8 +1398,7 @@ ENV MY_PATH /usr/mytest
 ~~~
 
 - **ADD：将宿主机目录下的文件拷贝进镜像且会自动处理URL和解压tar压缩包**
-
-- ##### **COPY：类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置**
+- **COPY：类似ADD，拷贝文件和目录到镜像中。 将从构建上下文目录中 <源路径> 的文件/目录复制到新的一层的镜像内的 <目标路径> 位置**
 
 ~~~bash
 COPY src dest
@@ -1410,9 +1409,9 @@ COPY ["src", "dest"]
 
 - **VOLUME: 容器数据卷，用于数据保存和持久化工作**
 
-- ##### **CMD: 指定容器启动后的要干的事情**
+- **CMD: 指定容器启动后的要干的事情**
 
-  - ##### 注意：**Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会被 docker run 之后的参数替换**
+  - 注意：**Dockerfile 中可以有多个 CMD 指令，但只有最后一个生效，CMD 会被 docker run 之后的参数替换**
 
   ~~~bash
   比如：在tomcat的dockerFile 最后一行是： CMD ["catalina.sh","run"]
@@ -1420,20 +1419,15 @@ COPY ["src", "dest"]
   ~~~
 
   - 它和前面RUN命令的区别：
-
     - CMD是在docker run 时运行。
+    - RUN是在 docker build时运行
 
-    - **RUN是在 docker build时运行。**
+- ENTRYPOINT ：类似于 CMD 指令，但是ENTRYPOINT不会被docker run后面的命令覆盖， 而且这些命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序
 
-- ##### ENTRYPOINT ：类似于 CMD 指令，但是ENTRYPOINT不会被docker run后面的命令覆盖， 而且这些命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序
-
-  - ##### 命令格式和案例说明：命令格式：ENTRYPOINT ["\<executeable>","\<param1>","\<param2>",...]
-
+  - 命令格式和案例说明：命令格式：ENTRYPOINT ["\<executeable>","\<param1>","\<param2>",...]
   - ENTRYPOINT可以和CMD一起用，一般是变参才会使用 CMD ，这里的 CMD 等于是在给 ENTRYPOINT 传参。
     当指定了ENTRYPOINT后，CMD的含义就发生了变化，不再是直接运行其命令而是将CMD的内容作为参数传递给ENTRYPOINT指令，他两个组合会变成 \<ENTRTPOINT>"\<CMD>"
-
   - **优点**：**在执行docker run的时候可以指定 ENTRYPOINT 运行所需的参数。**
-
   - **注意**：**如果 Dockerfile 中如果存在多个 ENTRYPOINT 指令，仅最后一个生效**
 
   ~~~bash
