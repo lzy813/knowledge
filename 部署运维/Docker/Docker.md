@@ -1513,10 +1513,721 @@ CMD /bin/bash
 
 
 
+# 九、微服务应用
+
+## 1、编写springboot应用
+
+- pom
+
+~~~xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>dockerDemo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- spring boot通用依赖包 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.3.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+~~~
+
+- yml
+
+~~~yaml
+server:
+  port: 8081
+~~~
+
+- 主启动类
+
+~~~java
+package org.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class DockerDemoMainApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(DockerDemoMainApplication.class, args);
+    }
+}
+~~~
+
+- controller
+
+~~~java
+package org.example.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+@RestController
+public class DockerController {
+
+    @GetMapping("/test")
+    public String getUUID() {
+        return UUID.randomUUID().toString();
+    }
+
+}
+~~~
+
+
+
+## 2、编译打包
+
+- 点击右边maven的clean、package
+- 会在target下面生成一个jar包
+- 将jar包上传到服务器的创建的目录下
+
+
+
+## 3、编写Dockerfile
+
+~~~bash
+# 基础镜像
+FROM openjdk:17
+
+# 作者
+MAINTAINER lzy
+
+# VOLUME 指定临时文件目录为/tmp，在主机/var/lib/docker目录下创建了一个临时文件并链接到容器的/tmp
+VOLUME /tmp
+
+# 将jar包添加到容器中并更名为dockerDemo.jar
+ADD dockerDemo-1.0-SNAPSHOT.jar dockerDemo.jar
+
+# 运行jar包
+RUN bash -c 'touch /dockerDemo.jar'
+ENTRYPOINT ["java", "-jar", "/dockerDemo.jar"]
+
+# 暴露8081端口作为微服务
+EXPOSE 8081
+~~~
+
+
+
+## 4、构建镜像并运行
+
+- 进入到存放Dockerfile和jar包的目录下
+- docker build -t dockerdemo:1.0 .
+- docker images查看镜像是否打包完成
+- docker run -d -p 8081:8081 dockerdemo:1.0
+- docker ps -a查看是否容器是否启动成功
+- 测试链接地址：http://111.231.33.58:8081/test
+
+
+
+# 十、docker网络
 
 
 
 
 
 
-九、将
+
+# 十一、docker-compose容器编排
+
+## 1、简介
+
+- 是什么：docker官方的开源项目，负责实现对docker容器集群的快速编排
+- 能干嘛：compose是docker公司推出的一个工具软件，可以管理多个docker容器组成一个应用。需要定义一个YAML格式的配置文件docker-compose.yml，<font color="red">**写好多个容器之间的调用关系**</font>。然后，只需要一个命令，就能同时启动/关闭这些。类似spring工厂
+  - docker 建议我们每一个容器中只运行一个服务，因为 docker 容器本身占用资源极少，所以最好是将每个服务单独的分割开来但是这样我们又面临了一个问题？
+  - 如果我需要同时部署好多个服务，难道要每个服务单独写 Dockerfile 然后在构建镜像，构建容器，这样累都累死了，所以 docker 官方给我们提供了 docker - compose 多服务部署的工具
+  - 例如要实现一个 Web 微服务项目，除了 Web 服务容器本身，往往还需要再加上后端的数据库 mysql 服务器，redis 服务器，注册中心 eureka，甚至还包括负载均衡容器等等。。。。。。
+  - Compose 允许用户通过一个单独的<font color="red">**docker-compose.yml 模板文件（YAML 格式）**</font>来定义一组相关联的应用容器为一个项目（project）。
+  - 可以很容易地用一个配置文件定义一个多容器的应用，然后使用一条指令安装这个应用的所有依赖，完成构建。Docker - Compose 解决了容器与容器之间如何管理编排的问题。
+
+
+![compose能干嘛](D:\knowledge\部署运维\Docker\图片\compose容器编排\能干嘛.png)
+
+
+
+## 2、下载
+
+- 官方文档：https://docs.docker.com/reference/compose-file/
+- 官网下载地址：https://docs.docker.com/compose/install/
+- 安装步骤
+
+~~~bash
+# 下载最新版本
+sudo curl -L "https://github.com/docker/compose/releases/download/${latest_version}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+# 赋予执行权限
+sudo chmod +x /usr/local/bin/docker-compose
+
+# 验证安装结果
+docker-compose --version
+~~~
+
+- 现在docker最新版都是自带的docker compose了，不用自己单独安装，直接验证即可
+
+~~~bash
+# 验证安装结果
+docker compose version
+# 结果：Docker Compose version v2.27.1
+~~~
+
+
+
+## 3、docker核心概念
+
+- 一文件：docker-compose.yml
+- 两要素
+  - 服务（service）：一个个应用容器实例，比如订单微服务，库存微服务，myusql微服务等
+  - 工程（project）：由一组关联的应用容器组成的一个<font color="red">**完整业务单元**</font>，在docker-compose.yml文件中定义
+
+
+
+## 4、使用步骤
+
+- 编写 Dockerfile 定义各个微服务应用并构建出对应的镜像文件
+- 使用 docker-compose.yml
+  定义一个完整业务单元，安排好整体应用中的各个容器服务。
+- 最后，执行 docker-compose up 命令
+  来启动并运行整个应用程序，完成一键部署上线
+
+
+
+## 5、常用命令
+
+- **基础命令**
+  - docker compose up：创建并启动所有服务容器
+  - docker compose up -d：后台启动所有服务
+  - docker compose down：停止并删除容器、网络（默认保留数据卷）
+  - docker compose down --volumes：停止并删除容器、网络及数据卷
+- **容器生命周期管理**
+  - docker compose start：启动已存在的服务容器
+  - docker compose stop：停止运行中的服务容器
+  - docker compose restart：重启服务容器
+  - docker compose pause：暂停服务容器
+  - docker compose unpause：恢复暂停的服务容器
+  - docker compose rm：删除已停止的服务容器
+- **状态查看**
+  - docker compose ps：列出所有服务容器的状态
+  - docker compose logs：查看所有服务的日志输出
+  - docker compose logs \<service>：查看指定服务的日志
+  - docker compose top：显示各服务容器中运行的进程
+- **构建与更新**
+  - docker compose build：构建或重新构建服务镜像
+  - docker compose pull：拉取服务所需的镜像
+  - docker compose push：推送服务镜像到仓库
+  - docker compose up --build：启动时强制重新构建镜像
+- **执行操作**
+  - docker compose exec \<service> \<command>：在指定服务容器中执行命令
+    例：docker compose exec web /bin/bash 进入 web 服务容器
+  - docker compose run \<service> \<command>：运行一次性命令（创建新容器）
+- **配置检查**
+  - docker compose config：验证并显示 Compose 文件配置
+  - docker compose config --services：列出所有服务名称
+  - docker compose config --volumes：列出所有数据卷
+- **其他实用命令**
+  - docker compose version：显示 Compose 版本信息
+  - docker compose images：列出服务使用的镜像
+  - docker compose cp：在容器和本地文件系统间复制文件
+
+
+
+## 6、案例
+
+### 6.1 实现一个微服务
+
+- 技术实现：springboot + redis + mysql
+- 实现功能
+  - 添加用户：往mysql和redis都插入
+  - 获取用户：先查redis，查不到再查mysql，mysql查到了就往redis里写，都查不到就返回空
+- SQL建表
+
+~~~sql
+CREATE TABLE `docker`.`Untitled`  (
+  `username` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '账号',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '密码',
+  `sex` varchar(3) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '性别',
+  `age` int NULL DEFAULT NULL COMMENT '年龄',
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '地址',
+  PRIMARY KEY (`username`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+~~~
+
+- pom
+
+~~~pom
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>dockerDemo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- spring boot通用依赖包 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-data-jpa -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.1.0</version>
+        </dependency>
+        <!-- RedisTemplate -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <version>3.3.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+            <version>2.12.0</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.3.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+~~~
+
+- yml
+
+~~~ymal
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:mysql://111.231.33.58:3306/docker?useSSL=false&serverTimezone=UTC
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+  data:
+    redis:
+      host: 111.231.33.58  # Redis服务器的IP地址，若Redis部署在其他机器，改成对应的IP
+      port: 6379  # Redis服务器的端口号，默认是6379
+      password: li998813 # 如果Redis设置了密码，在这里填写密码，没有密码则留空
+      database: 0  # 使用的Redis数据库索引，Redis有0 - 15共16个数据库，默认使用0号库
+      lettuce:
+        pool:
+          max-active: 8  # 连接池最大连接数（使用负值表示没有限制）
+          max-wait: -1ms  # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-idle: 8  # 连接池中的最大空闲连接
+          min-idle: 0  # 连接池中的最小空闲连接
+      timeout: 5000ms  # 连接超时时间（毫秒）
+~~~
+
+- controller
+
+~~~java
+package org.example.controller;
+
+import jakarta.annotation.Resource;
+import org.example.entity.UserEntity;
+import org.example.service.UserService;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
+
+@RestController
+public class DockerController {
+
+    @Resource
+    private UserService userService;
+
+    @Resource
+    private RedisTemplate redisTemplate;
+
+    @GetMapping("/test")
+    public String getUUID() {
+        return UUID.randomUUID().toString();
+    }
+
+    @PostMapping("addUser")
+    public void addUser(@RequestBody UserEntity user) {
+        // 插入数据库
+        userService.addUser(user);
+        // 存入redis缓存
+        redisTemplate.opsForValue().set(user.getUsername(), user);
+    }
+
+    @GetMapping("/getUser/{username}")
+    public UserEntity getUser(@PathVariable("username") String username) {
+        UserEntity user = null;
+        // 从redis中读
+        Object o = redisTemplate.opsForValue().get(username);
+
+        if (o == null) {
+            // redis里没有就从mysql读
+            user = userService.getUser(username);
+            if (user == null) {
+                // 都无就返回穿透数据
+                return user;
+            } else {
+                // mysql有就写回redis中
+                redisTemplate.opsForValue().set(username, user);
+            }
+        }
+        return (UserEntity) o;
+    }
+}
+~~~
+
+- service
+
+~~~java
+package org.example.service.impl;
+
+import jakarta.annotation.Resource;
+import org.example.entity.UserEntity;
+import org.example.mapper.UserRepository;
+import org.example.service.UserService;
+import org.springframework.stereotype.Service;
+
+import java.util.Optional;
+
+@Service
+public class UserServiceImpl implements UserService {
+
+    @Resource
+    private UserRepository userRepository;
+
+    @Override
+    public UserEntity getUser(String username) {
+        Optional<UserEntity> byId = userRepository.findById(username);
+        return byId.orElse(null);
+    }
+
+    @Override
+    public void addUser(UserEntity user) {
+        userRepository.save(user);
+    }
+}
+~~~
+
+- mapper
+
+~~~java
+package org.example.mapper;
+
+import org.example.entity.UserEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface UserRepository extends JpaRepository<UserEntity, String> {
+
+}
+~~~
+
+
+
+### 6.2 打镜像
+
+- Dockerfile
+
+~~~dockerfile
+# 基础镜像
+FROM java:17
+
+# 作者
+MAINTAINER lzy
+
+# VOLUME 指定临时文件目录为/tmp，在主机/var/lib/docker目录下创建了一个临时文件并链接到容器的/tmp
+VOLUME /tmp
+
+# 将jar包添加到容器中并更名为dockerDemo.jar
+ADD dockerDemo-1.0-SNAPSHOT.jar dockerDemo.jar
+
+# 运行jar包
+RUN bash -c 'touch /dockerDemo.jar'
+ENTRYPOINT ["java", "-jar", "/zzyy_docker.jar"]
+
+# 暴露8081端口作为微服务
+EXPOSE 8081
+~~~
+
+- 将Dockerfile和jar包上传
+
+- docker build -t dockerdemo:1.0 .
+
+- docker images查看镜像是否打包完成
+
+- docker run -d -p 8081:8081 dockerdemo:1.0
+
+- docker ps -a查看是否容器是否启动成功
+
+- 测试链接地址：
+
+  - localhost:8081/getUser/lsq
+
+  - localhost:8081/addUser
+
+    ~~~bash
+    {
+        "username":"lsq",
+        "password":"123",
+        "sex":"女",
+        "age":18,
+        "address":"湖北"
+    }
+    ~~~
+
+    
+
+### 6.3 不用compose启动
+
+- 先启动redis和mysql，这个见前面的章节
+- 再启动微服务的容器
+- 启动后如下
+
+![不使用compose](D:\knowledge\部署运维\Docker\图片\compose容器编排\不使用compose.png)
+
+
+
+### 6.4 不使用compose缺点
+
+- 先后顺序要求固定，先mysql+redis才能微服务访问成功
+- 多个run命令
+- 容器间的启停或宕机，有可能导致IP地址对应的容器实例变化，映射出错，要么生产IP写死（不推荐），要么通过服务调用
+
+
+
+### 6.5 使用compose启动
+
+- 编写docker-compose.yml文件
+
+~~~yaml
+services:
+  # MySQL服务
+  mysql:
+    image: mysql:latest  # 使用MySQL latest镜像
+    container_name: mysql  # 容器名称
+    restart: always  # 容器退出时自动重启
+    environment:
+      MYSQL_ROOT_PASSWORD: li998813  #  root用户密码
+      MYSQL_DATABASE: docker  # 自动创建的数据库名称
+      MYSQL_CHARSET: utf8mb4  # 字符集
+      MYSQL_COLLATION: utf8mb4_unicode_ci  # 排序规则
+    ports:
+      - "3306:3306"  # 端口映射（宿主机:容器）
+    volumes:
+      - /lzy/mysql/log:/var/log/mysql  # 数据卷挂载，持久化数据
+      - /lzy/mysql/data:/var/lib/mysql
+      - /lzy/mysql/conf:/etc/mysql/conf.d
+    networks:
+      - lzy-network  # 加入自定义网络
+    healthcheck:  # 健康检查，确保MySQL启动完成
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Redis服务
+  redis:
+    image: redis:latest  # 使用Redis latest镜像
+    container_name: redis  # 容器名称
+    restart: always  # 容器退出时自动重启
+    command: redis-server --requirepass li998813  # 启动时设置密码
+    ports:
+      - "6379:6379"  # 端口映射
+    volumes:
+      - /app/redis/redis.conf:/etc/redis/redis.conf  # 数据卷挂载，持久化数据
+      - /app/redis/data:/data
+    networks:
+      - lzy-network  # 加入自定义网络
+    healthcheck:  # 健康检查，确保Redis启动完成
+      test: ["CMD", "redis-cli", "-a", "li998813", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  # 应用服务（依赖mysql和redis）
+  dockerdemo:
+    image: dockerdemo:1.0  # 应用镜像
+    container_name: dockerdemo  # 容器名称
+    restart: always  # 容器退出时自动重启
+    depends_on:
+      mysql:
+        condition: service_healthy  # 依赖mysql健康检查通过
+      redis:
+        condition: service_healthy  # 依赖redis健康检查通过
+    environment:
+      # 应用连接MySQL的配置（需与应用内配置一致）
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/docker?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: li998813
+      # 应用连接Redis的配置
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: li998813
+    ports:
+      - "8081:8081"  # 应用端口映射
+    networks:
+      - lzy-network  # 加入自定义网络
+
+# 定义数据卷，用于持久化MySQL和Redis数据
+volumes:
+  mysql-data:
+  redis-data:
+
+# 定义自定义网络，使服务间可通过服务名通信
+networks:
+  lzy-network:
+    driver: bridge  # 使用桥接网络
+~~~
+
+- 修改微服务应用的配置文件，并重新打包
+
+~~~yaml
+server:
+  port: 8081
+
+spring:
+  datasource:
+#    url: jdbc:mysql://111.231.33.58:3306/docker?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://mysql:3306/docker?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: li998813
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+  data:
+    redis:
+#      host: 111.231.33.58  # Redis服务器的IP地址，若Redis部署在其他机器，改成对应的IP
+      host: redis
+      port: 6379  # Redis服务器的端口号，默认是6379
+      password: li998813 # 如果Redis设置了密码，在这里填写密码，没有密码则留空
+      database: 0  # 使用的Redis数据库索引，Redis有0 - 15共16个数据库，默认使用0号库
+      lettuce:
+        pool:
+          max-active: 8  # 连接池最大连接数（使用负值表示没有限制）
+          max-wait: -1ms  # 连接池最大阻塞等待时间（使用负值表示没有限制）
+          max-idle: 8  # 连接池中的最大空闲连接
+          min-idle: 0  # 连接池中的最小空闲连接
+      timeout: 5000ms  # 连接超时时间（毫秒）
+~~~
+
+- docker build -t dockerdemo:1.0 . 重新打包
+- docker compose config -q 检查docker-compose.yml文件语法是否有误
+- docker compose up -d 后台启动docker compose服务，启动三个容器
+- docker ps查看三个容器是否启动成功
+
+![dockercompose启动成功](D:\knowledge\部署运维\Docker\图片\compose容器编排\dockercompose启动成功.png)
+
+- 进入mysql容器中，创建user表：docker exec -it mysql /bin/bash
+
+  - 创建docker数据库，user表
+
+- 测试：
+
+  - localhost:8081/getUser/lsq
+
+  - localhost:8081/addUser
+
+    ~~~bash
+    {
+        "username":"lsq",
+        "password":"123",
+        "sex":"女",
+        "age":18,
+        "address":"湖北"
+    }
+    ~~~
+
+- 关停：docker compose stop
+
+- 下线并删除：docker compose down
+
+
+
+
+
