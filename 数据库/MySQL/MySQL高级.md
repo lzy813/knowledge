@@ -13,7 +13,7 @@ show variables like '%log_error%';
 
 - 可以通过以下方式进行错误日志查看，并且定位到出错位置
 
-![错误日志的存放位置](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\错误日志的存放位置.png)
+![错误日志的存放位置](Mysql高阶篇图片/错误日志的存放位置.png)
 
 ~~~bash
 # 查看错误日志位置
@@ -42,7 +42,7 @@ show variables like '%log_bin%';
 -- log_bin_index：二进制日志文件索引文件
 ~~~
 
-![二进制日志参数](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\二进制日志参数.png)
+![二进制日志参数](Mysql高阶篇图片/二进制日志参数.png)
 
 - 日志格式
 
@@ -152,13 +152,13 @@ log_queries_not_using_indexes=1
   - 实现读写分离，降低主库的访问压力
   - 可以在从库中执行备份，以避免备份期间影响主库服务
 
-![主从复制](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\主从复制.png)
+![主从复制](Mysql高阶篇图片/主从复制.png)
 
 
 
 ### 2.2 原理
 
-![主从复制原理](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\主从复制原理.png)
+![主从复制原理](Mysql高阶篇图片/主从复制原理.png)
 
 - Master主库在事务提交时，会把数据变更记录在二进制日志文件binlog中
 - 从库读取主库的二进制日志文件binlog，写入到从库的中继日志Relay log中
@@ -172,7 +172,7 @@ log_queries_not_using_indexes=1
 
 - 准备好两台服务器，并都在上面安装好mysql，并把端口设置好
 
-![主从复制服务器准备](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\主从复制服务器准备.png)
+![主从复制服务器准备](Mysql高阶篇图片/主从复制服务器准备.png)
 
 ~~~bash
 # 开放指定的3306端口号
@@ -264,10 +264,10 @@ start replica;
 - 查看主从同步状态
 
 ~~~mysql
-show replica status\G;
+show replica status/G;
 ~~~
 
-![主从复制是否正常](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\主从复制是否正常.png)
+![主从复制是否正常](Mysql高阶篇图片/主从复制是否正常.png)
 
 
 
@@ -286,7 +286,7 @@ show replica status\G;
   - CPU瓶颈：排序、分组、连接查询、聚合统计等SQL会耗费大量的CPU资源，请求数太多，CPU出现瓶颈
 - **分库分表的中心思想就是将数据分散存储，使得单一数据库/表的数据量变小来缓解单一数据库的性能问题，从而达到提升数据库性能的目的**
 
-![单数据库体系问题](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\分库分表.png)
+![单数据库体系问题](Mysql高阶篇图片/分库分表.png)
 
 
 
@@ -296,7 +296,7 @@ show replica status\G;
   - 分库：将一个数据库的数据存放在多个数据库中
   - 分表：将一个表的数据分散的存放在多个表中
 
-![拆分策略](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\拆分策略.png)
+![拆分策略](Mysql高阶篇图片/拆分策略.png)
 
 - 垂直拆分
 
@@ -305,14 +305,14 @@ show replica status\G;
     - 每个库的数据也不一样
     - 所有库的并集是全量数据
 
-  ![垂直分库](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\垂直分库.png)
+  ![垂直分库](Mysql高阶篇图片/垂直分库.png)
 
   - 垂直分表：以字段为依据，根据字段属性将不同字段拆分到不同表中
     - 每个表的结构都不一样
     - 每个表的数据也不一样，一般通过一列（主键/外键）关联
     - 所有表的并集是全量数据
 
-  ![分库分表](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\垂直分表.png)
+  ![分库分表](Mysql高阶篇图片/垂直分表.png)
 
   ​
 
@@ -326,21 +326,21 @@ show replica status\G;
     - 每个库的数据都不一样
     - 所有库的并集是全量数据
 
-  ![水平分库](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\水平分库.png)
+  ![水平分库](Mysql高阶篇图片/水平分库.png)
 
   - 水平分表：以字段为依据，按照一定策略，将一个表的数据拆分到多个表中
     - 每个表的结构都一样
     - 每个表的数据都一样
     - 所有表的并集是全量数据
 
-  ![水平分表](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\水平分表.png)
+  ![水平分表](Mysql高阶篇图片/水平分表.png)
 
 - 实现技术
 
   - shardingJDBC：基于AOP原理，在应用程序中对本地执行的SQL进行拦截，解析、改写、路由处理。需要自行编码配置实现，只支持java语言，性能较高
   - MyCat：数据库分库分表中间件，不用调整代码即可实现分库分表，支持多种语言，性能不及前者
 
-![MyCat实现技术](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\MyCat实现技术.png)
+![MyCat实现技术](Mysql高阶篇图片/MyCat实现技术.png)
 
 
 
@@ -355,7 +355,7 @@ show replica status\G;
   - 体系完善
   - 社区活跃
 
-![MyCat](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\MyCat.png)
+![MyCat](Mysql高阶篇图片/MyCat.png)
 
 
 
@@ -378,5 +378,5 @@ show replica status\G;
 
 #### 3.3.3 MyCat概述
 
-![MyCat概念图](C:\Users\lzy\Desktop\work\数据库\Mysql\Mysql高阶篇图片\MyCat概念图.png)
+![MyCat概念图](Mysql高阶篇图片/MyCat概念图.png)
 
