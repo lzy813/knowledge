@@ -4,7 +4,7 @@
 
 ### 1.1 mysql的体系结构
 
-![mysql体系结构](Mysql进阶篇图片/mysql体系结构.png)
+![mysql体系结构](MySQL进阶篇图片/mysql体系结构.png)
 
 - 连接层：最上层是一些客户端和链接服务，主要完成一些类似于连接处理、授权认证、及相关的安全方案。服务器也会为安全接入的每个客户端验证它所具有的操作权限
 - 服务层：第二层架构主要完成大多数的核心服务功能，如SQL接口，并完成缓存的查询，SQL的分析和优化，部分内置函数的执行。所有跨存储引擎的功能也在这一层实现，如过程、函数等
@@ -48,7 +48,7 @@ show engines;
   - xxx.ibd：xxx代表的是表名，InnoDB引擎的每张表都会对应这样一个表空间文件，存储该表的表结构(frm，sdi)、数据和索引
   - 参数：innodb_file_per_table
 
-![InnoDB存储结构](Mysql进阶篇图片/InnoDB存储结构.png)
+![InnoDB存储结构](MySQL进阶篇图片/InnoDB存储结构.png)
 
 
 
@@ -112,7 +112,7 @@ show engines;
 
 - 索引（index）是帮助MySQL**高效获取数据**的**数据结构（有序）**。在数据之外，数据库系统还维护着满足特定查找算法的数据结构，这些数据结构以某种方式引用（指向）数据，这样就可以在这些数据结构上实现高级查找算法，这种数据结构就是索引。
 
-![有无索引比较](Mysql进阶篇图片/有无索引比较.png)
+![有无索引比较](MySQL进阶篇图片/有无索引比较.png)
 
 - 备注：上述二叉树索引结构的只是一个示意图
 - 优缺点
@@ -142,22 +142,22 @@ show engines;
 
 - 二叉树结构
 
-![二叉树](Mysql进阶篇图片/二叉树.png)
+![二叉树](MySQL进阶篇图片/二叉树.png)
 
 - B-Tree树
 
-![B-Tree树](Mysql进阶篇图片/B-Tree树.png)
+![B-Tree树](MySQL进阶篇图片/B-Tree树.png)
 
 - B+Tree树
   - 所有数据都会出现在叶子节点
   - 叶子节点会形成一个单向链表
 
-![B+Tree树](Mysql进阶篇图片/B+Tree树.png)
+![B+Tree树](MySQL进阶篇图片/B+Tree树.png)
 
 - Mysql的B+Tree树
   - 在原B+Tree的基础上，增加了一个指向相邻叶子节点的链表指针，就形成了带有顺序指针的B+Tree
 
-![Mysql的B+Tree](Mysql进阶篇图片/Mysql的B+Tree.png)
+![Mysql的B+Tree](MySQL进阶篇图片/Mysql的B+Tree.png)
 
 
 
@@ -168,7 +168,7 @@ show engines;
 - 哈希索引就是采用一定的hash算法，将键值换算成新的hash值，映射到对应的槽位上，然后存储在hash表中
 - 如果两个(或多个)键值，映射到一个相同的槽位上，他们就产生了hash冲突，可以通过链表来解决
 
-![hash索引](Mysql进阶篇图片/hash索引.png)
+![hash索引](MySQL进阶篇图片/hash索引.png)
 
 - 特点
   - hash索引只能用于对等比较（=，in），不支持范围查询（between，>，<，...）
@@ -212,14 +212,14 @@ show engines;
   - 如果不存在主键，将使用第一个唯一（UNIQUE）索引作为聚集索引
   - 如果表没有主键，或没有合适的唯一索引，则InnoDB会自动生成一个rowid作为隐藏的聚集索引
 
-  ![聚集索引和二级索引](Mysql进阶篇图片/聚集索引和二级索引.png)
+  ![聚集索引和二级索引](MySQL进阶篇图片/聚集索引和二级索引.png)
 
 
 - 回表查询
   - 先根据名字通过二级索引查询出Arm的id值
   - 再根据id值通过聚集索引查询数据信息
 
-![回表查询](Mysql进阶篇图片/回表查询.png)
+![回表查询](MySQL进阶篇图片/回表查询.png)
 
 - 思考题
 
@@ -287,7 +287,7 @@ create index idx_user_emial on tb_user(email);
 show global status like 'Com_______';
 ~~~
 
-![SQL性能查询](Mysql进阶篇图片/SQL性能查询.png)
+![SQL性能查询](MySQL进阶篇图片/SQL性能查询.png)
 
 - 慢查询日志
   - 慢查询日志记录了所以执行时间超过指定参数（long_query_time，单位：秒，默认10秒）的所有语句的日志
@@ -488,7 +488,7 @@ explain select * from tb_user where profession = '软件工程' and age = 31 and
 - using index condition：查找使用了索引，但是需要回表查询数据
 - using where; using index：查找使用了索引，但是需要的数据都在索引列中能找到，索引不需要回表查询
 
-![覆盖索引](Mysql进阶篇图片/覆盖索引.png)
+![覆盖索引](MySQL进阶篇图片/覆盖索引.png)
 
 - 第一条语句直接走的聚集索引，没有发生回表，故而效率高
 - 第二条根据name查询，name索引下的值存放的就是id值，故而是覆盖索引，不需要回表
@@ -518,7 +518,7 @@ select count(distinct email)/count(*) from tb_user;
 select count(distinct substring(email,1,5))/count(*) from tb_user;
 ~~~
 
-![前缀索引查询流程](Mysql进阶篇图片/前缀索引查询流程.png)
+![前缀索引查询流程](MySQL进阶篇图片/前缀索引查询流程.png)
 
 
 
@@ -529,7 +529,7 @@ select count(distinct substring(email,1,5))/count(*) from tb_user;
 - 在业务场景中，如果存在多个查询条件，考虑针对于查询字段建立索引时，建议建立联合索引，而非单列索引
 - **多条件联合索引查询时，MySQL优化器会评估哪个字段的索引效率更高，会选择该索引完成本次查询**
 
-![联合索引](Mysql进阶篇图片/联合索引.png)
+![联合索引](MySQL进阶篇图片/联合索引.png)
 
 
 
@@ -576,7 +576,7 @@ commit;
 
 - 大批量插入数据：如果一次性需要插入大批量数据，使用insert语句插入性能较低，此时可以使用MySQL数据库提供的load指令进行插入。**也需要顺序插入**。操作如下：
 
-![load操作](Mysql进阶篇图片/load操作.png)
+![load操作](MySQL进阶篇图片/load操作.png)
 
 ~~~mysql
 # 客户端连接服务端时，加上参数 --local-infile
@@ -595,11 +595,11 @@ load data local infile '/root/sql1.log' into table 'tb_user' fields terminated b
 - 页分裂：页可以为空，也可以填充一半，也可以填充100%。每个页包含了2~N行数据（如果一行数据多大，会行溢出），根据主键排列
 - 主键顺序插入
 
-![主键顺序插入](Mysql进阶篇图片/主键顺序插入.png)
+![主键顺序插入](MySQL进阶篇图片/主键顺序插入.png)
 
 - 主键乱序插入
 
-![主键乱序插入](Mysql进阶篇图片/主键乱序插入.png)
+![主键乱序插入](MySQL进阶篇图片/主键乱序插入.png)
 
 - 页分裂
 
@@ -607,7 +607,7 @@ load data local infile '/root/sql1.log' into table 'tb_user' fields terminated b
   - 然后50放到47后，组成第三页
   - 然后更换指针指向
 
-  ![页分裂](Mysql进阶篇图片/页分裂.png)
+  ![页分裂](MySQL进阶篇图片/页分裂.png)
 
   ​
 
@@ -617,7 +617,7 @@ load data local infile '/root/sql1.log' into table 'tb_user' fields terminated b
   - 当页中删除的记录达到MERGE_THRESHOLD（默认为页的50%），InnoDB会开始寻找最靠近的页（前或后）看看是否可以将两个页合并以优化空间使用
   - MERGE_THRESHOLD：合并页的阈值，可以自己设置，在创建表或者创建索引时指定
 
-![页合并](Mysql进阶篇图片/页合并.png)
+![页合并](MySQL进阶篇图片/页合并.png)
 
 - 主键设计原则
   - 满足业务需求的情况下，尽量降低主键的长度
@@ -1566,7 +1566,7 @@ delete from user;
 - 全局锁就是对整个数据库实例加锁，加锁后整个实例就处于只读状态，后续的DML的写语句，DDL语句，已经更新操作的事务提交语句都会被阻塞
 - 其典型的使用场景是做全库的逻辑备份，对所有的表进行锁定，从而获取一致性视图，保证数据的完整性
 
-![全局锁](Mysql进阶篇图片/全局锁.png)
+![全局锁](MySQL进阶篇图片/全局锁.png)
 
 ~~~sql
 -- 加上全局锁
@@ -1649,11 +1649,11 @@ mysqldump --single-transaction -用户名 -密码 数据库 > 存放到哪个sql
 
   - 表共享读锁（read lock）：当前客户端可以读，但是不可以写；其他客户端也可以读，但是不可写
 
-  ![表锁读操作](Mysql进阶篇图片/表锁读操作.png)
+  ![表锁读操作](MySQL进阶篇图片/表锁读操作.png)
 
   - 表独占写锁（write lock）：当前客户端可读也可写；其他客户端不可读也不可写
 
-  ![表锁写操作](Mysql进阶篇图片/表锁写操作.png)
+  ![表锁写操作](MySQL进阶篇图片/表锁写操作.png)
 
 
 - 语法
@@ -1748,7 +1748,7 @@ commit;
 select object_schema, object_name, index_name, lock_type, lock_mode, lock_data from performance_schema.metadata_locks; 
 ~~~
 
-![意向锁](Mysql进阶篇图片/意向锁.png)
+![意向锁](MySQL进阶篇图片/意向锁.png)
 
 - 演示客户端1
 
