@@ -8,7 +8,7 @@
 | 数据库管理系统 |                  操纵和管理数据库的大型软件                  | DataBase Management System（DBMS） |
 |      SQL       | 操作关系型数据库的编程语言，定义了一套操作关系型数据库统一**标准** |  Structured Query Language（SQL）  |
 
-![Mysql概述](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\Mysql概述.png)
+![Mysql概述](MySQL基础篇图片/Mysql概述.png)
 
 ## 2、Mysql的前置准备
 
@@ -16,75 +16,75 @@
 
 - MySQL 下载地址为：https://dev.mysql.com/downloads/windows/installer/，这里下载的是mysql的msi安装文件，选择下面的470.2M的版本，点击download进行下载。
 
-![1](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\1.png)
+![1](Windows下载安装/1.png)
 
 - 在下载页面直接选择：**No thanks, just start my download.进行下载**
 
-![1](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\2.png)
+![1](Windows下载安装/2.png)
 
 - 下载好mysql的msi安装文件后，双击进行安装，选择最下面的Custom模式安装，点击右下角 Next 到下一步
 
-![1](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\3.png)
+![1](Windows下载安装/3.png)
 
 - 选择MySql Server 8.0.27 移动到右侧，点击Next
 
-![4](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\4.png)
+![4](Windows下载安装/4.png)
 
 - 点击Execute，检查必要配置
 
-![5](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\5.png)
+![5](Windows下载安装/5.png)
 
 - 检查过程中，可能会提示要安装微软文件，这时安装即可；等到后面的status提示的状态完成后，点击Next进行下一步
 
-![6](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\6.png)
+![6](Windows下载安装/6.png)
 
 - 然后，点击Execute执行
 
-![7](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\7.png)
+![7](Windows下载安装/7.png)
 
 - 此时会进行下载文件
 
-![8](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\8.png)
+![8](Windows下载安装/8.png)
 
 - 全部下载完成后，Status提示状态Complete表示已完成，此时点击Next
 
-![9](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\9.png)
+![9](Windows下载安装/9.png)
 
 - 此时到下一步再点击Next
 
-![10](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\10.png)
+![10](Windows下载安装/10.png)
 
 - 再 Type and NetWorking 页面中，Port是mysql数据库的默认端口3306，直接点击Next
 
-![11](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\11.png)
+![11](Windows下载安装/11.png)
 
 - 在认证方式页面有两个选项，强密码认证和以前的认证方式，我这里选择的是强密码认证，然后Next
 
-![12](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\12.png)
+![12](Windows下载安装/12.png)
 
 - 然后输入root用户的密码，密码一定要记住，否则无法登录。
 
-![12](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\13.png)
+![12](Windows下载安装/13.png)
 
 - 检查mysql的服务，建议使用默认不修改，点击Next
 
-![14](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\14.png)
+![14](Windows下载安装/14.png)
 
 - 在Apply Configuration 点击Execute执行
 
-![15](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\15.png)
+![15](Windows下载安装/15.png)
 
 - 应用配置完成后，点击Finish继续
 
-![16](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\16.png)
+![16](Windows下载安装/16.png)
 
 - 在Product Configuration 中，status提示状态完成后，点击Next继续
 
-![17](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\17.png)
+![17](Windows下载安装/17.png)
 
 - 最后一步，提示安装完成，点击Finish结束
 
-![18](C:\Users\lzy\Desktop\work\数据库\MySQL\Windows下载安装\18.png)
+![18](Windows下载安装/18.png)
 
 
 
@@ -120,7 +120,7 @@ mysql -u root -p					# 前提是得配置环境变量，否则得从mysql的安�
   - 每个数据库里可以创建多张表
   - 每个表里可以存放多条数据
 
-![mysql数据模型](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\mysql数据模型.png)
+![mysql数据模型](MySQL基础篇图片/mysql数据模型.png)
 
 
 
@@ -512,7 +512,7 @@ select 字段列表 from 表名 where 条件列表;
 | 逻辑运算符 |            功能            |
 | :--------: | :------------------------: |
 | and 或 &&  |   并且(多个条件同时成立)   |
-| or 或 \|\| | 或者(多个条件任意一个成立) |
+| or 或 /|/| | 或者(多个条件任意一个成立) |
 | not 或 ！  |          非，不是          |
 
 - 案例
@@ -686,7 +686,7 @@ select * from emp where sex = '男' and age between 20 and 40 order by age asc,e
 
 #### 3.5.8 执行顺序
 
-![执行顺序](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\执行顺序.png)
+![执行顺序](MySQL基础篇图片/执行顺序.png)
 
 
 
@@ -1009,7 +1009,7 @@ insert into users(name,age,status,gender) values('tom1',19,1,'男'),('tom2',19,1
 - 概念：外键用来让两张表的数据之间建立连接，从而保证数据的一致性和完整性
 - 注意：**下述两张表，在数据库层面，并未建立外键关联，所以是无法保证数据的一致性和完整性的**
 
-![外键约束](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\外键约束.png)
+![外键约束](MySQL基础篇图片/外键约束.png)
 
 - 语法
 
@@ -1081,14 +1081,14 @@ alter table emp add constraint fk_emp_dept_id foreign key(dept_id) references de
   - 关系：一个部门对应多个员工，一个员工对应一个部门
   - 实现：**在多的一方建立外键，指向一的一方的主键**
 
-![一对多](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\一对多.png)
+![一对多](MySQL基础篇图片/一对多.png)
 
 - 多对多
   - 案例：学生与课程的关系
   - 关系：一个学生可以选修多门课程，一门课程也可以供多个学生选择
   - 实现：**建立第三张中间表，中间表至少包括两个外键，分别关联两方主键**
 
-![多对多](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\多对多.png)
+![多对多](MySQL基础篇图片/多对多.png)
 
 - 一对一
 
@@ -1096,7 +1096,7 @@ alter table emp add constraint fk_emp_dept_id foreign key(dept_id) references de
   - 关系：一对一关系，多用于单表拆分，将一张表的基础字段放在一张表中，其他详情字段放在另一张表中，以提升操作效率
   - 实现：**在任意一方加入外键，关联另外一方的主键，并且设置外键为唯一的**
 
-  ![一对一](C:\Users\lzy\Desktop\work\数据库\MySQL\MySQL基础篇图片\一对一.png)
+  ![一对一](MySQL基础篇图片/一对一.png)
 
   ​
 
