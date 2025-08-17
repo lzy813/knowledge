@@ -205,13 +205,13 @@ cat /etc/redhat-release
 #结果：CentOS Linux release 7.6.1810 (Core)
 
 # step 2: 卸载旧版本
-sudo yum remove docker \
-                  docker-client \
-                  docker-client-latest \
-                  docker-common \
-                  docker-latest \
-                  docker-latest-logrotate \
-                  docker-logrotate \
+sudo yum remove docker /
+                  docker-client /
+                  docker-client-latest /
+                  docker-common /
+                  docker-latest /
+                  docker-latest-logrotate /
+                  docker-logrotate /
                   docker-engine
    
 # step 3: 安装gcc
@@ -1318,6 +1318,14 @@ get k1
 
 
 
+
+
+
+
+
+
+
+
 # 八、DockerFile解析
 
 ## 1、是什么
@@ -1341,7 +1349,7 @@ get k1
 - Dockerfile内容基础知识	
   - 每条保留字指令都**必须为大写字母**且后面要跟随至少一个参数
   - 指令按照从上到下，顺序执行
-  - \#表示注释
+  - /#表示注释
   - 每条指令都会创建一个新的镜像层并对镜像进行提交
 - Docker执行Dockerfile的大致流程
   - docker从基础镜像运行一个容器
@@ -1424,9 +1432,9 @@ COPY ["src", "dest"]
 
 - ENTRYPOINT ：类似于 CMD 指令，但是ENTRYPOINT不会被docker run后面的命令覆盖， 而且这些命令行参数会被当作参数送给 ENTRYPOINT 指令指定的程序
 
-  - 命令格式和案例说明：命令格式：ENTRYPOINT ["\<executeable>","\<param1>","\<param2>",...]
+  - 命令格式和案例说明：命令格式：ENTRYPOINT ["/<executeable>","/<param1>","/<param2>",...]
   - ENTRYPOINT可以和CMD一起用，一般是变参才会使用 CMD ，这里的 CMD 等于是在给 ENTRYPOINT 传参。
-    当指定了ENTRYPOINT后，CMD的含义就发生了变化，不再是直接运行其命令而是将CMD的内容作为参数传递给ENTRYPOINT指令，他两个组合会变成 \<ENTRTPOINT>"\<CMD>"
+    当指定了ENTRYPOINT后，CMD的含义就发生了变化，不再是直接运行其命令而是将CMD的内容作为参数传递给ENTRYPOINT指令，他两个组合会变成 /<ENTRTPOINT>"/<CMD>"
   - **优点**：**在执行docker run的时候可以指定 ENTRYPOINT 运行所需的参数。**
   - **注意**：**如果 Dockerfile 中如果存在多个 ENTRYPOINT 指令，仅最后一个生效**
 
@@ -1489,7 +1497,7 @@ CMD /bin/bash
 
 ## 6、虚悬镜像
 
-- 是什么：仓库名、标签都是\<nono>的镜像，俗称dangling image
+- 是什么：仓库名、标签都是/<nono>的镜像，俗称dangling image
 
 - Dockerfile写一个
 
@@ -1667,6 +1675,26 @@ EXPOSE 8081
 
 # 十、docker网络
 
+## 1、前述
+
+- 不启动docker的情况，默认情况会有三种网络情况
+  - ens33
+  - lo
+  - virbr0：在 CentOS7 的安装过程中如果**有选择相关虚拟化的的服务安装系统后**，启动网卡时会发现有一个以网桥连接的私网地址的 virbr0 网卡 (virbr0 网卡：它还有一个固定的默认 IP 地址 192.168.122.1)，是做虚拟机网桥的使用的，**其作用是为连接其上的虚拟网卡提供 NAT 访问外网的功能。**
+
+![不启动docker网络类型](图片/docker网络/不启动docker网络类型.png)
+
+- 
+
+- Docker 默认启动的时候，会为我们创建三个网络：docker network ls
+  - bridge
+  - host
+  - none
+
+![三种默认网络类型](图片/docker网络/三种默认网络类型.png)
+
+
+
 
 
 
@@ -1686,7 +1714,7 @@ EXPOSE 8081
   - 可以很容易地用一个配置文件定义一个多容器的应用，然后使用一条指令安装这个应用的所有依赖，完成构建。Docker - Compose 解决了容器与容器之间如何管理编排的问题。
 
 
-![compose能干嘛](D:\knowledge\部署运维\Docker\图片\compose容器编排\能干嘛.png)
+![compose能干嘛](图片/compose容器编排/能干嘛.png)
 
 
 
@@ -1753,7 +1781,7 @@ docker compose version
 - **状态查看**
   - docker compose ps：列出所有服务容器的状态
   - docker compose logs：查看所有服务的日志输出
-  - docker compose logs \<service>：查看指定服务的日志
+  - docker compose logs /<service>：查看指定服务的日志
   - docker compose top：显示各服务容器中运行的进程
 - **构建与更新**
   - docker compose build：构建或重新构建服务镜像
@@ -1761,9 +1789,9 @@ docker compose version
   - docker compose push：推送服务镜像到仓库
   - docker compose up --build：启动时强制重新构建镜像
 - **执行操作**
-  - docker compose exec \<service> \<command>：在指定服务容器中执行命令
+  - docker compose exec /<service> /<command>：在指定服务容器中执行命令
     例：docker compose exec web /bin/bash 进入 web 服务容器
-  - docker compose run \<service> \<command>：运行一次性命令（创建新容器）
+  - docker compose run /<service> /<command>：运行一次性命令（创建新容器）
 - **配置检查**
   - docker compose config：验证并显示 Compose 文件配置
   - docker compose config --services：列出所有服务名称
@@ -2069,7 +2097,7 @@ EXPOSE 8081
 - 再启动微服务的容器
 - 启动后如下
 
-![不使用compose](D:\knowledge\部署运维\Docker\图片\compose容器编排\不使用compose.png)
+![不使用compose](图片/compose容器编排/不使用compose.png)
 
 
 
@@ -2094,6 +2122,7 @@ services:
     restart: always  # 容器退出时自动重启
     environment:
       MYSQL_ROOT_PASSWORD: li998813  #  root用户密码
+      MYSQL_ROOT_HOST: '%'		     # root可登录的主机
       MYSQL_DATABASE: docker  # 自动创建的数据库名称
       MYSQL_CHARSET: utf8mb4  # 字符集
       MYSQL_COLLATION: utf8mb4_unicode_ci  # 排序规则
@@ -2102,7 +2131,7 @@ services:
     volumes:
       - /lzy/mysql/log:/var/log/mysql  # 数据卷挂载，持久化数据
       - /lzy/mysql/data:/var/lib/mysql
-      - /lzy/mysql/conf:/etc/mysql/conf.d
+      - /lzy/mysql/conf/my.cnf:/etc/my.cnf
     networks:
       - lzy-network  # 加入自定义网络
     healthcheck:  # 健康检查，确保MySQL启动完成
@@ -2201,7 +2230,7 @@ spring:
 - docker compose up -d 后台启动docker compose服务，启动三个容器
 - docker ps查看三个容器是否启动成功
 
-![dockercompose启动成功](D:\knowledge\部署运维\Docker\图片\compose容器编排\dockercompose启动成功.png)
+![dockercompose启动成功](图片/compose容器编排/dockercompose启动成功.png)
 
 - 进入mysql容器中，创建user表：docker exec -it mysql /bin/bash
 
@@ -2231,3 +2260,261 @@ spring:
 
 
 
+# 十二、Portainer
+
+## 1、简介
+
+- 是什么：轻量级监测应用，它提供了图形化界面，用于方便的管理docke环境，包括单机环境和集群环境
+- 官网
+  - https://www.portainer.io/
+  - https://docs.portainer.io/start/install-ce/server/docker/linux
+
+
+
+## 2、安装
+
+~~~bash
+# 创建Portainer Server将用于存储其数据库的卷
+docker volume create portainer_data
+
+# docker启动
+docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts
+~~~
+
+![安装](图片/Portainer/安装.png)
+
+- 第一次登录：https://111.231.33.58:9443/，会报错
+
+![](图片/Portainer/第一次报错超时.png)
+
+- 重启服务：docker restart Prtainer
+- 再次进入设置admin密码，密码要是12位以上
+
+![设置密码](图片/Portainer/设置密码.png)
+
+- 再次进入输入账号密码进行登录，进入dashboard界面，可以看到基础状况
+
+![dashboard](图片/Portainer/dashboard.png)
+
+- 对应的命令：docker system df
+
+
+
+## 3、常用操作
+
+- 容器化操作
+
+![容器化操作](图片/Portainer/容器化操作.png)
+
+- 这里以安装nginx为例，第一步选择相关的镜像，设置容器名和设置对应端口
+
+![安装nginx1](图片/Portainer/安装nginx1.png)
+
+- 第二步设置容器卷、覆盖命令、工作区间等相关配置，这里默认
+
+![安装nginx2](图片/Portainer/安装nginx2.png)
+
+- 安装部署
+
+![安装部署](图片/Portainer/安装部署.png)
+
+- 安装完成
+
+![安装完成](图片/Portainer/安装完成.png)
+
+- 验证：http://111.231.33.58/
+
+![验证安装](图片/Portainer/验证安装.png)
+
+- 也可以在页面中进行验证
+
+  - 步骤1
+
+  ![页面验证1](图片/Portainer/页面验证1.png)
+
+  - 步骤2
+
+  ![页面验证2](图片/Portainer/页面验证2.png)
+
+  - 步骤3：curl 127.0.0.1:80
+
+  ![页面验证3](图片/Portainer/页面验证3.png)
+
+
+
+## 4、补充说明
+
+- 安装命令：docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:lts
+  - <font color="red">**--restart=always：代表docker重启后，部署在docker上的这个实例容器也会跟着docker重启，保证这个容器跟docker实时同步，永远是在线状态，这样才能保证实时监控docker**</font>
+
+
+
+# 十三、CIG容器重量级监控系统
+
+## 1、简介
+
+- 通过docker stats 命令可以很方便的查看当前宿主机上所有容器的CPU、内存、网络流量等数据，可以满足一些小型应用
+
+![docker stats](图片/CIG/dockerstats.png)
+
+- 但是 docker stats 统计结果只能是当前宿主机的全部容器，数据资料是实时的，没有地方存储、没有健康指标过线预警等功能
+- 是什么：**CAdvisor（监控收集） + InfluxDB（存储数据） + Granfana（展示图表），合称 CIG**
+
+![CIG](图片/CIG/CIG.png)
+
+
+
+## 2、分别介绍
+
+### 2.1 CAdvisor
+
+- CAdvisor是一个容器资源监控工具，包括容器的内存、CPU、网络IO、磁盘IO等监控，同时提供了一个Web页面用于查看容器的实时运行状态。
+
+
+- CAdvisor默认存储2分钟的数据，而且只是针对单物理机。不过CAdvisor提供了很多数据集成接口，支持 InfluxDB、Redis、Kafka、Elasticsearch等集成，可以加上对应配置将监控数据发往这些数据库存储起来。
+- CAdvisor主要功能：
+  - 展示Host和容器两个层次的监控数据
+  - 展示历史变化数据
+
+
+
+### 2.2 InfluxDB
+
+- InfluxDB是用Go语言编写的一个开源分布式时序、事件和指标数据库，无需外部依赖。
+- CAdvisor默认只在本机保存2分钟的数据，为了持久化存储数据和统一收集展示监控数据，需要将数据存储到InfluxDB中。InfluxDB是一个时序数据库，专门用于存储时序相关数据，很适合存储 CAdvisor 的数据。而且 CAdvisor本身已经提供了InfluxDB的集成方法，在启动容器时指定配置即可。
+- InfluxDB主要功能：
+  - 基于时间序列，支持与时间有关的相关函数（如最大、最小、求和等）
+  - 可度量性，可以实时对大量数据进行计算
+  - 基于事件，支持任意的事件数据
+
+
+
+### 2.3 Granfana
+
+- Grafana是一个开源的数据监控分析可视化平台，支持多种数据源配置（支持的数据源包括InfluxDB、MySQL、Elasticsearch、OpenTSDB、Graphite等）和丰富的插件及模板功能，支持图表权限控制和报警。
+- Granfana主要功能：
+  - 灵活丰富的图形化选项
+  - 可以混合多种风格
+  - 支持白天和夜间模式
+  - 多个数据源
+
+
+
+## 3、安装
+
+- 通过docker compose安装
+
+~~~bash
+services:
+  influxdb:
+    image: influxdb # tutum/influxdb 相比influxdb多了web可视化视图。但是该镜像已被标记为已过时
+    restart: always
+    environment:
+      - PRE_CREATE_DB=cadvisor
+    ports:
+      - "8083:8083"         # 数据库web可视化页面端口
+      - "8086:8086"         # 数据库端口
+    volumes:
+      - ./data/influxdb:/data
+
+  cadvisor:
+    image: google/cadvisor:v0.32.0
+    links:
+      - influxdb:influxsrv
+    command:
+      - -storage_driver=influxdb
+      - -storage_driver_db=cadvisor
+      - -storage_driver_host=influxsrv:8086
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+
+  grafana:
+    image: grafana/grafana:8.5.2
+    user: '104'
+    restart: always
+    links:
+      - influxdb:influxsrv
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - HTTP_USER=admin
+      - HTTP_PASS=admin
+      - INFLUXDB_HOST=influxsrv
+      - INFLUXDB_PORT=8086
+      
+volumes:
+  grafana_data: {}
+~~~
+
+- docker compose config -q：检查是否有语法问题
+- docker compose up -d：后端启动
+
+![CIG安装成功](图片/CIG/CIG安装成功.png)
+
+- 测试：
+  - 浏览 cAdvisor 收集服务，http://111.231.33.58:8080/
+  - 浏览 influxdb 存储服务，http://111.231.33.58:8083/
+  - 浏览 grafana 展现服务，http://111.231.33.58:3000
+
+
+
+## 4、检查容器状态
+
+- 在浏览器打开CAdvisor页面：http://111.231.33.58:8080/，查看当前docker中的cpu、内存、网络IO等统计信息，如下：
+
+![cAdvisor](图片/CIG/cAdvisor.png)
+
+
+
+- 在浏览器打开InfluxDB数据库的页面： http://111.231.33.58:8083，使用命令 `SHOW DATABASES` 查看当前数据库中的数据库实例，检查其中是否自动创建了我们在配置文件中配置的 cadvisor 数据库实例，如下：
+
+![InfluxDB](图片/CIG/InfluxDB.png)
+
+- 在浏览器打开Grafana页面：http://111.231.33.58:3000/，默认用户名密码是：admin/admin。 如下
+
+![Grafana](图片/CIG/Grafana.png)
+
+
+
+## 5、Grafana配置
+
+- 在Configuration 选项卡中，选择Data Sources，添加一个InfluxDB数据源, 如下：
+
+![Grafana配置1](图片/CIG/Grafana配置1.png)
+
+- 配置 InfluxDB 数据源内容，选择 Save & test 
+  - 具体说明如下：
+    - qname：自定义一个数据源名称，例如InfluxDB
+    - Query Language：查询语言，默认InfluxQL即可
+    - URL：根据compose中的容器服务名连接，http://influxdb:8086
+    - database：我们在InfluxDB中创建的数据库实例，cadvisor
+    - User：InfluxDB的默认用户，root
+    - Password：root
+
+![Grafana配置2](图片/CIG/Grafana配置2.png)
+
+- 工作台配置, 具体步骤如下
+
+  - 添加工作台，并且添加监控面板
+
+  ![Grafana配置3](图片/CIG/Grafana配置3.png)
+
+  - 选择监控面板样式，如 柱状图、仪表盘、表格、饼图等等
+
+  ![Grafana配置4](图片/CIG/Grafana配置4.png)
+
+  - 编辑面板标题和描述后保存面板
+
+  ![Grafana配置5](图片/CIG/Grafana配置5.png)
+
+  - 效果如下
+
+  ![Grafana配置6](图片/CIG/Grafana配置6.png)

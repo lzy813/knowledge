@@ -2404,12 +2404,12 @@ public class Test4 {
 ~~~java
 String s1 = new String("hello"); // char[]{'h','e','l','l','o'}
 String s2 = new String("hello"); // char[]{'h','e','l','l','o'}
-​~~~
+~~~
 
 - 将所有新分配的字符串放入一个队列。当新生代回收时，G1并发检查是否有字符串重复，如果它们值一样，让它们引用同一个 char[ ]
 - 注意，与 String.intern() 不一样
 - String.intern() 关注的是字符串对象,而字符串去重关注的是 char[]
-- 在 JVM 内部，使用了不同的字符串表
+- 在JVM 内部，使用了不同的字符串表
 
 
 
