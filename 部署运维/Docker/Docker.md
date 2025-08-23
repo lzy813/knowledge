@@ -975,9 +975,10 @@ docker 具体命令 -help
 
   - {
 
-      	"registry-mirrors": ["https://aa25jngu.mirror.aliyuncs.com"],
-    	
-      	"insecure-registries": ["127.0.0.1:5000"]
+       "registry-mirrors": ["https://aa25jngu.mirror.aliyuncs.com"],
+       	
+
+       	"insecure-registries": ["127.0.0.1:5000"]
 
     }
 
@@ -1093,7 +1094,7 @@ docker 具体命令 -help
   - ro = readOnly
 - 容器内不能修改，只能读
 
-​     ![只读权限1](图片/容器数据卷/只读权限1.png)
+     ![只读权限1](图片/容器数据卷/只读权限1.png)
 
 - 宿主机可以修改，容器会实时同步
 
@@ -1308,11 +1309,48 @@ get k1
 
   ![select 15报错](图片/常用软件安装/select15报错.png)
 
-  
 
 
 
 # 七、复杂安装详说
+
+## 1、MySQL安装主从复制
+
+- 新建主服务器容器实例3307
+
+~~~bash
+docker run -p 3307:3306 --privileged=true --name mysql-master \
+-v /usr/lzy/mysql-master/log:/var/log/mysql \
+-v /usr/lzy/mysql-master/data:/var/lib/mysql \
+-v /usr/lzy/mysql-master/conf:/etc/mysql/conf.d \
+-e MYSQL_ROOT_PASSWORD=root \
+-d mysql:8.0.42
+~~~
+
+- 进入/usr/lzy/mysql-master/conf目录新建my.cnf
+
+~~~bash
+[mysqld]
+## 设置server_id，同一局域网中需要唯一
+server_id=101 
+## 指定不需要同步的数据库名称
+binlog-ignore-db=mysql  
+## 开启二进制日志功能
+log-bin=mall-mysql-bin  
+## 设置二进制日志使用内存大小（事务）
+binlog_cache_size=1M  
+## 设置使用的二进制日志格式（mixed,statement,row）
+binlog_format=mixed  
+## 二进制日志过期清理时间。默认值为0，表示不自动清理。
+expire_logs_days=7  
+## 跳过主从复制中遇到的所有错误或指定类型的错误，避免slave端复制中断。
+## 如：1062错误是指一些主键重复，1032错误是因为主从数据库数据不一致
+slave_skip_errors=1062
+~~~
+
+- 修改完配置重启master实例：docker restart mysql-master
+- 进入mysql-master容器：docker exec -it mysql-master /bin/bash
+- 命令连接：mysql -u root -p root
 
 
 
@@ -1513,8 +1551,10 @@ CMD /bin/bash
   ![虚悬镜像](图片/DockerFile/虚玄镜像.png)
 
 - 查看
+
   - docker image ls -f dangling=true
 - 删除：虚悬镜像已经失去了存在价值，可以删除
+
   - docker image prune
 
 ![虚悬镜像删除](图片/DockerFile/虚玄镜像删除.png)
@@ -1678,8 +1718,8 @@ EXPOSE 8081
 ## 1、前述
 
 - 不启动docker的情况，默认情况会有三种网络情况
-  - ens33
-  - lo
+  - ens33：网卡，linux宿主机的地址
+  - lo：local的缩写，本地回环链路
   - virbr0：在 CentOS7 的安装过程中如果**有选择相关虚拟化的的服务安装系统后**，启动网卡时会发现有一个以网桥连接的私网地址的 virbr0 网卡 (virbr0 网卡：它还有一个固定的默认 IP 地址 192.168.122.1)，是做虚拟机网桥的使用的，**其作用是为连接其上的虚拟网卡提供 NAT 访问外网的功能。**
 
 ![不启动docker网络类型](图片/docker网络/不启动docker网络类型.png)
@@ -2089,7 +2129,6 @@ EXPOSE 8081
     }
     ~~~
 
-    
 
 ### 6.3 不用compose启动
 
