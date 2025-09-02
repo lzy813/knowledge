@@ -98,6 +98,8 @@ extendedTypesEnabled=true
 ![启动成功](图片/简介/启动成功.png)
 
 - 查看zookeeper状态：**./zkServer.sh status**
+  - 单集群状态
+
 
 ![单集群启动成功](图片/简介/单集群启动成功.png)
 
@@ -107,3 +109,87 @@ extendedTypesEnabled=true
 
 # 二、zookeeper命令操作
 
+## 1、zookeeper数据模型
+
+- ZooKeeper 是一个<font color="red">**树形目录服务**</font>，其数据模型和 Unix 的文件系统目录树很类似，拥有一个层次化结构。
+- 这里面的每一个节点都被称为：ZNode，<font color="red">**每个节点上都会保存自己的数据和节点信息。**</font>
+- 节点可以拥有子节点，同时也允许少量（1MB）数据存储在该节点之下。
+- 节点可以分为四大类：
+  - PERSISTENT 持久化节点
+  - EPHEMERAL 临时节点：-e
+  - PERSISTENT_SEQUENTIAL 持久化顺序节点：-s
+  - EPHEMERAL_SEQUENTIAL 临时顺序节点：-es
+
+![数据模型](图片/命令操作/数据模型.png)
+
+
+
+## 2、服务端常用命令
+
+![服务端命令](图片/命令操作/服务端命令.png)
+
+- 启动 ZooKeeper 服务：./zkServer.sh start
+
+![start](图片/命令操作/start.png)
+
+- 查看 ZooKeeper 服务状态：./zkServer.sh status
+
+![status](图片/命令操作/status.png)
+
+- 停止 ZooKeeper 服务：./zkServer.sh stop
+
+![stop](图片/命令操作/stop.png)
+
+- 重启 ZooKeeper 服务：./zkServer.sh restart
+
+![restart](图片/命令操作/restart.png)
+
+
+
+
+
+## 3、客户端命令
+
+![客户端命令](图片/命令操作/客户端命令.png)
+
+- 连接 Zookeeper服务端：./zkCli.sh -server ip:port
+  - 如果是本机，后面的ip和端口可以省略不写
+
+
+![连接服务端](图片/命令操作/连接服务端.png)
+
+- 断开连接：quit
+
+![quit](图片/命令操作/quit.png)
+
+- 查看指定节点下有哪些子节点：ls 节点路径
+
+![quit](图片/命令操作/ls.png)
+
+- 创建节点包含数据：create 节点路径 [数据]
+
+![create](图片/命令操作/create.png)
+
+- 创建子节点：create 节点路径 [数据]
+
+![创建子节点](图片/命令操作/创建子节点.png)
+
+- 获取节点数据：get 节点路径
+
+![get](图片/命令操作/get.png)
+
+- 设置节点数据：set 节点路径 [数据]
+
+![set](图片/命令操作/set.png)
+
+- 删除节点：delete 节点路径
+
+![delete](图片/命令操作/delete.png)
+
+
+
+## 4、客户端非持久化命令
+
+![客户端非持久化命令](图片/命令操作/客户端命令2.png)
+
+- 
