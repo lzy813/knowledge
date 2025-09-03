@@ -192,4 +192,200 @@ extendedTypesEnabled=true
 
 ![客户端非持久化命令](图片/命令操作/客户端命令2.png)
 
-- 
+- 创建临时节点：create -e /节点path value
+
+![临时节点](图片/命令操作/临时节点.png)
+
+- 创建顺序节点：create -s /节点path value
+
+![顺序节点](图片/命令操作/顺序节点.png)
+
+- 创建临时的顺序节点：create -es /节点path value
+
+![非持久化顺序节点](图片/命令操作/非持久化顺序节点.png)
+
+- 查询节点详细信息：ls -s /节点path
+
+![打印详细信息](图片/命令操作/打印详细信息.png)
+
+
+
+# 三、Java API操作
+
+## 1、Curator
+
+### 1.1 Curator介绍
+
+- Curator 是 Apache ZooKeeper 的 Java 客户端库。
+- 常见的 ZooKeeper Java API：
+  - 原生 Java API
+  - ZkClient
+  - Curator
+- Curator 项目的目标是简化 ZooKeeper 客户端的使用。
+- Curator 最初是 Netflix 研发的，后来捐献了 Apache 基金会，目前是 Apache 的顶级项目。
+- 官网：http://curator.apache.org/
+
+
+
+### 1.2 常用API操作
+
+- Curator API 常用操作
+
+  - 建立连接
+
+  - 添加节点
+
+  - 删除节点
+
+  - 修改节点
+
+  - 查询节点
+
+  - Watch 事件监听
+
+  - 分布式锁实现
+
+
+
+### 1.3 工程代码
+
+- pom代码
+
+~~~pom
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.example</groupId>
+    <artifactId>zookeeperDemo</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!--curator-->
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!--日志-->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.21</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
+~~~
+
+- log4j.properties
+
+~~~properties
+log4j.rootLogger=off,stdout
+
+log4j.appender.stdout = org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.Target = System.out
+log4j.appender.stdout.layout = org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern = [%d{yyyy-MM-dd HH/:mm/:ss}]%-5p %c(line/:%L) %x-%m%n
+~~~
+
+
+
+#### 1.3.1 建立连接
+
+~~~java
+	private CuratorFramework client;
+
+    /**
+     * 建立连接
+     */
+    @Before
+    public void testConnect() {
+//        // 1.第一种方式
+//        // 重试策略：间隔时间重试
+//        RetryPolicy retryPolicy = new ExponentialBackoffRetry(3000,10);
+//        /**
+//         * @param connectString         连接字符串。zk server 地址和端口 "192.168.149.135:2181,192.168.149.136:2181"
+//         * @param sessionTimeoutMs      会话超时时间 单位ms
+//         * @param connectionTimeoutMs   连接超时时间 单位ms
+//         * @param retryPolicy           重试策略
+//         */
+//        CuratorFramework client = CuratorFrameworkFactory.newClient("111.231.33.58:2181",
+//                60 * 1000, 15 * 1000, retryPolicy);
+//        // 开启连接
+//        client.start();
+
+
+        // 2.第二种方式
+        // 重试策略：间隔时间重试
+        RetryPolicy retryPolicy = new ExponentialBackoffRetry(3000, 10);
+        client = CuratorFrameworkFactory.builder()
+                .connectString("111.231.33.58:2181")
+                .sessionTimeoutMs(60 * 1000)
+                .connectionTimeoutMs(15 * 1000)
+                .retryPolicy(retryPolicy)
+                .namespace("lzy")
+                .build();
+        //开启连接
+        client.start();
+    }
+
+    @After
+    public void close() {
+        if (client != null) {
+            client.close();
+        }
+    }
+~~~
+
+
+
+#### 1.3.2 创建节点
+
+~~~java
+~~~
+
