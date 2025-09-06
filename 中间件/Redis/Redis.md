@@ -40,7 +40,6 @@
 
   - **排行榜+点赞**：通过zset可以实现
 
-    
 
 ### 1.3 优势
 
@@ -973,7 +972,6 @@ sintercard 3 set1 set2 set3 limit 3
   - scard：点赞用户数统计
   - sismember：判断某个朋友是否对楼主点赞过
 
-  
 
 ### 3.7 Zset命令
 
@@ -1370,7 +1368,7 @@ type hll03
   - 传统方式都是使用二维的经纬度表示，经都范围(-180, 180]，纬度范围(-90, 90]，只要确定一个点的经纬度就可以取得在地球上的位置
   - 例如滴滴打车，最直观的操作就是实时记录各个车的位置
   - 要找车的时候，就在数据库中查找距离我们(x0, y0)附近r公里范围内的车辆
-  - 使用select taxi from position where x0-r < x < x0 + r and y0 - r < y < y0 + r					 
+  	 使用select taxi from position where x0-r < x < x0 + r and y0 - r < y < y0 + r					 
 
 - 这样产生的问题
   - 查询性能问题，如果并发高，数据量大这种查询是要搞垮数据库的
@@ -2359,7 +2357,7 @@ OK
     - 如果时间间隔太大，那么 Redis 持久化的数据可能会丢失，并且故障恢复时的数据可能会受到影响。
     - 如果时间间隔太小，那么数据的保存成本就会过高，并可能导致 Redis 运行效率下降。
 
-  - 因此，**Redis 引入了按时间和数据修改次数双重限制的快照保存机制，以在灵活性和效率之间取得平衡**。如果在 5 秒内修改的次数超过 2 次，则说明数据的变化较快，在此情况下保存快照并不会带来明显的性能问题。因此，Redis 将其纳入保存快照的范围，以保证数据的安全和一致性	
+  		因此，**Redis 引入了按时间和数据修改次数双重限制的快照保存机制，以在灵活性和效率之间取得平衡**。如果在 5 秒内修改的次数超过 2 次，则说明数据的变化较快，在此情况下保存快照并不会带来明显的性能问题。因此，Redis 将其纳入保存快照的范围，以保证数据的安全和一致性	
 
 - 总结：<font color="red">**每5s检查够不够2次操作**</font>
 
@@ -3651,11 +3649,6 @@ sentinel auth-pass mymaster li998813
 
   ![redis故障恢复](图片/哨兵/redis故障恢复.png)
 
-  
-
-  
-
-  
 
 ### 9.5 哨兵使用建议
 
@@ -3897,7 +3890,7 @@ sentinel auth-pass mymaster li998813
       - 客户端端口：即你启动 Redis 实例时配置的端口（如 `6381、6382` 等 ）。
       - 集群总线端口：**客户端端口 + 10000** ，比如客户端端口是 `6381`，总线端口就是 `16381` ；端口 `6384` 对应总线端口 `16384` ，以此类推。
     - 对应关系就是前面的几个为master，后面的为salve
-  
+
   ~~~bash
   # 一定要注意，此处要修改自己的IP为真实IP
   redis-cli -a li998813 --cluster create --cluster-replicas 1 111.231.33.58:6381 111.231.33.58:6384 111.231.33.58:6382 111.231.33.58:6385 111.231.33.58:6383 111.231.33.58:6386
@@ -3912,16 +3905,15 @@ sentinel auth-pass mymaster li998813
   6383 -> 6383
   6384 -> 6384
   ~~~
-  
+
   - 正常情况下，会让输入yes
-  
+
   ![集群搭建输入yes](图片/集群/集群搭建输入yes.png)
-  
+
   - 出现这些就是搭建成功
-  
+
   ![集群搭建成功](图片/集群/集群搭建成功.png)
-  
-  
+
 
 ### 10.4 检验集群状态
 
@@ -4617,13 +4609,13 @@ spring:
   - 版本4.x，严格意义来说也不是单线程，而是<font color="red">**负责处理客户端请求的线程是单线程，但是开始加了点多线程的东西(异步删除)**</font>
   - 2020年5月版本的6.0.x后及2022年出的7.0版本后，告别了大家印象中的单线程，用一种全新的多线程来解决问题。
 
-![时间节点](图片/高级/时间节点.png)
+![时间节点](图片/高级/单线程/时间节点.png)
 
 - Redis的单线程
 
   - <font color="red">**Redis是单线程主要是指Redis的网络IO和键值对读写是由一个线程来完成的，Redis在处理客户端的请求时包括获取(socket 读)、解析、执行、内容返回(socket 写) 等都由一个顺序串行的主线程处理，这就是所谓的“单线程”。这也是Redis对外提供键值存储服务的主要流程。**</font>
 
-  ![redis单线程](图片/高级/redis单线程.png)
+  ![redis单线程](图片/高级/单线程/redis单线程.png)
 
   - <font color="red">**但Redis的其他功能，比如持久化RDB、AOF、异步删除、集群数据同步等等，其实是由额外的线程执行的。**</font>
   - <font color="red">**Redis命令工作线程是单线程的，但是，整个Redis来说，是多线程的；**</font>
@@ -4670,7 +4662,7 @@ spring:
 
 - <font color="red">**redis的主要性能瓶颈是内存或者网络带宽而不是CPU**</font>
 
-![影响redis性能的三大要素](图片/高级/影响redis性能的三大要素.png)
+![影响redis性能的三大要素](图片/高级/单线程/影响redis性能的三大要素.png)
 
 
 
@@ -4722,11 +4714,13 @@ spring:
   cat /tmp/redisTest.txt | redis-cli -h 127.0.0.1 -p 6379 -a li998813 --pipe
   ~~~
 
-  ![100w数据插入成功1](图片/高级/100w数据插入成功1.png)
+  ![100w数据插入成功1](图片/高级/BigKey/100w数据插入成功1.png)
 
 - 测试100w数据是否插入成功
 
-![100w数据插入成功2](图片/高级/100w数据插入成功2.png)
+![100w数据插入成功2](图片/高级/BigKey/100w数据插入成功2.png)
+
+
 
 
 
@@ -4744,11 +4738,11 @@ rename-command flushdb ""
 rename-command flushall ""
 ~~~
 
-![禁用命令](图片/高级/禁用命令.png)
+![禁用命令](图片/高级/BigKey/禁用命令.png)
 
 - 重启服务测试：redis-server myredis/redis6379.conf
 
-![禁用命令成功](图片/高级/禁用命令成功.png)
+![禁用命令成功](图片/高级/BigKey/禁用命令成功.png)
 
 
 
@@ -4773,7 +4767,7 @@ rename-command flushall ""
 - SCAN 的遍历顺序
   - <font color="red">**非常特别，它不是从第一维数组的第零位一直遍历到末尾，而是采用了高位进位加法来遍历。之所以使用这样特殊的方式进行遍历，是考虑到字典的扩容和缩容时避免槽位的遍历重复和遗漏。**</font>
 
-![scan使用](图片/高级/scan使用.png)
+![scan使用](图片/高级/BigKey/scan使用.png)
 
 - 例子：上一个游标的返回是下一个游标的开始，直到最终返回0，则证明全部遍历完成
 
@@ -4878,7 +4872,7 @@ rename-command flushall ""
   redis-cli -h 127.0.0.1 -p 6379 -a li998813 --bigkeys -i 0.1
   ~~~
 
-  ![bigkey](图片/高级/bigkey.png)
+  ![bigkey](图片/高级/BigKey/bigkey.png)
 
   - 上图string的Top 1 bigkey是k1000000，占8个字节，还有平均大小
 
@@ -4891,7 +4885,6 @@ rename-command flushall ""
   (integer) 72
   ~~~
 
-  
 
 #### 2.5.5 如何删除
 
@@ -4944,7 +4937,7 @@ rename-command flushall ""
     - 下标 0 表示列表的第一个元素，以 1 表示列表的第二个元素，以此类推。你也可以使用负数下标，以 -1 表示列表的最后一个元素，-2 表示列表
       的倒数第二个元素，以此类推。
 
-    ![ltrim](图片/高级/ltrim.png)
+    ![ltrim](图片/高级/BigKey/ltrim.png)
 
     ~~~java
     // ltrim
@@ -5032,7 +5025,6 @@ rename-command flushall ""
   }
   ~~~
 
-  
 
 ### 2.6 BigKey生产调优
 
@@ -5059,4 +5051,98 @@ lazyfree-lazy-expire							   # 对应场景三过期数据的删除场景；
 lazyfree-lazy-eviction 							   # 对应场景四缓存淘汰时的数据删除场景。
 replica-lazy-flush								   # 对应场景五从节点完成全量同步后，删除原有旧数据的场景。（改为yes）
 ~~~
+
+
+
+## 3、缓存双写一致性之更新策略
+
+### 3.1 面试题
+
+![缓存双写基本逻辑图](图片/高级/缓存双写/缓存双写基本逻辑图.png)
+
+- 你只要用缓存，就可能涉及到redis缓存与数据库双存储双写，你只要是双写，就一定会有数据一致性的问题，那么你如何解决一致性问题？
+- 双写一致性，你先动缓存redis还是数据库MySQL哪一个？why？
+- <font color="red">**延时删除**</font>你做过吗？会有哪些问题？
+- 有这么一种情况，微服务查询redis无 MySQL有，为保证数据双写一致性回写redis你需要注意什么？<font color="red">**双检加锁策略**</font>你了解过吗？如何尽量避免缓存击穿？
+- redis和MySQL双写100%会出纰漏，做不到强一致性，你如何保证<font color="red">**最终一致性**</font>？
+
+
+
+### 3.2 缓存双写一致性的理解
+
+- 如果redis中<font color="red">**有数据：需要和数据库的值相同**</font>
+- 如果redis中<font color="red">**无数据：数据库中的值要是最新值，且准备回写redis**</font>
+
+- 缓存按照操作来分：
+  - 只读缓存
+  - 读写缓存
+    - 同步直写策略
+      - 写数据库之后也同步写redis缓存，缓存和数据库中的数据一致；
+      - 对于读写缓存来说，要想保证缓存和数据库中的数据一致，就要采用同步直写策略
+    - 异步缓写策略
+      - 正常业务中，MySQL数据变了，但是可以在业务上容许出现一定时间后才作用于redis，比如仓库、物流系统
+      - 异常情况出现了， 不得不将失败的动作重新修补，有可能需要借助kafka或者RabbitMQ等消息中间件，实现重试重写
+
+- <font color="red">**双检加锁策略**</font>
+
+  - 多个线程同时去查询数据库的这条数据，那么我们可以在第一个查询数据的请求上使用一个互斥锁来锁住它。其他的线程走到这一步拿不到锁就等着，等第一个线程查询到了数据，然后做缓存
+  - 后面的线程进来发现已经有缓存了，就直接走缓存
+  - 原始代码：针对3.2这块，如果并发度高了的情况下，会出现两个隐患
+    - 请求全部走到了MySQL，数据库压力剧增
+    - 多个请求都会写回redis，可能会导致缓存数据被覆盖
+
+  ~~~java
+  public User findUserById(Interger id) {
+  	User user = null;
+      
+      // 1、先从redis里面查询，如果有则直接返回结果，没有再去查询mysql
+     	user = (User) redisTemplate.opsForValue().get(key);
+      
+      if (user == null) {
+          // 2、redis中没有，继续查询mysql
+          user = userMapper.selectById(id);
+          if (user == null) {
+  			// 3.1 mysql+redis都无数据
+              // todo：为防止多次穿透，一般业务规定记录下null值的这个key，列入黑名单或者记录或者异常
+              return user;
+          } else {
+              // 3.2 mysql有，则需要将数据写回redis，保证下一次缓存命中
+              redisTemplate.opsForValue().set(key, user);
+          }
+      }
+  	return user;
+  }
+  ~~~
+
+  - 修改后代码：双检加锁
+    - 多个线程同时去查询数据库这条数据，在第一个查询数据的请求上使用第一个**互斥锁来锁住它**
+    - 其他线程走到这一步拿不到锁就等着，等第一个线程查询到了数据，然后做缓存
+    - 后面的线程进来发现已经有缓存了，就直接走缓存
+
+  ~~~java
+  public User findUserById(Interger id) {
+  	User user = null;
+      
+      // 1、先从redis里面查询，如果有则直接返回结果，没有再去查询mysql
+     	user = (User) redisTemplate.opsForValue().get(key);
+      
+      if (user == null) {
+          // 2、针对高qps的请求，进来先加锁，保证一个请求操作，让外面的redis等待一下，避免击穿redis
+          synchronized (UserService.class) {
+              // 3、redis中没有，继续查询mysql
+  			user = userMapper.selectById(id);
+              if (user == null) {
+                  // 4.1 mysql+redis都无数据
+                  // todo：为防止多次穿透，一般业务规定记录下null值的这个key，列入黑名单或者记录或者异常
+                  return user;
+              } else {
+                  // 4.2 mysql有，则需要将数据写回redis，保证下一次缓存命中
+                  redisTemplate.opsForValue().set(key, user);
+              }
+          }
+      }
+  	return user;
+  }
+  ~~~
+
 
