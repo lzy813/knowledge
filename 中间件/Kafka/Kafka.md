@@ -2,13 +2,9 @@
 
 ## 1、是什么
 
-<<<<<<< HEAD
 - 官网：https://kafka.apache.org/
 - 是一个开源<font color="red">**分布式事件流平台**</font>，被用于高性能数据管道、流分析、数据集成和关键任务应用程序
 
-
-
-=======
 - 是一个<font color="red">**开源分布式事件流平台**</font>，被数千家公司用于<font color="red">**高性能数据管道**、**流分析**、**数据集成**和**关键任务应用程序**</font>
 
 - kafka是一款<font color="red">**分布式的基于发布/订阅模式的消息队列**</font>，是目前比较主流的消息中间件，kafka对消息保存时根据Topic（主题）进行归类，发送消息者称为Producer，消息接受者称为Consumer，此外kafka集群有多个kafka实例组成，每个实例(server)称为broker。无论是kafka集群，还是consumer<font color="red">**都依赖于zookeeper集群保存一些meta信息**</font>，来保证系统可用性,所以安装kafka需要先间搭建zookeeper集群。
@@ -46,5 +42,3 @@
 
 
 
-5、
->>>>>>> f55ba7da807c28cea7652b0126831d18ef5fc82c

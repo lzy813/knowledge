@@ -229,7 +229,7 @@ public class Test1 {
 
   - 2024-06-02 21:50:48 [thread1][com.example.one.Test1] [DEBUG] - running
 
-    ​
+    
 
 
 ### 1.2 方法二：Runnable
@@ -491,7 +491,7 @@ java
 -jar test.jar 
 ```
 
-- ​当代码运行起来后，在控制台输入jconsole
+- 当代码运行起来后，在控制台输入jconsole
 
 ![jconsole的使用1](图片/jconsole的使用1.png)
 
@@ -6851,7 +6851,7 @@ public final class Singleton {
 
 ##### 1.5.2.1 名词
 
-- ​
+- 
 
 
 
@@ -6999,4 +6999,889 @@ public void actor2(I_Result r) {
 
 ## 2、自定义线程池
 
+![自定义线程池](图片/线程池/自定义线程池.png)
+
+- 不带超时时间的
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * 测试
+ */
+@Slf4j(topic = "c.TestPool")
+public class TestPool {
+    public static void main(String[] args) {
+        ThreadPool threadPool = new ThreadPool(2, 1000, TimeUnit.MICROSECONDS, 10);
+        for (int i = 0; i < 5; i++) {
+            int j = i;
+            threadPool.execute(() -> {
+                log.info("{}", j);
+            });
+        }
+    }
+}
+
+
+
+/**
+ * 自定义线程池
+ */
+@Slf4j(topic = "c.ThreadPool")
+class ThreadPool {
+    // 任务队列
+    private BlockingQueue<Runnable> taskQueue;
+    // 线程集合
+    private HashSet<Worker> workers = new HashSet<>();
+    // 核心线程数
+    private int coreSize;
+    // 获取任务的超时时间
+    private long timeout;
+    // 超时时间单位
+    private TimeUnit unit;
+
+    /**
+     * 构造函数
+     * @param coreSize 核心线程数
+     * @param timeout 超时时间
+     * @param unit 时间单位
+     * @param queueCapacity 任务队列容量
+     */
+    public ThreadPool(int coreSize, long timeout, TimeUnit unit, int queueCapacity) {
+        this.coreSize = coreSize;
+        this.timeout = timeout;
+        this.unit = unit;
+        this.taskQueue = new BlockingQueue<>(queueCapacity);
+    }
+
+    /**
+     * 执行任务
+     * 线程池对象是共享的，必须上锁
+     * 1、当任务数没有超过 核心线程数 时，直接交给worker对象执行
+     * 2、如果超过 核心线程数 时，加入任务队列暂存
+     */
+    public void execute(Runnable task) {
+        synchronized (workers) {
+            if (workers.size() < coreSize) {
+                Worker worker = new Worker(task);
+                log.debug("新增 worker {}, {}", worker, task);
+                workers.add(worker);
+                worker.start();
+            } else {
+                log.debug("加入任务队列 {}", task);
+                taskQueue.put(task);
+            }
+        }
+    }
+
+    /**
+     * 线程对象
+     * 入参：task 任务对象
+     */
+    class Worker extends Thread {
+        private Runnable task;
+
+        public Worker(Runnable task) {
+            this.task = task;
+        }
+
+        /**
+         * 执行任务
+         * 当task不为空，执行任务
+         * 当task执行完毕，再接着从任务队列获取新的任务并执行
+         * 执行完毕之后，线程池就要移除此线程对象
+         */
+        @Override
+        public void run() {
+            while (task != null || (task = taskQueue.take()) != null) {
+                try {
+                    log.debug("正在执行 ... {}", task);
+                    task.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    task = null;
+                }
+            }
+
+            synchronized (workers) {
+                log.debug("worker {} 被移除", this);
+                workers.remove(this);
+            }
+        }
+    }
+
+}
+
+
+
+/**
+ * 阻塞式队列
+ */
+@Slf4j(topic = "c.BlockingQueue")
+class BlockingQueue<T> {
+    // 1、任务队列
+    private Deque<T> queue = new ArrayDeque<>();
+
+    // 2、锁：多个用户获取任务的话，避免获取的是同一个，要加锁
+    private ReentrantLock lock = new ReentrantLock();
+
+    // 3、生产者条件变量
+    private Condition fullWaitSet = lock.newCondition();
+
+    // 4、消费者条件变量
+    private Condition emptyWaitSet = lock.newCondition();
+
+    // 5、容量
+    private int capacity;
+
+    /**
+     * 构造函数
+     * @param capacity
+     */
+    public BlockingQueue(int capacity) {
+        this.capacity = capacity;
+    }
+
+    /**
+     * 带超时的阻塞获取
+     * @param timeout 超时时间
+     * @param unit 超时时间单位
+     */
+    public T poll(long timeout, TimeUnit unit) {
+        lock.lock();
+
+        try {
+            // 将timeout同一转化为纳秒
+            long nanos = unit.toNanos(timeout);
+
+            while (queue.isEmpty()) {
+                try {
+                    // 返回是剩余时间，若剩余时间已经小于0证明已经过了超时时间，就返回空
+                    if (nanos <= 0) {
+                        return null;
+                    }
+                    nanos = emptyWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞获取
+     * 1、首先避免多个用户获取的是同一个任务，就必须上锁
+     * 2、循环判断队列是否为空，当为空的时候，就await进入emptyWaitSet等待
+     * 3、当有新的任务入队后，即：队列不为空的时候，被唤醒，重新执行while循环，不为空则继续走到循环后的代码
+     * 4、移除队列头的任务并返回，同时要唤醒fullWaitSet，因为此时队列肯定未到达最大容量需唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public T take() {
+        lock.lock();
+
+        try {
+            while (queue.isEmpty()) {
+                try {
+                    emptyWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞添加
+     * 1、首先避免多个用户同时创建放入对象，就要上锁
+     * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待
+     * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+     * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public void put(T t) {
+        lock.lock();
+
+        try {
+            while (queue.size() == capacity) {
+                try {
+                    fullWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            queue.addLast(t);
+            emptyWaitSet.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 获取大小
+     */
+    public int size() {
+        lock.lock();
+        try {
+            return queue.size();
+        }  finally {
+            lock.unlock();
+        }
+    }
+
+}
+
+
+
+/**
+结果
+23:41:24.691 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-0,5,main], org.example.TestPool$$Lambda$1/540585569@3632be31
+23:41:24.697 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-1,5,main], org.example.TestPool$$Lambda$1/540585569@57536d79
+23:41:24.697 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@3632be31
+23:41:24.697 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@5a8e6209
+23:41:24.697 [Thread-0] INFO c.TestPool - 0
+23:41:24.697 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@57536d79
+23:41:24.697 [Thread-1] INFO c.TestPool - 1
+23:41:24.697 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@5a8e6209
+23:41:24.697 [Thread-1] INFO c.TestPool - 2
+23:41:24.698 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@4b4523f8
+23:41:24.698 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@731a74c
+23:41:24.698 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@4b4523f8
+23:41:24.698 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@731a74c
+23:41:24.698 [Thread-1] INFO c.TestPool - 3
+23:41:24.698 [Thread-0] INFO c.TestPool - 4
+*/
+
+/**
+开始新增两个核心线程
+两个线程执行两个任务
+其余的加入到阻塞队列中，但是阻塞队列容量为10，5个任务，所以打印 加入任务队列 * 3
+等任务1和2执行完毕，再执行后续的任务
+所有任务执行完后，销毁线程
+*/
+~~~
+
+- 带超时时间的
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * 测试
+ */
+@Slf4j(topic = "c.TestPool")
+public class TestPool {
+    public static void main(String[] args) {
+        ThreadPool threadPool = new ThreadPool(2, 1000, TimeUnit.MICROSECONDS, 10);
+        for (int i = 0; i < 5; i++) {
+            int j = i;
+            threadPool.execute(() -> {
+                log.info("{}", j);
+            });
+        }
+    }
+}
+
+
+
+/**
+ * 自定义线程池
+ */
+@Slf4j(topic = "c.ThreadPool")
+class ThreadPool {
+    // 任务队列
+    private BlockingQueue<Runnable> taskQueue;
+    // 线程集合
+    private HashSet<Worker> workers = new HashSet<>();
+    // 核心线程数
+    private int coreSize;
+    // 获取任务的超时时间
+    private long timeout;
+    // 超时时间单位
+    private TimeUnit unit;
+
+    /**
+     * 构造函数
+     * @param coreSize 核心线程数
+     * @param timeout 超时时间
+     * @param unit 时间单位
+     * @param queueCapacity 任务队列容量
+     */
+    public ThreadPool(int coreSize, long timeout, TimeUnit unit, int queueCapacity) {
+        this.coreSize = coreSize;
+        this.timeout = timeout;
+        this.unit = unit;
+        this.taskQueue = new BlockingQueue<>(queueCapacity);
+    }
+
+    /**
+     * 执行任务
+     * 线程池对象是共享的，必须上锁
+     * 1、当任务数没有超过 核心线程数 时，直接交给worker对象执行
+     * 2、如果超过 核心线程数 时，加入任务队列暂存
+     */
+    public void execute(Runnable task) {
+        synchronized (workers) {
+            if (workers.size() < coreSize) {
+                Worker worker = new Worker(task);
+                log.debug("新增 worker {}, {}", worker, task);
+                workers.add(worker);
+                worker.start();
+            } else {
+                log.debug("加入任务队列 {}", task);
+                taskQueue.put(task);
+            }
+        }
+    }
+
+    /**
+     * 线程对象
+     * 入参：task 任务对象
+     */
+    class Worker extends Thread {
+        private Runnable task;
+
+        public Worker(Runnable task) {
+            this.task = task;
+        }
+
+        /**
+         * 执行任务
+         * 当task不为空，执行任务
+         * 当task执行完毕，再接着从任务队列获取新的任务并执行
+         * 执行完毕之后，线程池就要移除此线程对象
+         */
+        @Override
+        public void run() {
+            while (task != null || (task = taskQueue.poll(timeout, unit)) != null) {
+                try {
+                    log.debug("正在执行 ... {}", task);
+                    task.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    task = null;
+                }
+            }
+
+            synchronized (workers) {
+                log.debug("worker {} 被移除", this);
+                workers.remove(this);
+            }
+        }
+    }
+
+}
+
+
+
+/**
+ * 阻塞式队列
+ */
+@Slf4j(topic = "c.BlockingQueue")
+class BlockingQueue<T> {
+    // 1、任务队列
+    private Deque<T> queue = new ArrayDeque<>();
+
+    // 2、锁：多个用户获取任务的话，避免获取的是同一个，要加锁
+    private ReentrantLock lock = new ReentrantLock();
+
+    // 3、生产者条件变量
+    private Condition fullWaitSet = lock.newCondition();
+
+    // 4、消费者条件变量
+    private Condition emptyWaitSet = lock.newCondition();
+
+    // 5、容量
+    private int capacity;
+
+    /**
+     * 构造函数
+     * @param capacity
+     */
+    public BlockingQueue(int capacity) {
+        this.capacity = capacity;
+    }
+
+    /**
+     * 带超时的阻塞获取
+     * @param timeout 超时时间
+     * @param unit 超时时间单位
+     */
+    public T poll(long timeout, TimeUnit unit) {
+        lock.lock();
+
+        try {
+            // 将timeout同一转化为纳秒
+            long nanos = unit.toNanos(timeout);
+
+            while (queue.isEmpty()) {
+                try {
+                    // 返回是剩余时间，若剩余时间已经小于0证明已经过了超时时间，就返回空
+                    if (nanos <= 0) {
+                        return null;
+                    }
+                    nanos = emptyWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞获取
+     * 1、首先避免多个用户获取的是同一个任务，就必须上锁
+     * 2、循环判断队列是否为空，当为空的时候，就await进入emptyWaitSet等待
+     * 3、当有新的任务入队后，即：队列不为空的时候，被唤醒，重新执行while循环，不为空则继续走到循环后的代码
+     * 4、移除队列头的任务并返回，同时要唤醒fullWaitSet，因为此时队列肯定未到达最大容量需唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public T take() {
+        lock.lock();
+
+        try {
+            while (queue.isEmpty()) {
+                try {
+                    emptyWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞添加
+     * 1、首先避免多个用户同时创建放入对象，就要上锁
+     * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待
+     * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+     * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public void put(T t) {
+        lock.lock();
+
+        try {
+            while (queue.size() == capacity) {
+                try {
+                    fullWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            queue.addLast(t);
+            emptyWaitSet.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 获取大小
+     */
+    public int size() {
+        lock.lock();
+        try {
+            return queue.size();
+        }  finally {
+            lock.unlock();
+        }
+    }
+
+}
+
+/**
+23:43:47.211 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-0,5,main], org.example.TestPool$$Lambda$1/540585569@3632be31
+23:43:47.216 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-1,5,main], org.example.TestPool$$Lambda$1/540585569@57536d79
+23:43:47.216 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@5a8e6209
+23:43:47.216 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@3632be31
+23:43:47.216 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@4b4523f8
+23:43:47.216 [Thread-0] INFO c.TestPool - 0
+23:43:47.216 [main] DEBUG c.ThreadPool - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@731a74c
+23:43:47.216 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@57536d79
+23:43:47.216 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@5a8e6209
+23:43:47.216 [Thread-1] INFO c.TestPool - 1
+23:43:47.216 [Thread-0] INFO c.TestPool - 2
+23:43:47.216 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@731a74c
+23:43:47.216 [Thread-0] INFO c.TestPool - 4
+23:43:47.216 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@4b4523f8
+23:43:47.216 [Thread-1] INFO c.TestPool - 3
+23:43:47.225 [Thread-0] DEBUG c.ThreadPool - worker Thread[Thread-0,5,main] 被移除
+23:43:47.225 [Thread-1] DEBUG c.ThreadPool - worker Thread[Thread-1,5,main] 被移除
+*/
+
+/**
+开始新增两个核心线程
+两个线程执行两个任务
+其余的加入到阻塞队列中，但是阻塞队列容量为10，5个任务，所以打印 加入任务队列 * 3
+等任务1和2执行完毕，再执行后续的任务
+所有任务执行完后，销毁线程
+*/
+~~~
+
+- 任务数超过任务队列容量
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * 测试
+ */
+@Slf4j(topic = "c.TestPool")
+public class TestPool {
+    public static void main(String[] args) {
+        ThreadPool threadPool = new ThreadPool(2, 1000, TimeUnit.MICROSECONDS, 10);
+        for (int i = 0; i < 15; i++) {
+            int j = i;
+            threadPool.execute(() -> {
+                try {
+                    Thread.sleep(100000L);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                log.info("{}", j);
+            });
+        }
+    }
+}
+
+
+
+/**
+ * 自定义线程池
+ */
+@Slf4j(topic = "c.ThreadPool")
+class ThreadPool {
+    // 任务队列
+    private BlockingQueue<Runnable> taskQueue;
+    // 线程集合
+    private HashSet<Worker> workers = new HashSet<>();
+    // 核心线程数
+    private int coreSize;
+    // 获取任务的超时时间
+    private long timeout;
+    // 超时时间单位
+    private TimeUnit unit;
+
+    /**
+     * 构造函数
+     * @param coreSize 核心线程数
+     * @param timeout 超时时间
+     * @param unit 时间单位
+     * @param queueCapacity 任务队列容量
+     */
+    public ThreadPool(int coreSize, long timeout, TimeUnit unit, int queueCapacity) {
+        this.coreSize = coreSize;
+        this.timeout = timeout;
+        this.unit = unit;
+        this.taskQueue = new BlockingQueue<>(queueCapacity);
+    }
+
+    /**
+     * 执行任务
+     * 线程池对象是共享的，必须上锁
+     * 1、当任务数没有超过 核心线程数 时，直接交给worker对象执行
+     * 2、如果超过 核心线程数 时，加入任务队列暂存
+     */
+    public void execute(Runnable task) {
+        synchronized (workers) {
+            if (workers.size() < coreSize) {
+                Worker worker = new Worker(task);
+                log.debug("新增 worker {}, {}", worker, task);
+                workers.add(worker);
+                worker.start();
+            } else {
+                taskQueue.put(task);
+            }
+        }
+    }
+
+    /**
+     * 线程对象
+     * 入参：task 任务对象
+     */
+    class Worker extends Thread {
+        private Runnable task;
+
+        public Worker(Runnable task) {
+            this.task = task;
+        }
+
+        /**
+         * 执行任务
+         * 当task不为空，执行任务
+         * 当task执行完毕，再接着从任务队列获取新的任务并执行
+         * 执行完毕之后，线程池就要移除此线程对象
+         */
+        @Override
+        public void run() {
+            while (task != null || (task = taskQueue.poll(timeout, unit)) != null) {
+                try {
+                    log.debug("正在执行 ... {}", task);
+                    task.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    task = null;
+                }
+            }
+
+            synchronized (workers) {
+                log.debug("worker {} 被移除", this);
+                workers.remove(this);
+            }
+        }
+    }
+
+}
+
+
+
+/**
+ * 阻塞式队列
+ */
+@Slf4j(topic = "c.BlockingQueue")
+class BlockingQueue<T> {
+    // 1、任务队列
+    private Deque<T> queue = new ArrayDeque<>();
+
+    // 2、锁：多个用户获取任务的话，避免获取的是同一个，要加锁
+    private ReentrantLock lock = new ReentrantLock();
+
+    // 3、生产者条件变量
+    private Condition fullWaitSet = lock.newCondition();
+
+    // 4、消费者条件变量
+    private Condition emptyWaitSet = lock.newCondition();
+
+    // 5、容量
+    private int capacity;
+
+    /**
+     * 构造函数
+     * @param capacity
+     */
+    public BlockingQueue(int capacity) {
+        this.capacity = capacity;
+    }
+
+    /**
+     * 带超时的阻塞获取
+     * @param timeout 超时时间
+     * @param unit 超时时间单位
+     */
+    public T poll(long timeout, TimeUnit unit) {
+        lock.lock();
+
+        try {
+            // 将timeout同一转化为纳秒
+            long nanos = unit.toNanos(timeout);
+
+            while (queue.isEmpty()) {
+                try {
+                    // 返回是剩余时间，若剩余时间已经小于0证明已经过了超时时间，就返回空
+                    if (nanos <= 0) {
+                        return null;
+                    }
+                    nanos = emptyWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞获取
+     * 1、首先避免多个用户获取的是同一个任务，就必须上锁
+     * 2、循环判断队列是否为空，当为空的时候，就await进入emptyWaitSet等待
+     * 3、当有新的任务入队后，即：队列不为空的时候，被唤醒，重新执行while循环，不为空则继续走到循环后的代码
+     * 4、移除队列头的任务并返回，同时要唤醒fullWaitSet，因为此时队列肯定未到达最大容量需唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public T take() {
+        lock.lock();
+
+        try {
+            while (queue.isEmpty()) {
+                try {
+                    emptyWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞添加
+     * 1、首先避免多个用户同时创建放入对象，就要上锁
+     * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待
+     * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+     * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public void put(T t) {
+        lock.lock();
+
+        try {
+            while (queue.size() == capacity) {
+                try {
+                    log.debug("等待加入任务队列 {}", t);
+                    fullWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            log.debug("加入任务队列 {}", t);
+            queue.addLast(t);
+            emptyWaitSet.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 获取大小
+     */
+    public int size() {
+        lock.lock();
+        try {
+            return queue.size();
+        }  finally {
+            lock.unlock();
+        }
+    }
+
+}
+
+/**
+22:03:02.574 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-0,5,main], org.example.TestPool$$Lambda$1/540585569@3632be31
+22:03:02.579 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-1,5,main], org.example.TestPool$$Lambda$1/540585569@57536d79
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@5a8e6209
+22:03:02.579 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@3632be31
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@4b4523f8
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@731a74c
+22:03:02.579 [Thread-1] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$1/540585569@57536d79
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@369f73a2
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@1f28c152
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@7d907bac
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@7791a895
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@3a5ed7a6
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@6325a3ee
+22:03:02.579 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$1/540585569@1d16f93d
+22:03:02.579 [main] DEBUG c.BlockingQueue - 等待加入任务队列 org.example.TestPool$$Lambda$1/540585569@67b92f0a
+*/
+
+/**
+开始新增两个核心线程
+两个线程执行两个任务
+其余的加入到阻塞队列中，但是阻塞队列容量为10，所以打印 加入任务队列 * 10
+第13个任务就得等待任务队列出现空位才能进去
+put是上锁的，第14和15个任务就直接卡死在外面了，还没执行到所以没打印
+*/
+~~~
+
+
+
+## 3、拒绝策略
+
+- 上一节知道，当任务数大于核心线程数时，后面的线程都是等待加入任务队列，并且队列是阻塞的，所以对主线程很不友好：如果任务数很大，执行时间长，那么就要卡很久，都等在外面等待，需要线程执行完才能执行加入任务的代码
+- 这时候就需要拒绝策略
+- 带超时时间的阻塞添加代码如下：
+
+~~~java
+/**
+ * 带超时时间的阻塞添加
+ * 1、首先避免多个用户同时创建放入对象，就要上锁
+ * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待，并判断是否超过超时时间，超过了就返回false
+ * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+ * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+ * 5、解除锁对象，让其他用户继续
+*/
+public boolean offer(T t, long timeout, TimeUnit unit) {
+    lock.lock();
+
+    try {
+        long nanos = unit.toNanos(timeout);
+        while (queue.size() == capacity) {
+            try {
+                log.debug("等待加入任务队列 {}", t);
+                if (nanos <= 0) {
+                    return false;
+                }
+
+                // 返回 剩余的等待的超时时间
+                nanos = fullWaitSet.awaitNanos(nanos);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        log.debug("加入任务队列 {}", t);
+        queue.addLast(t);
+        emptyWaitSet.signal();
+        return true;
+    } finally {
+        lock.unlock();
+    }
+}
+~~~
 
