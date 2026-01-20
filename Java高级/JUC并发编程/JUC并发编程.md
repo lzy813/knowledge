@@ -7885,3 +7885,408 @@ public boolean offer(T t, long timeout, TimeUnit unit) {
 }
 ~~~
 
+- 带拒绝策略的
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+/**
+ * 测试
+ */
+@Slf4j(topic = "c.TestPool")
+public class TestPool {
+    public static void main(String[] args) {
+        ThreadPool threadPool = new ThreadPool(1, 1000, TimeUnit.MILLISECONDS, 1,
+                ((queue, task) -> {
+                    // 1、死等
+                    // queue.put(task);
+                    // 2、带超时的等待
+                    // queue.offer(task, 500, TimeUnit.MILLISECONDS);
+                    // 3、放弃任务执行
+                    // log.debug("放弃{}", task);
+                    // 4、抛出异常
+                    // throw new RuntimeException("任务执行失败" + task);
+                    // 5、让调用者自己执行
+                    task.run();
+                }));
+        for (int i = 0; i < 3; i++) {
+            int j = i;
+            threadPool.execute(() -> {
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                log.info("{}", j);
+            });
+        }
+    }
+}
+
+
+/**
+ * 拒绝策略
+ * 拒绝策略所涉及的无非就俩参数：任务队列、任务
+ */
+@FunctionalInterface
+interface RejectPolicy<T> {
+    void reject(BlockingQueue<T> queue, T t);
+}
+
+
+/**
+ * 自定义线程池
+ */
+@Slf4j(topic = "c.ThreadPool")
+class ThreadPool {
+    // 任务队列
+    private BlockingQueue<Runnable> taskQueue;
+    // 线程集合
+    private HashSet<Worker> workers = new HashSet<>();
+    // 核心线程数
+    private int coreSize;
+    // 获取任务的超时时间
+    private long timeout;
+    // 超时时间单位
+    private TimeUnit unit;
+    // 拒绝策略
+    private RejectPolicy<Runnable> rejectPolicy;
+
+    /**
+     * 构造函数
+     * @param coreSize 核心线程数
+     * @param timeout 超时时间
+     * @param unit 时间单位
+     * @param queueCapacity 任务队列容量
+     * @param rejectPolicy 拒绝策略
+     */
+    public ThreadPool(int coreSize, long timeout, TimeUnit unit, int queueCapacity, RejectPolicy<Runnable> rejectPolicy) {
+        this.coreSize = coreSize;
+        this.timeout = timeout;
+        this.unit = unit;
+        this.taskQueue = new BlockingQueue<>(queueCapacity);
+        this.rejectPolicy = rejectPolicy;
+    }
+
+    /**
+     * 执行任务
+     * 线程池对象是共享的，必须上锁
+     * 1、当任务数没有超过 核心线程数 时，直接交给worker对象执行
+     * 2、如果超过 核心线程数 时，加入任务队列暂存
+     */
+    public void execute(Runnable task) {
+        synchronized (workers) {
+            if (workers.size() < coreSize) {
+                Worker worker = new Worker(task);
+                log.debug("新增 worker {}, {}", worker, task);
+                workers.add(worker);
+                worker.start();
+            } else {
+                taskQueue.tryPut(rejectPolicy, task);
+            }
+        }
+    }
+
+    /**
+     * 线程对象
+     * 入参：task 任务对象
+     */
+    class Worker extends Thread {
+        private Runnable task;
+
+        public Worker(Runnable task) {
+            this.task = task;
+        }
+
+        /**
+         * 执行任务
+         * 当task不为空，执行任务
+         * 当task执行完毕，再接着从任务队列获取新的任务并执行
+         * 执行完毕之后，线程池就要移除此线程对象
+         */
+        @Override
+        public void run() {
+            while (task != null || (task = taskQueue.poll(timeout, unit)) != null) {
+                try {
+                    log.debug("正在执行 ... {}", task);
+                    task.run();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    task = null;
+                }
+            }
+
+            synchronized (workers) {
+                log.debug("worker {} 被移除", this);
+                workers.remove(this);
+            }
+        }
+    }
+
+}
+
+
+
+/**
+ * 阻塞式队列
+ */
+@Slf4j(topic = "c.BlockingQueue")
+class BlockingQueue<T> {
+    // 1、任务队列
+    private Deque<T> queue = new ArrayDeque<>();
+
+    // 2、锁：多个用户获取任务的话，避免获取的是同一个，要加锁
+    private ReentrantLock lock = new ReentrantLock();
+
+    // 3、生产者条件变量
+    private Condition fullWaitSet = lock.newCondition();
+
+    // 4、消费者条件变量
+    private Condition emptyWaitSet = lock.newCondition();
+
+    // 5、容量
+    private int capacity;
+
+    /**
+     * 构造函数
+     * @param capacity
+     */
+    public BlockingQueue(int capacity) {
+        this.capacity = capacity;
+    }
+
+    /**
+     * 带超时的阻塞获取
+     * @param timeout 超时时间
+     * @param unit 超时时间单位
+     */
+    public T poll(long timeout, TimeUnit unit) {
+        lock.lock();
+
+        try {
+            // 将timeout同一转化为纳秒
+            long nanos = unit.toNanos(timeout);
+
+            while (queue.isEmpty()) {
+                try {
+                    // 返回是剩余时间，若剩余时间已经小于0证明已经过了超时时间，就返回空
+                    if (nanos <= 0) {
+                        return null;
+                    }
+                    nanos = emptyWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞获取
+     * 1、首先避免多个用户获取的是同一个任务，就必须上锁
+     * 2、循环判断队列是否为空，当为空的时候，就await进入emptyWaitSet等待
+     * 3、当有新的任务入队后，即：队列不为空的时候，被唤醒，重新执行while循环，不为空则继续走到循环后的代码
+     * 4、移除队列头的任务并返回，同时要唤醒fullWaitSet，因为此时队列肯定未到达最大容量需唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public T take() {
+        lock.lock();
+
+        try {
+            while (queue.isEmpty()) {
+                try {
+                    emptyWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            T t = queue.removeFirst();
+            fullWaitSet.signal();
+            return t;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 阻塞添加
+     * 1、首先避免多个用户同时创建放入对象，就要上锁
+     * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待
+     * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+     * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public void put(T t) {
+        lock.lock();
+
+        try {
+            while (queue.size() == capacity) {
+                try {
+                    log.debug("等待加入任务队列 {}", t);
+                    fullWaitSet.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            log.debug("加入任务队列 {}", t);
+            queue.addLast(t);
+            emptyWaitSet.signal();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 带超时时间的阻塞添加
+     * 1、首先避免多个用户同时创建放入对象，就要上锁
+     * 2、循环判断队列中的任务容量是否到达最大容量值，当到达时，就await进入fullWaitSet等待，并判断是否超过超时时间，超过了就返回false
+     * 3、当队列中有对象被取走后，即：队列中出现空位，被唤醒，继续执行while循环，未到达最大容量走循环后代码
+     * 4、添加此任务对象到队列尾，同时要唤醒emptyWaitSet，因为此时队列有对象了肯定不为空需要唤醒
+     * 5、解除锁对象，让其他用户继续
+     */
+    public boolean offer(T t, long timeout, TimeUnit unit) {
+        lock.lock();
+
+        try {
+            long nanos = unit.toNanos(timeout);
+            while (queue.size() == capacity) {
+                try {
+                    log.debug("等待加入任务队列 {}", t);
+                    if (nanos <= 0) {
+                        return false;
+                    }
+
+                    // 返回 剩余的等待的超时时间
+                    nanos = fullWaitSet.awaitNanos(nanos);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            log.debug("加入任务队列 {}", t);
+            queue.addLast(t);
+            emptyWaitSet.signal();
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 获取大小
+     */
+    public int size() {
+        lock.lock();
+        try {
+            return queue.size();
+        }  finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 带拒绝策略的添加
+     * @param rejectPolicy
+     * @param task
+     */
+    public void tryPut(RejectPolicy<T> rejectPolicy, T task) {
+        lock.lock();
+
+        try {
+            // 判断队列是否已满
+            if (queue.size() == capacity) {
+                // 已满
+                rejectPolicy.reject(this, task);
+            } else {
+                // 空闲
+                log.debug("加入任务队列 {}", task);
+                queue.addLast(task);
+                emptyWaitSet.signal();
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+
+
+/**
+22:36:46.978 [main] DEBUG c.ThreadPool - 新增 worker Thread[Thread-0,5,main], org.example.TestPool$$Lambda$2/555826066@527740a2
+22:36:46.983 [main] DEBUG c.BlockingQueue - 加入任务队列 org.example.TestPool$$Lambda$2/555826066@369f73a2
+22:36:46.983 [main] DEBUG c.BlockingQueue - 等待加入任务队列 org.example.TestPool$$Lambda$2/555826066@1f28c152
+22:36:46.983 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$2/555826066@527740a2
+22:36:47.491 [main] DEBUG c.BlockingQueue - 等待加入任务队列 org.example.TestPool$$Lambda$2/555826066@1f28c152
+22:36:47.989 [Thread-0] INFO c.TestPool - 0
+22:36:47.989 [Thread-0] DEBUG c.ThreadPool - 正在执行 ... org.example.TestPool$$Lambda$2/555826066@369f73a2
+22:36:49.002 [Thread-0] INFO c.TestPool - 1
+22:36:50.012 [Thread-0] DEBUG c.ThreadPool - worker Thread[Thread-0,5,main] 被移除
+*/
+
+/**
+ 1s的时候任务1还没执行完，所以队列还是满的，那么500毫秒等待就过了，只能返回空
+ 如果是1500毫秒，那么1s执行完了，队列有位置了，任务对象就会入进去，所以3个任务都会执行
+*/
+~~~
+
+
+
+## 4、ThreadPoolExecutor
+
+### 4.1 线程池状态
+
+- ThreadPoolExecutor使用int的高3位来表示线程池状态，低29位表示线程数量
+
+|   状态名   | 高3位 | 接收新任务 | 处理阻塞队列任务 |                     说明                     |
+| :--------: | :---: | :--------: | :--------------: | :------------------------------------------: |
+|  RUNNING   |  111  |     Y      |        Y         |                                              |
+|  SHUTDOWN  |  000  |     N      |        Y         |  不会接收新任务，但是会处理阻塞队列剩余任务  |
+|    STOP    |  001  |     N      |        N         | 会中止正在执行的任务，并抛弃阻塞队列中的任务 |
+|  TIDYING   |  010  |     -      |        -         | 任务全部执行完毕，活动线程为0，即将进入终结  |
+| TERMINATED |  011  |     -      |        -         |                   终结状态                   |
+
+- 从数字上来看：TERMINATED > TIDYING > STOP > SHUTDOWN > RUNNING
+- 这些信息存储在一个原子变量ctl中，目的是将线程池状态与线程个数合二为一，这样就可以用一次cas原子操作进行赋值
+
+~~~java
+// c为旧值，ctlOf返回结果为新值
+ctl.compareAndSet(c, ctlOf(targetState, workerCountOf(c))));
+
+// rs为高3位代表线程池状态，wc为低29位代表线程个数，ctl是合并他们
+private static int ctlOf(int rs, int wc) { return rs | wc; }
+~~~
+
+
+
+### 4.2 构造方法
+
+~~~java
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue,
+                          ThreadFactory threadFactory,
+                          RejectedExecutionHandler handler) 
+~~~
+
+- corePoolSize：核心线程数目（最多保留的线程数）
+- maximumPoolSize：最大线程数目
+- keepAliveTime：生存时间（针对救急线程）
+- unit：时间单位（针对救急线程）
+- workQueue：阻塞队列
+- threadFactory：线程工厂（可以为线程创建时起个好名字）
+- handler：拒绝策略
