@@ -229,7 +229,6 @@ public class Test1 {
 
   - 2024-06-02 21:50:48 [thread1][com.example.one.Test1] [DEBUG] - running
 
-    
 
 
 ### 1.2 方法二：Runnable
@@ -8259,6 +8258,7 @@ class BlockingQueue<T> {
 | TERMINATED |  011  |     -      |        -         |                   终结状态                   |
 
 - 从数字上来看：TERMINATED > TIDYING > STOP > SHUTDOWN > RUNNING
+  - 因为第一位是符号位，RUNNING是负数，所以最小
 - 这些信息存储在一个原子变量ctl中，目的是将线程池状态与线程个数合二为一，这样就可以用一次cas原子操作进行赋值
 
 ~~~java
@@ -8290,3 +8290,186 @@ public ThreadPoolExecutor(int corePoolSize,
 - workQueue：阻塞队列
 - threadFactory：线程工厂（可以为线程创建时起个好名字）
 - handler：拒绝策略
+
+
+
+### 4.3 工作方式
+
+![工作方式](图片/线程池/工作方式.png)
+
+- 线程池中刚开始没有线程，当一个任务提交给线程池后，线程池会创建一个新线程来执行任务。 
+- 当线程数达到 corePoolSize 并没有线程空闲，这时再加入任务，新加的任务会被加入workQueue 队列排队，直到有空闲的线程。 
+- 如果队列选择了有界队列，那么任务超过了队列大小时，会创建 maximumPoolSize - corePoolSize 数目的线程来救急。 
+- 如果线程到达 maximumPoolSize 仍然有新任务这时会执行拒绝策略。拒绝策略 jdk 提供了 4 种实现，其它著名框架也提供了实现
+
+- - <font color="red">**AbortPolicy**</font> 让调用者抛出 RejectedExecutionException 异常，这是默认策略
+  - <font color="red">**CallerRunsPolicy**</font> 让调用者运行任务
+  - <font color="red">**DiscardPolicy**</font> 放弃本次任务 
+  - <font color="red">**DiscardOldestPolicy**</font> 放弃队列中最早的任务，本任务取而代之 
+
+- 例子：
+  - Dubbo 的实现，在抛出 RejectedExecutionException 异常之前会记录日志，并 dump 线程栈信息，方便定位问题 
+  - Netty 的实现，是创建一个新线程来执行任务
+
+- - ActiveMQ 的实现，带超时等待（60s）尝试放入队列，类似我们之前自定义的拒绝策略 
+  - PinPoint 的实现，它使用了一个拒绝策略链，会逐一尝试策略链中每种拒绝策略 
+
+- 当高峰过去后，超过corePoolSize 的救急线程如果一段时间没有任务做，需要结束节省资源，这个时间由keepAliveTime 和 unit 来控制。
+
+![拒绝策略](图片/线程池/拒绝策略.png)
+
+
+
+### 4.4 JDK提供的典型线程池
+
+#### 4.4.1 newFixedThreadPool
+
+~~~java
+/**
+ * 创建一个newFixedThreadPool线程池
+ */
+public static ExecutorService newFixedThreadPool(int nThreads) {
+    return new ThreadPoolExecutor(nThreads, nThreads,
+                                  0L, TimeUnit.MILLISECONDS,
+                                  new LinkedBlockingQueue<Runnable>());
+}
+
+
+
+/**
+ * newFixedThreadPool构造方法
+ */
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue)
+~~~
+
+- 特点
+  - 核心线程数 = 最大线程数（没有救急线程被创建），因此无需超时时间
+  - 阻塞队列是无界的，可以放任意数量的任务
+- 用途：<font color="red">**适用于任务量已知，相对耗时的任务**</font>
+
+
+
+#### 4.4.2 newCachedThreadPool
+
+~~~java
+/**
+ * 创建一个newCachedThreadPool线程池
+ */
+public static ExecutorService newCachedThreadPool() {
+    return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                  60L, TimeUnit.SECONDS,
+                                  new SynchronousQueue<Runnable>());
+}
+
+
+
+/**
+ * newFixedThreadPool构造方法
+ */
+public ThreadPoolExecutor(int corePoolSize,
+                          int maximumPoolSize,
+                          long keepAliveTime,
+                          TimeUnit unit,
+                          BlockingQueue<Runnable> workQueue)
+~~~
+
+- 特点：
+
+  - 核心线程数是0，最大线程数是Integer.MAX_VALUE，救急线程的空闲生存时间是60s，意味着
+    - 全部是救急线程（60s后可以回收）
+    - 救急线程可以无限创建
+  - 队列采用SynchronousQueue，实现特点是：他没有容量，没有线程来取是放不进去的（一手交钱，一手交货）
+
+  ~~~JAVA
+  public static void main(String[] args) {
+      SynchronousQueue<Integer> integers = new SynchronousQueue<>();
+  
+      new Thread(() -> {
+          try {
+              log.debug("putting {} ", 1);
+              integers.put(1);
+              log.debug("{} putted...", 1);
+              log.debug("putting...{} ", 2);
+              integers.put(2);
+              log.debug("{} putted...", 2);
+          } catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+      },"t1").start();
+  
+      sleep(10000L);
+  
+      new Thread(() -> {
+          try {
+              log.debug("taking {}", 1);
+              integers.take();
+          } catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+      },"t2").start();
+  
+      sleep(10000L);
+  
+      new Thread(() -> {
+          try {
+              log.debug("taking {}", 2);
+              integers.take();
+          } catch (InterruptedException e) {
+              e.printStackTrace();
+          }
+      },"t3").start();
+  }
+  
+  
+  
+  /**
+  17:01:49.160 [t1] DEBUG com.example.juc.Test1 - putting 1 
+  17:01:59.171 [t2] DEBUG com.example.juc.Test1 - taking 1
+  17:01:59.173 [t1] DEBUG com.example.juc.Test1 - 1 putted...
+  17:01:59.173 [t1] DEBUG com.example.juc.Test1 - putting...2 
+  17:02:09.178 [t3] DEBUG com.example.juc.Test1 - taking 2
+  17:02:09.179 [t1] DEBUG com.example.juc.Test1 - 2 putted...
+  */
+  
+  /**
+  解析:
+  如果t2线程和t3线程没有来取的话，t1是放不进去的
+  第一个10s，t2没来取，所以t1一直卡住放不进去，直到t2来取了，t1才能放进去
+  第二个10s，t3没来取，所以t1一直卡住放不进去，直到t3来取了，t1才能放进去
+   */
+  ~~~
+
+- 整个线程池表现为线程数会根据任务量不断增长，没有上限，当任务执行完毕，空闲1分钟hou释放线程
+- 线程池用途：<font color="red">**适用于任务数比较密集，但每个任务执行时间较短的情况**</font>
+
+
+
+#### 4.4.3 newSingleThreadExecutor
+
+~~~java
+public static ExecutorService newSingleThreadExecutor() {
+    return new FinalizableDelegatedExecutorService
+        (new ThreadPoolExecutor(1, 1,
+                                0L, TimeUnit.MILLISECONDS,
+                                new LinkedBlockingQueue<Runnable>()));
+}
+~~~
+
+- 使用场景：
+  - 希望多个任务排队执行。线程数固定为，任务数多余1时，会放入无界队列排队
+  - 任务执行完毕，这唯一的线程也不会释放 
+- 和自己创建一个线程来工作的区别：
+  - <font color="red">**自己创建一个单线程串行执行任务，如果任务执行失败而终止那么没有任何补救措施，而线程池会创建一个新的线程，保证池的正常工作**</font>
+- 和Executors.newFixedThreadPool(1)的区别：
+  - <font color="red">**newFixedThreadPool(1)初始时为1，以后还可以修改**</font>
+    - 对外暴露的是ThreadPoolExecutor对象，可以强转后调用setCorePoolSize等方法进行修改
+  - <font color="red">**newSingleThreadExecutor线程个数始终为1，不能修改**</font>
+    - FinalizableDelegatedExecutorService 应用的是装饰器模式，只对外暴露了 ExecutorService 接口，因此不能调用 ThreadPoolExecutor 中特有的方法 
+
+
+
+5、
