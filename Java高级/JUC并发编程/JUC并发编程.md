@@ -8472,4 +8472,498 @@ public static ExecutorService newSingleThreadExecutor() {
 
 
 
-5、
+### 5、 提交任务
+
+~~~java
+// 执行任务
+void execute(Runnable command);
+
+// 提交任务 task，用返回值 Future 获得任务执行结果
+<T> Future<T> submit(Callable<T> task);
+
+// 提交 tasks 中所有任务
+<T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+    throws InterruptedException;
+
+// 提交 tasks 中所有任务，带超时时间，时间超时后，会放弃执行后面的任务
+<T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                              long timeout, TimeUnit unit)
+    throws InterruptedException;
+
+// 提交 tasks 中所有任务，哪个任务先成功执行完毕，返回此任务执行结果，其它任务取消
+<T> T invokeAny(Collection<? extends Callable<T>> tasks)
+    throws InterruptedException, ExecutionException;
+
+// 提交 tasks 中所有任务，哪个任务先成功执行完毕，返回此任务执行结果，其它任务取消，带超时时间
+<T> T invokeAny(Collection<? extends Callable<T>> tasks,
+                long timeout, TimeUnit unit)
+    throws InterruptedException, ExecutionException, TimeoutException;
+~~~
+
+- 测试submit
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+@Slf4j(topic = "c.Test")
+public class Test {
+
+    private static void method1(ExecutorService pool) throws InterruptedException, ExecutionException {
+        Future<String> future = pool.submit(() -> {
+            log.debug("running");
+            Thread.sleep(1000);
+            return "ok";
+        });
+
+        log.debug("{}", future.get());
+    }
+    
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(1);
+        method1(pool);
+    }
+}
+
+
+/**
+21:35:03.763 [pool-1-thread-1] DEBUG c.Test - running
+21:35:04.766 [main] DEBUG c.Test - ok
+ */
+~~~
+
+- 测试invokeAll，不带超时时间
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+@Slf4j(topic = "c.Test")
+public class Test {
+	
+    private static void method2(ExecutorService pool) throws InterruptedException {
+        List<Future<String>> futures = pool.invokeAll(Arrays.asList(
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(1000);
+                    return "1";
+                },
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(500);
+                    return "2";
+                },
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(2000);
+                    return "3";
+                }
+        ));
+
+        futures.forEach( f ->  {
+            try {
+                log.debug("{}", f.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        method2(pool);
+    }
+}
+
+/**
+第一个线程只能执行任务1，因为他睡眠了，所以线程2会执行两个任务，所以总的等待时间为2.5s
+21:41:14.372 [pool-1-thread-1] DEBUG c.Test - begin
+21:41:14.372 [pool-1-thread-2] DEBUG c.Test - begin
+21:41:14.881 [pool-1-thread-2] DEBUG c.Test - begin
+21:41:16.896 [main] DEBUG c.Test - 1
+21:41:16.900 [main] DEBUG c.Test - 2
+21:41:16.900 [main] DEBUG c.Test - 3
+*/
+~~~
+
+- 测试invokeAll，带超时时间
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+@Slf4j(topic = "c.Test")
+public class Test {
+	
+    private static void method2(ExecutorService pool) throws InterruptedException {
+        List<Future<String>> futures = pool.invokeAll(Arrays.asList(
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(1000);
+                    return "1";
+                },
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(500);
+                    return "2";
+                },
+                () -> {
+                    log.debug("begin");
+                    Thread.sleep(2000);
+                    return "3";
+                }
+        ), 2, TimeUnit.SECONDS);
+
+        futures.forEach( f ->  {
+            try {
+                log.debug("{}", f.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        method2(pool);
+    }
+}
+
+/**
+第一个线程只能执行任务1，因为他睡眠了，所以线程2会执行两个任务，所以总的等待时间为2.5s，超时了，所以会放弃掉第二个任务
+21:45:04.866 [pool-1-thread-2] DEBUG c.Test - begin
+21:45:04.866 [pool-1-thread-1] DEBUG c.Test - begin
+21:45:05.384 [pool-1-thread-2] DEBUG c.Test - begin
+21:45:06.866 [main] DEBUG c.Test - 1
+21:45:06.868 [main] DEBUG c.Test - 2
+Exception in thread "main" java.util.concurrent.CancellationException
+	at java.util.concurrent.FutureTask.report(FutureTask.java:121)
+	at java.util.concurrent.FutureTask.get(FutureTask.java:192)
+	at org.example.Test.lambda$method2$4(Test.java:43)
+	at java.util.ArrayList.forEach(ArrayList.java:1257)
+	at org.example.Test.method2(Test.java:41)
+	at org.example.Test.main(Test.java:53)
+*/
+~~~
+
+- 测试invokeAny，不带超时时间
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
+
+@Slf4j(topic = "c.Test")
+public class Test {
+
+    private static void method3(ExecutorService pool) throws InterruptedException, ExecutionException {
+        String result = pool.invokeAny(Arrays.asList(
+                () -> {
+                    log.debug("begin 1");
+                    Thread.sleep(1000);
+                    log.debug("end 1");
+                    return "1";
+                },
+                () -> {
+                    log.debug("begin 2");
+                    Thread.sleep(500);
+                    log.debug("end 2");
+                    return "2";
+                },
+                () -> {
+                    log.debug("begin 3");
+                    Thread.sleep(2000);
+                    log.debug("end 3");
+                    return "3";
+                }
+        ));
+        log.debug("{}", result);
+    }
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        // ExecutorService pool = Executors.newFixedThreadPool(3);
+        // ExecutorService pool = Executors.newFixedThreadPool(2);
+        ExecutorService pool = Executors.newFixedThreadPool(1);
+        method3(pool);
+    }
+}
+
+/**
+当为3时，3个任务同时执行，所以2执行最快，500毫秒就完了，其他任务就直接取消，所以返回是2
+21:56:29.076 [pool-1-thread-3] DEBUG c.Test - begin 3
+21:56:29.076 [pool-1-thread-2] DEBUG c.Test - begin 2
+21:56:29.076 [pool-1-thread-1] DEBUG c.Test - begin 1
+21:56:29.582 [pool-1-thread-2] DEBUG c.Test - end 2
+21:56:29.583 [main] DEBUG c.Test - 2
+*/
+
+/**
+当为2时，第一个和第二个任务同时执行，还是2最快，所以返回是2
+21:57:53.537 [pool-1-thread-2] DEBUG c.Test - begin 2
+21:57:53.537 [pool-1-thread-1] DEBUG c.Test - begin 1
+21:57:54.050 [pool-1-thread-2] DEBUG c.Test - end 2
+21:57:54.050 [pool-1-thread-2] DEBUG c.Test - begin 3
+21:57:54.050 [main] DEBUG c.Test - 2
+*/
+
+/**
+当为1时，只有第一个任务执行，执行完便直接返回了，所以返回是1
+21:58:46.977 [pool-1-thread-1] DEBUG c.Test - begin 1
+21:58:47.993 [pool-1-thread-1] DEBUG c.Test - end 1
+21:58:47.993 [pool-1-thread-1] DEBUG c.Test - begin 2
+21:58:47.993 [main] DEBUG c.Test - 1
+*/
+~~~
+
+- 测试invokeAny，带超时时间
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.*;
+
+@Slf4j(topic = "c.Test")
+public class Test {
+
+    private static void method3(ExecutorService pool) throws InterruptedException, ExecutionException, TimeoutException {
+        String result = pool.invokeAny(Arrays.asList(
+                () -> {
+                    log.debug("begin 1");
+                    Thread.sleep(10000);
+                    log.debug("end 1");
+                    return "1";
+                },
+                () -> {
+                    log.debug("begin 2");
+                    Thread.sleep(500);
+                    log.debug("end 2");
+                    return "2";
+                },
+                () -> {
+                    log.debug("begin 3");
+                    Thread.sleep(2000);
+                    log.debug("end 3");
+                    return "3";
+                }
+        // ), 5, TimeUnit.SECONDS);
+        ), 12, TimeUnit.SECONDS);
+        log.debug("{}", result);
+    }
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException, TimeoutException {
+        ExecutorService pool = Executors.newFixedThreadPool(1);
+        method3(pool);
+    }
+}
+
+/**
+5s报错超时
+22:17:17.644 [pool-1-thread-1] DEBUG c.Test - begin 1
+Exception in thread "main" java.util.concurrent.TimeoutException
+	at java.util.concurrent.AbstractExecutorService.doInvokeAny(AbstractExecutorService.java:184)
+	at java.util.concurrent.AbstractExecutorService.invokeAny(AbstractExecutorService.java:225)
+	at org.example.Test.method3(Test.java:51)
+	at org.example.Test.main(Test.java:76)
+*/
+
+/**
+12s正差执行，任务1执行完毕直接返回
+22:20:33.301 [pool-1-thread-1] DEBUG c.Test - begin 1
+22:20:43.305 [pool-1-thread-1] DEBUG c.Test - end 1
+22:20:43.306 [pool-1-thread-1] DEBUG c.Test - begin 2
+22:20:43.306 [main] DEBUG c.Test - 1
+*/
+~~~
+
+
+
+### 6、关闭线程池
+
+#### 6.1 shutdown
+
+- 线程池状态变为 SHUTDOWN
+  - 不会接收新任务
+  - 但已提交任务会执行完
+  - 此方法不会阻塞调用线程的
+
+- void shutdown();
+
+~~~java
+public void shutdown() {
+    final ReentrantLock mainLock = this.mainLock;
+    mainLock.lock();
+    try {
+        checkShutdownAccess();
+        // 修改线程池状态
+        advanceRunState(SHUTDOWN);
+        // 仅会打断空闲线程
+        interruptIdleWorkers();
+        onShutdown(); // 扩展点 ScheduledThreadPoolExecutor
+    } finally {
+        mainLock.unlock();
+    }
+    // 尝试终结(没有运行的线程可以立刻终结，如果还有运行的线程也不会等)
+    tryTerminate();
+}
+~~~
+
+
+
+#### 6.2 shutdownNow
+
+- 线程池状态变为 STOP
+  - 不会接收新任务
+  - 会将队列中的任务返回
+  - 并用 interrupt 的方式中断正在执行的任务
+
+- 线程池状态变为 STOP
+  - 不会接收新任务
+
+- List<Runnable> shutdownNow();
+
+~~~java
+public List<Runnable> shutdownNow() {
+    List<Runnable> tasks;
+    final ReentrantLock mainLock = this.mainLock;
+    mainLock.lock();
+    try {
+        checkShutdownAccess();
+        // 修改线程池状态
+        advanceRunState(STOP);
+        // 打断所有线程
+        interruptWorkers();
+        // 获取队列中剩余任务
+        tasks = drainQueue();
+    } finally {
+        mainLock.unlock();
+    }
+    // 尝试终结
+    tryTerminate();
+    return tasks;
+}
+~~~
+
+
+
+#### 6.3 其他方法
+
+~~~java
+// 不在 RUNNING 状态的线程池，此方法就返回 true
+boolean isShutdown();
+// 线程池状态是否是 TERMINATED
+boolean isTerminated();
+// 调用 shutdown 后，由于调用线程并不会等待所有任务运行结束，因此如果它想在线程池 TERMINATED 后做些事情，可以利用此方法等待
+// 一般task是Callable类型的时候不用此方法，因为futureTask.get方法自带等待功能。
+boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
+~~~
+
+
+
+#### 6.4 测试
+
+~~~java
+package org.example;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+@Slf4j(topic = "c.TestShutDown")
+public class TestShutDown {
+
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+
+        Future<Integer> result1 = pool.submit(() -> {
+            log.debug("task 1 running...");
+            Thread.sleep(1000);
+            log.debug("task 1 finish...");
+            return 1;
+        });
+
+        Future<Integer> result2 = pool.submit(() -> {
+            log.debug("task 2 running...");
+            Thread.sleep(1000);
+            log.debug("task 2 finish...");
+            return 2;
+        });
+
+        Future<Integer> result3 = pool.submit(() -> {
+            log.debug("task 3 running...");
+            Thread.sleep(1000);
+            log.debug("task 3 finish...");
+            return 3;
+        });
+
+        log.debug("shutdownNow");
+//        pool.shutdown();
+//        pool.awaitTermination(3, TimeUnit.SECONDS);
+        List<Runnable> runnables = pool.shutdownNow();
+        log.debug("other.... {}" , runnables);
+    }
+}
+
+/**
+shutdown不会影响已经提交的任务和加入到队列中的任务，依旧会执行完任务
+23:13:58.421 [main] DEBUG c.TestShutDown - shutdown
+23:13:58.421 [pool-1-thread-1] DEBUG c.TestShutDown - task 1 running...
+23:13:58.421 [pool-1-thread-2] DEBUG c.TestShutDown - task 2 running...
+23:13:59.431 [pool-1-thread-2] DEBUG c.TestShutDown - task 2 finish...
+23:13:59.431 [pool-1-thread-1] DEBUG c.TestShutDown - task 1 finish...
+23:13:59.431 [pool-1-thread-2] DEBUG c.TestShutDown - task 3 running...
+23:14:00.443 [pool-1-thread-2] DEBUG c.TestShutDown - task 3 finish...
+*/
+
+/**
+shutdownNow立刻停止所有任务
+23:26:06.199 [main] DEBUG c.TestShutDown - shutdownNow
+23:26:06.199 [pool-1-thread-2] DEBUG c.TestShutDown - task 2 running...
+23:26:06.199 [pool-1-thread-1] DEBUG c.TestShutDown - task 1 running...
+*/
+
+/**
+shutdown或shutdownNow执行后会立马执行下一步操作，如果需要同步等待，就需要使用pool.awaitTermination(3, TimeUnit.SECONDS);
+23:27:43.087 [main] DEBUG c.TestShutDown - shutdownNow
+23:27:43.087 [pool-1-thread-2] DEBUG c.TestShutDown - task 2 running...
+23:27:43.087 [pool-1-thread-1] DEBUG c.TestShutDown - task 1 running...
+23:27:44.097 [pool-1-thread-1] DEBUG c.TestShutDown - task 1 finish...
+23:27:44.097 [pool-1-thread-2] DEBUG c.TestShutDown - task 2 finish...
+23:27:44.098 [pool-1-thread-2] DEBUG c.TestShutDown - task 3 running...
+23:27:45.110 [pool-1-thread-2] DEBUG c.TestShutDown - task 3 finish...
+23:27:46.107 [main] DEBUG c.TestShutDown - other.... []
+ */
+~~~
+
