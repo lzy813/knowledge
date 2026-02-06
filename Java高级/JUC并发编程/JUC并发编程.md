@@ -6925,6 +6925,16 @@ public void actor2(I_Result r) {
 
 
 
+# 六、共享模型之无锁
+
+## 1、如何保证取款方法的线程安全
+
+
+
+
+
+
+
 
 
 
@@ -6949,21 +6959,232 @@ public void actor2(I_Result r) {
 
 # 七、共享模型之不可变
 
+## 1、日期转化问题
+
+### 1.1 线程不安全类SimpleDateFormat
+
+- 下面的代码在运行时，由于 <font color="red">**SimpleDateFormat 不是线程安全的**</font>，有很大几率出现 java.lang.NumberFormatException 或者出现不正确的日期解析结果下面的代码在运行时，由于 SimpleDateFormat 不是线程安全的
+
+~~~java
+package com.example.juc;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.text.SimpleDateFormat;
+
+@Slf4j
+public class Test1 {
+    public static void main(String[] args) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                try {
+                    log.debug("{}", sdf.parse("1951-04-21"));
+                } catch (Exception e) {
+                    log.error("{}", e);
+                }
+            }).start();
+        }
+    }
+}
+
+/**
+15:52:58.126 [Thread-1] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+15:52:58.128 [Thread-3] ERROR com.example.juc.Test1 - {}
+java.lang.NumberFormatException: For input string: ""
+	at java.lang.NumberFormatException.forInputString(NumberFormatException.java:65)
+	at java.lang.Long.parseLong(Long.java:601)
+	at java.lang.Long.parseLong(Long.java:631)
+	at java.text.DigitList.getLong(DigitList.java:195)
+	at java.text.DecimalFormat.parse(DecimalFormat.java:2084)
+	at java.text.SimpleDateFormat.subParse(SimpleDateFormat.java:1869)
+	at java.text.SimpleDateFormat.parse(SimpleDateFormat.java:1514)
+	at java.text.DateFormat.parse(DateFormat.java:364)
+ */
+~~~
 
 
 
+### 1.2 解决思路1：同步锁
+
+- synchronizzed同步锁
+- 能解决问题，但丢失性能
+
+~~~java
+package com.example.juc;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.text.SimpleDateFormat;
+
+@Slf4j
+public class Test1 {
+    public static void main(String[] args) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                synchronized (sdf) {
+                    try {
+                        log.debug("{}", sdf.parse("1951-04-21"));
+                    } catch (Exception e) {
+                        log.error("{}", e);
+                    }
+                }
+            }).start();
+        }
+    }
+}
+
+/**
+16:05:42.283 [Thread-0] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.290 [Thread-9] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.290 [Thread-6] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.290 [Thread-7] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-8] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-5] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-4] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-3] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-1] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+16:05:42.292 [Thread-2] DEBUG com.example.juc.Test1 - Sat Apr 21 00:00:00 CST 1951
+*/
+~~~
 
 
 
+### 1.3 解决思路2：不可变对象
+
+- 如果一个对象在不能够修改其内部状态（属性），那么它就是线程安全的，因为不存在并发修改啊！
+- 这样的对象在Java 中有很多，例如在 Java 8 后，提供了一个新的日期格式化类：DateTimeFormatter
+
+~~~java
+package com.example.juc;
+
+import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
+@Slf4j
+public class Test1 {
+    public static void main(String[] args) {
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (int i = 0; i < 10; i++) {
+            new Thread(() -> {
+                LocalDate date = dtf.parse("2018-10-01", LocalDate::from);
+                log.debug("{}", date);
+            }).start();
+        }
+    }
+}
+
+/**
+16:03:55.671 [Thread-1] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-5] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-7] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-3] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-8] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-9] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-6] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-2] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.671 [Thread-0] DEBUG com.example.juc.Test1 - 2018-10-01
+16:03:55.672 [Thread-4] DEBUG com.example.juc.Test1 - 2018-10-01
+*/
+~~~
+
+- 可以看 DateTimeFormatter 的文档：
+
+~~~java
+@implSpec
+This class is immutable and thread-safe.
+public final class DateTimeFormatter {
+~~~
+
+- 不可变对象，实际是另一种避免竞争的方式。
 
 
 
+## 2、不可变设计
+
+- 另一个大家更为熟悉的 String 类也是不可变的，以它为例，说明一下不可变设计的要素
+
+~~~java
+public final class String implements java.io.Serializable, Comparable<String>, CharSequence {
+    /** The value is used for character storage. */
+    private final char value[];
+    /** Cache the hash code for the string */
+    private int hash; // Default to 0
+    
+    // ...
+    
+}
+~~~
 
 
 
+### 2.1 final的使用
+
+- 发现该类、类中所有属性都是 final 的 
+  - 属性用 fifinal 修饰保证了该属性是只读的，不能修改 
+  - 类用 final 修饰保证了该类中的方法不能被覆盖，防止子类无意间破坏不可变性 
 
 
 
+### 2.2 保护性拷贝
+
+- String里也有修改或者截取方法啥的，为什么用了final修饰还能修改
+- 下面以substring举例
+- 发现其内部是调用String的构造方法创建了一个新字符串
+
+~~~java
+public String substring(int beginIndex, int endIndex) {
+    if (beginIndex < 0) {
+        throw new StringIndexOutOfBoundsException(beginIndex);
+    }
+    if (endIndex > value.length) {
+        throw new StringIndexOutOfBoundsException(endIndex);
+    }
+    int subLen = endIndex - beginIndex;
+    if (subLen < 0) {
+        throw new StringIndexOutOfBoundsException(subLen);
+    }
+    return ((beginIndex == 0) && (endIndex == value.length)) ? this
+        : new String(value, beginIndex, subLen);
+}
+~~~
+
+- 再进入这个构造看看，是否对 final char[] value 做出了修改：
+
+~~~java
+public String(char value[], int offset, int count) {
+    if (offset < 0) {
+        throw new StringIndexOutOfBoundsException(offset);
+    }
+    if (count <= 0) {
+        if (count < 0) {
+            throw new StringIndexOutOfBoundsException(count);
+        }
+        if (offset <= value.length) {
+            this.value = "".value;
+            return;
+        }
+    }
+    // Note: offset or count might be near -1>>>1.
+    if (offset > value.length - count) {
+        throw new StringIndexOutOfBoundsException(offset + count);
+    }
+    this.value = Arrays.copyOfRange(value, offset, offset+count);
+}
+~~~
+
+- 结果发现也没有，构造新字符串对象时，会生成新的 char[] value，对内容进行复制 。
+- <font color="red">**这种通过创建副本对象来避免共享的手段称之为【保护性拷贝（defensive copy）】**</font>
+
+
+
+## 3、模式之享元(池)
 
 
 
@@ -8472,7 +8693,7 @@ public static ExecutorService newSingleThreadExecutor() {
 
 
 
-### 5、 提交任务
+### 5、提交任务
 
 ~~~java
 // 执行任务
