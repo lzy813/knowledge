@@ -2367,7 +2367,6 @@ public class Test4 {
   - 如果回收垃圾的速度 > 生成垃圾的速度快，那么这个时候采用的还是**并发垃圾收集阶段**，虽然后续的**重新标记**和**数据拷贝**过程会有STW，但是由于其STW的时间很短。因此是不能算是Full GC的 
   - 如果回收垃圾的速度 < 生成垃圾的速度快，那么这个时候的并发收集就会失败了，就会化为一个串行垃圾回收器来进行**Full GC**
 
-    
 
 #### 6.5.1 跨代引用
 
@@ -2587,6 +2586,110 @@ String s2 = new String("hello"); // char[]{'h','e','l','l','o'}
 
 # 四、类加载与字节码技术
 
+![基础架构](图片/类加载/基础架构.png)
+
+
+
+## 1、类文件结构
+
+- 首先获得.class字节码文件
+
+- 方法：
+
+  - 在文本文档里写入java代码（文件名与类名一致），将文件类型改为.java
+  - java终端中，执行javac X:...\XXX.java
+  - javac D:\AI\code\DealServeWord\src\main\java\com\example\juc\Test1.java
+
+  ~~~java
+  package com.example.juc;
+  
+  public class Test1 {
+      public static void main(String[] args) {
+          System.out.println("hello world");
+      }
+  }
+  ~~~
+
+![javac](图片/类加载/javac.png)
+
+- 以下是字节码文件
+
+~~~bash
+0000000 ca fe ba be 00 00 00 34 00 23 0a 00 06 00 15 09 
+0000020 00 16 00 17 08 00 18 0a 00 19 00 1a 07 00 1b 07 
+0000040 00 1c 01 00 06 3c 69 6e 69 74 3e 01 00 03 28 29 
+0000060 56 01 00 04 43 6f 64 65 01 00 0f 4c 69 6e 65 4e 
+0000100 75 6d 62 65 72 54 61 62 6c 65 01 00 12 4c 6f 63 
+0000120 61 6c 56 61 72 69 61 62 6c 65 54 61 62 6c 65 01 
+0000140 00 04 74 68 69 73 01 00 1d 4c 63 6e 2f 69 74 63 
+0000160 61 73 74 2f 6a 76 6d 2f 74 35 2f 48 65 6c 6c 6f 
+0000200 57 6f 72 6c 64 3b 01 00 04 6d 61 69 6e 01 00 16 
+0000220 28 5b 4c 6a 61 76 61 2f 6c 61 6e 67 2f 53 74 72 
+0000240 69 6e 67 3b 29 56 01 00 04 61 72 67 73 01 00 13 
+0000260 5b 4c 6a 61 76 61 2f 6c 61 6e 67 2f 53 74 72 69 
+0000300 6e 67 3b 01 00 10 4d 65 74 68 6f 64 50 61 72 61 
+0000320 6d 65 74 65 72 73 01 00 0a 53 6f 75 72 63 65 46 
+0000340 69 6c 65 01 00 0f 48 65 6c 6c 6f 57 6f 72 6c 64
+0000360 2e 6a 61 76 61 0c 00 07 00 08 07 00 1d 0c 00 1e 
+0000400 00 1f 01 00 0b 68 65 6c 6c 6f 20 77 6f 72 6c 64 
+0000420 07 00 20 0c 00 21 00 22 01 00 1b 63 6e 2f 69 74 
+0000440 63 61 73 74 2f 6a 76 6d 2f 74 35 2f 48 65 6c 6c 
+0000460 6f 57 6f 72 6c 64 01 00 10 6a 61 76 61 2f 6c 61 
+0000500 6e 67 2f 4f 62 6a 65 63 74 01 00 10 6a 61 76 61 
+0000520 2f 6c 61 6e 67 2f 53 79 73 74 65 6d 01 00 03 6f 
+0000540 75 74 01 00 15 4c 6a 61 76 61 2f 69 6f 2f 50 72 
+0000560 69 6e 74 53 74 72 65 61 6d 3b 01 00 13 6a 61 76 
+0000600 61 2f 69 6f 2f 50 72 69 6e 74 53 74 72 65 61 6d 
+0000620 01 00 07 70 72 69 6e 74 6c 6e 01 00 15 28 4c 6a 
+0000640 61 76 61 2f 6c 61 6e 67 2f 53 74 72 69 6e 67 3b 
+0000660 29 56 00 21 00 05 00 06 00 00 00 00 00 02 00 01 
+0000700 00 07 00 08 00 01 00 09 00 00 00 2f 00 01 00 01 
+0000720 00 00 00 05 2a b7 00 01 b1 00 00 00 02 00 0a 00 
+0000740 00 00 06 00 01 00 00 00 04 00 0b 00 00 00 0c 00 
+0000760 01 00 00 00 05 00 0c 00 0d 00 00 00 09 00 0e 00 
+0001000 0f 00 02 00 09 00 00 00 37 00 02 00 01 00 00 00 
+0001020 09 b2 00 02 12 03 b6 00 04 b1 00 00 00 02 00 0a 
+0001040 00 00 00 0a 00 02 00 00 00 06 00 08 00 07 00 0b 
+0001060 00 00 00 0c 00 01 00 00 00 09 00 10 00 11 00 00 
+0001100 00 12 00 00 00 05 01 00 10 00 00 00 01 00 13 00 
+0001120 00 00 02 00 14
+~~~
+
+- 根据 JVM 规范，**类文件结构**如下
+  - u代表几个字节
+
+~~~java
+ClassFile {
+    u4 			   magic
+    u2             minor_version;    
+    u2             major_version;    
+    u2             constant_pool_count;    
+    cp_info        constant_pool[constant_pool_count-1];    
+    u2             access_flags;    
+    u2             this_class;    
+    u2             super_class;   
+    u2             interfaces_count;    
+    u2             interfaces[interfaces_count];   
+    u2             fields_count;    
+    field_info     fields[fields_count];   
+    u2             methods_count;    
+    method_info    methods[methods_count];    
+    u2             attributes_count;    
+    attribute_info attributes[attributes_count];
+}
+~~~
+
+- 魔数
+  - u4 magic
+  - 对应字节码文件的0~3(下标)个字节，表示它是否是【class】类型的文件
+  - 0000000 <font color="red">**ca fe ba be**</font> 00 00 00 34 00 23 0a 00 06 00 15 09
+- 版本
+  - u2 minor_version;
+  - u2 major_version;
+  - 0000000 ca fe ba be <font color="red">**00 00 00 34**</font> 00 23 0a 00 06 00 15 09
+  - 34H = 52，代表JDK8
+
+- 
 
 
 
@@ -2599,4 +2702,260 @@ String s2 = new String("hello"); // char[]{'h','e','l','l','o'}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 2、字节码指令
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 3、编译期处理
+
+- 所谓的 **语法糖** ，其实就是指 java 编译器把 *.java 源码编译为 *.class 字节码的过程中，**自动生成**和**转换**的一些代码，主要是为了减轻程序员的负担，算是 java 编译器给我们的一个额外福利
+
+
+
+### 3.1 默认构造器
+
+- java代码
+
+~~~java
+public class Candy1 {
+
+}
+~~~
+
+- 经过编译期优化后
+
+~~~java
+public class Candy1 {
+   //这个无参构造器是java编译器帮我们加上的
+   public Candy1() {
+      //即调用父类 Object 的无参构造方法，即调用 java/lang/Object." <init>":()V
+      super();
+   }
+}
+~~~
+
+
+
+### 3.2 自动拆装箱
+
+- 基本类型和其包装类型的相互转换过程，称为拆装箱
+
+- 在JDK 5以后，它们的转换可以在编译期自动完成
+
+~~~java
+public class Demo2 {
+   public static void main(String[] args) {
+      Integer x = 1;
+      int y = x;
+   }
+}
+~~~
+
+- 转换过程如下
+
+~~~java
+public class Demo2 {
+   public static void main(String[] args) {
+      //基本类型赋值给包装类型，称为装箱
+      Integer x = Integer.valueOf(1);
+      //包装类型赋值给基本类型，称谓拆箱
+      int y = x.intValue();
+   }
+}
+~~~
+
+
+
+### 3.3 泛型集合取值
+
+- 泛型也是在 JDK 5 开始加入的特性，但 java 在**编译泛型代码后**会执行 **泛型擦除** 的动作，即泛型信息在编译为字节码之后就**丢失**了，实际的类型都当做了 **Object** 类型来处理：
+
+~~~java
+public class Demo3 {
+   public static void main(String[] args) {
+      List<Integer> list = new ArrayList<>();
+      list.add(10);
+      Integer x = list.get(0);
+   }
+}
+~~~
+
+- 编译后class文件
+
+~~~java
+package com.example.juc;
+
+import java.util.ArrayList;
+
+public class Test1 {
+    public Test1() {
+    }
+
+    public static void main(String[] var0) {
+        ArrayList var1 = new ArrayList();
+        var1.add(10);
+        Integer var2 = (Integer)var1.get(0);
+    }
+}
+~~~
+
+- 对应字节码
+
+~~~java
+Code:
+    stack=2, locals=3, args_size=1
+       0: new           #2                  // class java/util/ArrayList
+       3: dup
+       4: invokespecial #3                  // Method java/util/ArrayList."<init>":()V
+       7: astore_1
+       8: aload_1
+       9: bipush        10
+      11: invokestatic  #4                  // Method java/lang/Integer.valueOf:(I)Ljava/lang/Integer;
+      //这里进行了泛型擦除，实际调用的是add(Objcet o)
+      14: invokeinterface #5,  2            // InterfaceMethod java/util/List.add:(Ljava/lang/Object;)Z
+
+      19: pop
+      20: aload_1
+      21: iconst_0
+      //这里也进行了泛型擦除，实际调用的是get(Object o)   
+      22: invokeinterface #6,  2            // InterfaceMethod java/util/List.get:(I)Ljava/lang/Object;
+//这里进行了类型转换，将Object转换成了Integer
+      27: checkcast     #7                  // class java/lang/Integer
+      30: astore_2
+      31: return
+~~~
+
+- 所以调用get函数取值时，有一个类型转换的操作
+
+~~~java
+Integer x = (Integer) list.get(0);
+~~~
+
+- 如果要将返回结果赋值给一个int类型的变量，则还有**自动拆箱**的操作
+
+~~~java
+int x = (Integer) list.get(0).intValue();
+~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 4、类加载
 
