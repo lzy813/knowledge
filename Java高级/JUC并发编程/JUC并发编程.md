@@ -7370,7 +7370,7 @@ public final class String implements java.io.Serializable, Comparable<String>, C
 ### 2.1 final的使用
 
 - 发现该类、类中所有属性都是 final 的 
-  - 属性用 fifinal 修饰保证了该属性是只读的，不能修改 
+  - 属性用 final 修饰保证了该属性是只读的，不能修改 
   - 类用 final 修饰保证了该类中的方法不能被覆盖，防止子类无意间破坏不可变性 
 
 
@@ -7428,6 +7428,95 @@ public String(char value[], int offset, int count) {
 
 
 ## 3、模式之享元(池)
+
+### 3.1 简介
+
+- **定义**：当需要重用数量有限的同一类对象时 .
+- 通俗来说：如果有取值相同的对象已经有了，那么是直接重用这些对象，而不是新创建一个
+- <font color="red">**是一种通过与其他类似对象共享尽可能多的数据来最小化内存使用的对象**</font>
+
+
+
+### 3.2 体现
+
+#### 3.2.1 包装类 
+
+- 在JDK中 Boolean，Byte，Short，Integer，Long，Character 等包装类提供了 valueOf 方法，例如 Long 的valueOf 会缓存 -128~127 之间的 Long 对象，在这个范围之间会重用对象，大于这个范围，才会新建 Long 对象：
+
+~~~java
+public static Long valueOf(long l) {
+    final int offset = 128;
+    if (l >= -128 && l <= 127) { // will cache
+        return LongCache.cache[(int)l + offset];
+    }
+    return new Long(l);
+}
+~~~
+
+**注意：** 
+
+- Byte, Short, Long 缓存的范围都是 -128~127 
+- Character 缓存的范围是 0~127 
+- Integer的默认范围是 -128~127 
+
+- - 最小值不能变 
+  - 但最大值可以通过调整虚拟机参数 `-Djava.lang.Integer.IntegerCache.high` 来改变 
+
+- Boolean 缓存了 TRUE 和 FALSE 
+
+
+
+#### 3.2.2 String串池 
+
+见jvm资料
+
+
+
+#### 3.2.3 BigDecimal和BigInteger 
+
+~~~~java
+private static BigDecimal add(final long xs, int scale1, final long ys, int scale2) {
+        long sdiff = (long) scale1 - scale2;
+        if (sdiff == 0) {
+            return add(xs, ys, scale1);
+        } else if (sdiff < 0) {
+            int raise = checkScale(xs,-sdiff);
+            long scaledX = longMultiplyPowerTen(xs, raise);
+            if (scaledX != INFLATED) {
+                return add(scaledX, ys, scale2);
+            } else {
+                BigInteger bigsum = bigMultiplyPowerTen(xs,raise).add(ys);
+                return ((xs^ys)>=0) ? // same sign test
+                    new BigDecimal(bigsum, INFLATED, scale2, 0)
+                    : valueOf(bigsum, scale2, 0);
+            }
+        } else {
+            int raise = checkScale(ys,sdiff);
+            long scaledY = longMultiplyPowerTen(ys, raise);
+            if (scaledY != INFLATED) {
+                return add(xs, scaledY, scale1);
+            } else {
+                // 这里也是新new了一个对象，而不是在原对象上修改，所以也是保护性拷贝，线程安全
+                BigInteger bigsum = bigMultiplyPowerTen(ys,raise).add(xs);
+                return ((xs^ys)>=0) ?
+                    new BigDecimal(bigsum, INFLATED, scale1, 0)
+                    : valueOf(bigsum, scale1, 0);
+            }
+        }
+    }
+~~~~
+
+- <font color="red">**这些类的单个方法是线程安全的,但多个方法的组合使用如果也要保证线程安全就需要使用锁来保护了**</font>
+
+
+
+### 3.3 DIY自定义数据库连接池
+
+- 例如：一个线上商城应用，QPS 达到数千，如果每次都重新创建和关闭数据库连接，性能会受到极大影响。 
+- 这时预先创建好一批连接，放入连接池。一次请求到达后，从连接池获取连接，使用完毕后再还回连接池，
+- 这样既节约了连接的创建和关闭时间，也实现了连接的重用，不至于让庞大的连接数压垮数据库。
+
+
 
 
 
