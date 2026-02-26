@@ -2957,5 +2957,26 @@ int x = (Integer) list.get(0).intValue();
 
 
 
-## 4、类加载
+## 4、类加载阶段
+
+### 4.1 加载
+
+- **将类的字节码载入方法区**（1.8后为元空间，在本地内存中）中，内部采用 C++ 的 instanceKlass 描述 java 类，它的重要 ﬁeld 有：
+  - _java_mirror 即 java 的类镜像，例如对 String 来说，它的镜像类就是 String.class，作用是把 klass 暴露给 java 使用
+  - _super 即父类
+  - _ﬁelds 即成员变量
+  - _methods 即方法
+  - _constants 即常量池
+  - _class_loader 即类加载器
+  - _vtable 虚方法表
+  - _itable 接口方法
+- 如果这个类还有父类没有加载，**先加载父类**
+- 加载和链接可能是**交替运行**的
+
+![加载](图片/类加载/加载.png)
+
+- instanceKlass保存在**方法区**。JDK 8以后，方法区位于元空间中，而元空间又位于本地内存中
+- _java_mirror则是保存在**堆内存**中
+- InstanceKlass和*.class(JAVA镜像类)互相保存了对方的地址*
+- *类的对象在对象头中保存了*.class的地址。让对象可以通过其找到方法区中的instanceKlass，从而获取类的各种信息
 
