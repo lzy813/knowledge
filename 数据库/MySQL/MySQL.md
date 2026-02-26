@@ -1412,7 +1412,7 @@ set [session | global] transaction isolation level {Read uncommittd | Read commi
 
 ### 1.1 mysql的体系结构
 
-![mysql体系结构](D:/knowledge/knowledge/%E6%95%B0%E6%8D%AE%E5%BA%93/MySQL/MySQL%E8%BF%9B%E9%98%B6%E7%AF%87%E5%9B%BE%E7%89%87/mysql%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84.png)
+![mysql体系结构](MySQL进阶篇图片/mysql体系结构.png)
 
 - 连接层：最上层是一些客户端和链接服务，主要完成一些类似于连接处理、授权认证、及相关的安全方案。服务器也会为安全接入的每个客户端验证它所具有的操作权限
 - 服务层：第二层架构主要完成大多数的核心服务功能，如SQL接口，并完成缓存的查询，SQL的分析和优化，部分内置函数的执行。所有跨存储引擎的功能也在这一层实现，如过程、函数等
@@ -1456,7 +1456,7 @@ show engines;
   - xxx.ibd：xxx代表的是表名，InnoDB引擎的每张表都会对应这样一个表空间文件，存储该表的表结构(frm，sdi)、数据和索引
   - 参数：innodb_file_per_table
 
-![InnoDB存储结构](D:/knowledge/knowledge/%E6%95%B0%E6%8D%AE%E5%BA%93/MySQL/MySQL%E8%BF%9B%E9%98%B6%E7%AF%87%E5%9B%BE%E7%89%87/InnoDB%E5%AD%98%E5%82%A8%E7%BB%93%E6%9E%84.png)
+![InnoDB存储结构](MySQL进阶篇图片/InnoDB存储结构.png)
 
 
 
