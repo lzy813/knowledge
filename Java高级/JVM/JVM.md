@@ -2980,3 +2980,158 @@ int x = (Integer) list.get(0).intValue();
 - InstanceKlass和*.class(JAVA镜像类)互相保存了对方的地址*
 - *类的对象在对象头中保存了*.class的地址。让对象可以通过其找到方法区中的instanceKlass，从而获取类的各种信息
 
+
+
+### 4.2 链接
+
+#### 4.2.1 验证
+
+- <font color="red">**验证**</font>：**验证类是否符合 JVM规范，安全性检查**
+
+  - 比如编写一个Java代码
+
+  ~~~java
+  package com.example.juc;
+  
+  public class Test1 {
+      public static void main(String[] args) {
+          System.out.println("hello world");
+      }
+  }
+  ~~~
+
+  - 将编译后的.class文件以16进制打开，随便修改一个，比如这里修改魔数
+
+  ![修改魔数](图片/类加载/修改魔数.png)
+
+  - 再启动执行这个class文件就会报错，这里就是链接的验证部分的职责
+
+  ![链接验证](图片/类加载/链接验证.png)
+
+
+
+#### 4.2.2 准备
+
+- <font color="red">**准备**</font>：**为 static 变量分配空间，设置默认值**
+  - static变量在JDK 7以前是存储与instanceKlass末尾。但在JDK 7以后就存储在_java_mirror末尾了
+  - static变量在分配空间和赋值是在两个阶段完成的。分配空间在准备阶段完成，赋值在初始化阶段完成
+  - 如果 static 变量是 ﬁnal 的**基本类型**，以及**字符串常量**，那么编译阶段值就确定了，**赋值在准备阶段完成**
+  - 如果 static 变量是 ﬁnal 的，但属于**引用类型**，那么赋值也会在**初始化阶段完成**
+
+~~~java
+package com.example.juc;
+
+public class Test1 {
+    static int a;
+    static int b = 10;
+    static final String str = "hello";
+    static final Object obj = new Object();
+}
+~~~
+
+- 查看其编译过程
+  - javac D:\AI\code\DealServeWord\src\main\java\com\example\juc\Test1.java
+  - javap -v -p D:\AI\code\DealServeWord\src\main\java\com\example\juc\Test1.class
+
+![链接准备](图片/类加载/链接准备.png)
+
+- a和b都是普通的静态变量，都是在准备阶段声明开辟空间，但是赋值则是在后面的init初始化阶段
+- str是final修饰的静态变量，它的常量串在准备阶段就给了
+- obj是final修饰的静态变量，但属于引用类型，即：用new声明的，那么赋值也会在初始化阶段完成
+
+
+
+#### 4.2.3 解析
+
+- <font color="red">**解析**</font>：**将常量池中的符号引用解析为直接引用**
+
+- HSDB使用方法
+
+  - 先获得要查看的进程ID：jps
+  - 打开HSDB：java -cp D:\soft\jdk1.8\lib\sa-jdi.jar sun.jvm.hotspot.HSDB
+  - 定位需要的进程
+
+  ![定位进程](图片/类加载/定位进程.png)
+
+  - 打开类信息界面
+
+  ![打开类信息界面](图片/类加载/打开类信息界面.png)
+
+- **未解析时，常量池中的看到的对象仅是符号，未真正的存在于内存中**
+
+  ~~~java
+  package com.example.juc;
+  
+  import java.io.IOException;
+  
+  public class Test1 {
+  
+      public static void main(String[] args) throws ClassNotFoundException, IOException {
+          ClassLoader classLoader = Test1.class.getClassLoader();
+          Class<?> c = classLoader.loadClass("com.example.juc.C");
+          System.in.read();
+      }
+  }
+  
+  class C {
+      D d = new D();
+  }
+  
+  class D {
+  
+  }
+  ~~~
+
+  - 打开HSDB，可以看到此时只加载了类C
+
+  ![未解析时只加载类C](图片/类加载/未解析时只加载类C.png)
+
+  - 查看类C的常量池，可以看到类D**未被解析**，只是存在于常量池中的符号
+
+  ![未解析时类C常量池](图片/类加载/未解析时类C常量池.png)
+
+- **解析以后，会将常量池中的符号引用解析为直接引用，此时已加载并解析了类C和类D**
+
+  - 加载C和D
+
+  ~~~java
+  package com.example.juc;
+  
+  import java.io.IOException;
+  
+  public class Test1 {
+  
+      public static void main(String[] args) throws ClassNotFoundException, IOException {
+          new C();
+          System.in.read();
+      }
+  }
+  
+  class C {
+      D d = new D();
+  }
+  
+  class D {
+  
+  }
+  ~~~
+
+  ![解析后加载C和D](图片/类加载/解析后加载C和D.png)
+
+  - D变为直接引用
+
+  ![解析后D变为真实引用](图片/类加载/解析后D变为真实引用.png)
+
+
+
+### 4.3 初始化
+
+- 初始化阶段就是<font color="red">**执行类构造器clinit()方法的过程**</font>，虚拟机会保证这个类的『构造方法』的线程安全
+- clinit()方法是由编译器自动收集类中的所有类变量的**赋值动作和静态语句块**（static{}块）中的语句合并产生的
+
+- 注意：
+  - 编译器收集的顺序是由语句在源文件中**出现的顺序决定**的，静态语句块中只能访问到定义在静态语句块之前的变量，定义在它**之后**的变量，在前面的静态语句块**可以赋值，但是不能访问**，如
+
+![非法前向引用](图片/类加载/非法前向引用.png)
+
+- **发生时机**
