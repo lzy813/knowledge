@@ -9518,3 +9518,39 @@ shutdown或shutdownNow执行后会立马执行下一步操作，如果需要同�
  */
 ~~~
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 九、JUC
+
+## 1、AQS
+
+### 1.1 核心思想
+
+- AQS：全称AbstractQueuedSynchronizer，翻译一下：基于队列的抽象接口同步器，是<font color="red">**阻塞式锁**</font>和相关的同步器工具的框架，许多同步类实现都依赖于该同步器
+- AQS 用state属性来表示资源的状态（分**独占模式和共享模式**），子类需要定义如何维护这个状态，控制如何获取锁和释放锁
+  - getState — 获取state状态
+  - setState — 设置state状态
+  - compareAndSetState — cas机制设置state状态
+  - 独占模式是只有一个线程能够访问资源，如 ReentrantLock
+  - 共享模式允许多个线程访问资源，如 Semaphore，ReentrantReadWriteLock 是组合式
+- 提供了基于FIFO的等待队列，类似与Monitor的EntryList
+- 条件变量来实现等待、唤醒机制，支持多个条件变量，类似于Monitor的WaitSet
+- AQS 核心思想：
+  - 如果被请求的共享资源空闲，则将当前请求资源的线程设置为有效的工作线程，并将共享资源设置锁定状态
+  - 请求的共享资源被占用，AQS 用队列实现线程阻塞等待以及被唤醒时锁分配的机制，将暂时获取不到锁的线程加入到队列中

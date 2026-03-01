@@ -2658,24 +2658,24 @@ String s2 = new String("hello"); // char[]{'h','e','l','l','o'}
 - 根据 JVM 规范，**类文件结构**如下
   - u代表几个字节
 
-~~~java
+~~~bash
 ClassFile {
-    u4 			   magic
-    u2             minor_version;    
-    u2             major_version;    
-    u2             constant_pool_count;    
-    cp_info        constant_pool[constant_pool_count-1];    
-    u2             access_flags;    
-    u2             this_class;    
-    u2             super_class;   
-    u2             interfaces_count;    
-    u2             interfaces[interfaces_count];   
-    u2             fields_count;    
-    field_info     fields[fields_count];   
-    u2             methods_count;    
-    method_info    methods[methods_count];    
-    u2             attributes_count;    
-    attribute_info attributes[attributes_count];
+    u4 			   magic				# 魔数
+    u2             minor_version;    	# 小版本号						
+    u2             major_version;    	# 主版本号
+    u2             constant_pool_count;    # 常量池数量
+    cp_info        constant_pool[constant_pool_count-1];	# 常量池信息    
+    u2             access_flags;    # 访问修饰：public、private这些
+    u2             this_class;    	# 类自己的包名信息
+    u2             super_class;   	# 父类信息
+    u2             interfaces_count;    # 接口数量
+    u2             interfaces[interfaces_count];	# 接口信息   
+    u2             fields_count;    # 成员变量数量
+    field_info     fields[fields_count];   # 成员变量信息
+    u2             methods_count;    # 方法数量
+    method_info    methods[methods_count];   # 方法信息 
+    u2             attributes_count;    # 其他属性数量
+    attribute_info attributes[attributes_count]; 	# 其他属性信息
 }
 ~~~
 
@@ -2963,6 +2963,8 @@ int x = (Integer) list.get(0).intValue();
 
 - **通过类的完全限定名，查找此类的二进制字节码文件，通过该字节码文件创建Class对象**
 
+- <font color="red">**这个阶段会在内存中生成一个代表这个类的 java.lang.Class 对象，作为方法区这个类的各种数据的入口。**</font>
+
 - **将类的字节码载入方法区**（1.8后为元空间，在本地内存中）中，内部采用 C++ 的 instanceKlass 描述 java 类，它的重要 ﬁeld 有：
   - _java_mirror 即 java 的类镜像，例如对 String 来说，它的镜像类就是 String.class，作用是把 klass 暴露给 java 使用
   - _super 即父类
@@ -3016,7 +3018,9 @@ int x = (Integer) list.get(0).intValue();
 
 #### 4.2.2 准备
 
-- <font color="red">**准备**</font>：**为 static 变量分配空间，设置初始化值**。注：这里不包含**final**修饰的静态变量，因为**final**修饰的静态变量是在编译期分配。
+- 准备阶段是正式为类变量分配内存并设置类变量的初始值阶段，即<font color="red">**在方法区中分配这些变量所使用的内存空间。**</font>
+
+- <font color="red">**准备**</font>：**为类变量分配空间，设置初始化值**。注：这里不包含**final**修饰的静态变量，因为**final**修饰的静态变量是在编译期分配。
   - static变量在JDK 7以前是存储与instanceKlass末尾。但在JDK 7以后就存储在_java_mirror末尾了
   - static变量在分配空间和赋值是在两个阶段完成的。分配空间在准备阶段完成，赋值在初始化阶段完成
   - 如果 static 变量是 ﬁnal 的**基本类型**，以及**字符串常量**，那么编译阶段值就确定了，**赋值在准备阶段完成**
@@ -3048,6 +3052,12 @@ public class Test1 {
 #### 4.2.3 解析
 
 - <font color="red">**解析**</font>：**将常量池中的符号引用解析为直接引用，解析包含字段解析、接口解析、方法解析。**
+
+  - **符号引用**
+    - 符号引用与虚拟机实现的布局无关，引用的目标并不一定要已经加载到内存中。各种虚拟机实现的内存布局可以各不相同，但是它们能接受的符号引用必须是一致的，因为符号引用的字面量形式明确定义在 Java 虚拟机规范的 Class 文件格式中。
+
+  - **直接引用**
+    - 直接引用可以是**指向目标的指针，相对偏移量或是一个能间接定位到目标的句柄**。如果有了直接引用，**那引用的目标必定已经在内存中存在。**
 
 - HSDB使用方法
 
@@ -3130,6 +3140,8 @@ public class Test1 {
 
 ### 4.3 初始化
 
+- 初始化阶段是**执行类构造器clinit方法方法的过程。**clinit方法方法是由<font color="red">**编译器自动收集类中的类变量的赋值操作和静态语句块中的语句合并而成的**</font>。虚拟机会保证子clinit方法方法执行之前，父类的clinit方法方法已经执行完毕，**如果一个类中没有对静态变量赋值也没有静态语句块，那么编译器可以不为这个类生成clinit方法()方法。**
+
 - **初始化静态变量和静态块，先初始化父类，再初始化当前类，只有对类主动时才会初始化**
 
 - 初始化阶段就是<font color="red">**执行类构造器clinit()方法的过程**</font>，虚拟机会保证这个类的『构造方法』的线程安全
@@ -3143,7 +3155,7 @@ public class Test1 {
 - **发生时机**：**类的初始化的懒惰的**，以下情况会初始化
   - main 方法所在的类，总会被首先初始化
   - 首次访问这个类的静态变量或静态方法时
-  - 子类初始化，如果父类还没初始化，会引发
+  - 子类初始化，如果父类还没初始化，会引发初始化
   - 子类访问父类的静态变量，只会触发父类的初始化
   - Class.forName
   - new 会导致初始化
@@ -3156,6 +3168,528 @@ public class Test1 {
 - **验证类是否被初始化，可以看该类的静态代码块是否被执行**
 
 ~~~java
+package org.example.jvm;
 
+public class Load1 {
+    static {
+        System.out.println("main init");
+    }
+    public static void main(String[] args) throws ClassNotFoundException {
+        // 1. 静态常量（基本类型和字符串）不会触发初始化，在准备阶段就已经初始化了
+//         System.out.println(B.b);
+        // 2. 类对象.class 不会触发初始化
+//         System.out.println(B.class);
+        // 3. 创建该类的数组不会触发初始化
+//         System.out.println(new B[0]);
+        // 4. 不会初始化类 B，但会加载 B、A
+//         ClassLoader cl = Thread.currentThread().getContextClassLoader();
+//         cl.loadClass("org.example.jvm.B");
+        // 5. 不会初始化类 B，但会加载 B、A
+//         ClassLoader c2 = Thread.currentThread().getContextClassLoader();
+//         Class.forName("org.example.jvm.B", false, c2);
+
+
+        // 1. 首次访问这个类的静态变量或静态方法时
+//         System.out.println(A.a);
+        // 2. 子类初始化，如果父类还没初始化，会引发
+//         System.out.println(B.c);
+        // 3. 子类访问父类静态变量，只触发父类初始化
+//         System.out.println(B.a);
+        // 4. 会初始化类 B，并先初始化类 A
+//         Class.forName("org.example.jvm.B");
+    }
+
+}
+
+
+class A {
+    static int a = 0;
+    static {
+        System.out.println("a init");
+    }
+}
+class B extends A {
+    final static double b = 5.0;
+    static boolean c = false;
+    static {
+        System.out.println("b init");
+    }
+}
 ~~~
+
+- 练习：从字节码分析，使用 a，b，c 这三个常量是否会导致 E 初始化
+
+~~~java
+public class Load2 {
+
+    public static void main(String[] args) {
+        // a和b不会初始化，因为他俩是静态常量，所以在准备阶段就已经赋值完了
+        System.out.println(E.a);
+        System.out.println(E.b);
+        // 会导致 E 类初始化，因为 Integer 是包装类
+        System.out.println(E.c);
+    }
+}
+
+class E {
+    public static final int a = 10;
+    public static final String b = "hello";
+    public static final Integer c = 20;
+
+    static {
+        System.out.println("E cinit");
+    }
+}
+~~~
+
+- 典型应用 - 完成懒惰初始化单例模式
+
+~~~java
+public class Singleton {
+
+    private Singleton() { } 
+    // 内部类中保存单例
+    private static class LazyHolder { 
+        static final Singleton INSTANCE = new Singleton(); 
+    }
+    // 第一次调用 getInstance 方法，才会导致内部类加载和初始化其静态成员 
+    public static Singleton getInstance() { 
+        return LazyHolder.INSTANCE; 
+    }
+}
+~~~
+
+以上的实现特点是：
+
+- 懒惰实例化
+- 初始化时的线程安全是有保障的
+
+
+
+## 5、类加载器
+
+- 类加载器虽然只用于实现类的加载动作，但它在Java程序中起到的作用却远超类加载阶段
+- <font color="red">**对于任意一个类，都必须由加载它的类加载器和这个类本身一起共同确立其在 Java 虚拟机中的唯一性**</font>，每一个类加载器，都拥有一个独立的类名称空间。这句话可以表达得更通俗一些：比较两个类是否“相等”，只有在这两个类是由同一个类加载器加载的前提下才有意义，否则，即使这两个类来源于同一个 Class 文件，被同一个 Java 虚拟机加载，只要加载它们的类加载器不同，那这两个类就必定不相等！
+- 以JDK 8为例
+
+|                 **名称**                  |     **加载的类**      |          **说明**           |
+| :---------------------------------------: | :-------------------: | :-------------------------: |
+|   Bootstrap ClassLoader（启动类加载器）   |   JAVA_HOME/jre/lib   |        无法直接访问         |
+|    Extension ClassLoader(拓展类加载器)    | JAVA_HOME/jre/lib/ext | 上级为Bootstrap，显示为null |
+| Application ClassLoader(应用程序类加载器) |       classpath       |       上级为Extension       |
+|              自定义类加载器               |        自定义         |      上级为Application      |
+
+
+
+### 5.1 启动类加载器
+
+- 加载的是JAVA_HOME/jre/lib的类文件
+
+~~~java
+package org.example.jvm;
+
+public class F {
+    static {
+        System.out.println("bootstrap F init");
+    }
+}
+
+
+package org.example.jvm;
+
+public class LoadF {
+    public static void main(String[] args) throws ClassNotFoundException {
+        Class<?> aClass = Class.forName("org.example.jvm.F");
+        System.out.println(aClass.getClassLoader());
+    }
+}
+~~~
+
+- 可通过在控制台输入指令，使得类被启动类加载器加载
+  - -Xbootclasspath 表示设置bootclasspath，指定类加载的启动路径
+  - 其中 /a:.  表示**追加**，将当前目录追加至bootclasspath之后
+  - 可以用这个方法来替换核心类
+    - java -Xbootclasspath:\<new bootclasspath>
+    - java -Xbootclasspath/a:\<追加路径>
+    - java -Xbootclasspath/p:\<追加路径>
+
+~~~bash
+D:\study\redisDemo\target\classes
+java -Xbootclasspath/a:. org.example.jvm.LoadF
+
+# 输出：LoadF会加载类F，类F经过初始化会执行静态代码块打印；
+#      使用Xbootclasspath修改JVM加载核心启动类路径，改为启动类加载器，而启动类加载器是native修饰的底层代码，所以这里打印的是null
+bootstrap F init
+null
+~~~
+
+
+
+### 5.2 扩展类的加载器
+
+- Extension ClassLoader(拓展类加载器)，加载的是JAVA_HOME/jre/lib/ext
+- Application ClassLoader(应用程序类加载器)加载的是classpath
+
+- <font color="red">**如果 classpath 和 JAVA_HOME/jre/lib/ext 下有同名类，加载时会使用拓展类加载器加载。**</font>当应用程序类加载器发现拓展类加载器已将该同名类加载过了，则不会再次加载。
+- 直接执行的时候会打印，即使用应用程序类加载器加载
+
+~~~java
+package org.example.jvm;
+
+public class F {
+    static {
+        System.out.println("application F init");
+    }
+}
+
+
+package org.example.jvm;
+
+public class LoadF {
+    public static void main(String[] args) throws ClassNotFoundException {
+        Class<?> aClass = Class.forName("org.example.jvm.F");
+        System.out.println(aClass.getClassLoader());
+    }
+}
+
+/**
+application F init
+sun.misc.Launcher$AppClassLoader@18b4aac2
+ */
+~~~
+
+- 如果在 JAVA_HOME/jre/lib/ext下有相同的类，就会打印ext
+
+~~~java
+package org.example.jvm;
+
+public class F {
+    static {
+        System.out.println("ext F init");
+    }
+}
+
+
+package org.example.jvm;
+
+public class LoadF {
+    public static void main(String[] args) throws ClassNotFoundException {
+        Class<?> aClass = Class.forName("org.example.jvm.F");
+        System.out.println(aClass.getClassLoader());
+    }
+}
+~~~
+
+~~~bash
+D:\study\redisDemo\target\classes> jar -cvf my.jar org\example\jvm\F.class 
+执行后打印
+ext F init
+sun.misc.Launcher$ExtClassLoader@29453f44
+~~~
+
+
+
+### 5.3 双亲委派机制
+
+- 双亲委派机制（Parent Delegation Mechanism）是Java中的一种类 加载机制。在Java中，类加载器负责加载类的字节码并创建对应的Class对象。双亲委派机制是指<font color="red">**当一个类加载器收到类加载请求时，它会先将该请求委派给它的父类加载器去尝试加载**</font>。**只有当父类加载器无法加载该类时，子类加载器才会尝试加载。**
+- <font color="red">**这种机制的设计目的是为了保证类的加载是有序的，避免重复加载同一个类。**</font>Java中的类加载器形成了一个层次结构，根加载器（Bootstrap ClassLoader）位于最顶层，它负责加载Java核心类库。其他加载器如扩展类加载器（Extension ClassLoader）和应用程序类加载器（Application ClassLoader）都有各自的加载范围和职责。通过双亲委派机制，可以确保类在被加载时，先从上层的加载器开始查找，逐级向下，直到找到所需的类或者无法找到为止。
+- **这种机制的好处是可以避免类的重复加载，提高了类加载的效率和安全性。同时，它也为Java提供了一种扩展机制，允许开发人员自定义类加载器，实现特定的加载策略。**
+
+![双亲委派机制](图片/类加载/双亲委派机制.png)
+
+~~~java
+protected Class<?> loadClass(String name, boolean resolve)
+    throws ClassNotFoundException
+{
+    synchronized (getClassLoadingLock(name)) {
+        // 首先查找该类是否已经被该类加载器加载过了
+        Class<?> c = findLoadedClass(name);
+        // 如果没有被加载过
+        if (c == null) {
+            long t0 = System.nanoTime();
+            try {
+                // 看是否被它的上级加载器加载过了 Extension 的上级是Bootstarp，但它显示为null
+                if (parent != null) {
+                    c = parent.loadClass(name, false);
+                } else {
+                    // 看是否被启动类加载器加载过
+                    c = findBootstrapClassOrNull(name);
+                }
+            } catch (ClassNotFoundException e) {
+                // ClassNotFoundException thrown if class not found
+                // from the non-null parent class loader
+                //捕获异常，但不做任何处理
+            }
+
+            if (c == null) {
+                // 如果还是没有找到，先让拓展类加载器调用 findClass 方法去找到该类，如果还是没找到，就抛出异常
+                // 然后让应用类加载器去找 classpath 下找该类
+                long t1 = System.nanoTime();
+                c = findClass(name);
+
+                // 记录时间
+                sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
+                sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
+                sun.misc.PerfCounter.getFindClasses().increment();
+            }
+        }
+        if (resolve) {
+            resolveClass(c);
+        }
+        return c;
+    }
+}
+~~~
+
+- 优点
+  - 避免重复加载：通过委派给父类加载器，可以避免同一个类被多次加载，提高了加载效率。
+  - 安全性：通过双亲委派机制，核心类库由根加载器加载，可以确保核心类库的安全性，防止恶意代码替换核心类。
+  - 扩展性：开发人员可以自定义类加载器，实现特定的加载策略，从而扩展Java的类加载机制。
+- 缺点
+  - 灵活性受限：双亲委派机制对于某些特殊的类加载需求可能过于严格，限制了加载器的灵活性。
+  - 破坏隔离性：如果自定义类加载器不遵循双亲委派机制，可能会破坏类加载的隔离性，导致类冲突或安全性问题。
+  - 不适合动态更新：由于类加载器在加载类时会先检查父加载器是否已加载，因此在动态更新类时可能会出现问题，需要额外的处理。
+- 总体而言，双亲委派机制通过层次结构和委派机制提供了一种有序、安全的类加载方式，但也存在一些限制和不适用的情况。
+- 双亲委派机制的应用场景
+  - 双亲委派机制在Java中有多种应用场景。一些常见的应用场景包括：
+    - 类加载：双亲委派机制主要用于Java中的类加载。它确保类以层次结构方式加载，从引导类加载器开始，然后是扩展类加载器，最后是应用程序类加载器。这样可以高效且一致地加载类，跨类加载器层次结构。
+    - 安全性：双亲委派机制在确保Java应用程序的安全性方面起着重要作用。通过委派类加载给父加载器，它可以防止未经授权或恶意代码的加载和执行。这有助于维护Java运行时环境的完整性和安全性。
+    - 类库：双亲委派机制对于加载和管理类库非常有用。引导类加载器位于层次结构的顶部，负责加载核心Java类。扩展类加载器负责从Java扩展目录加载类。应用程序类加载器负责从应用程序的类路径加载类。这种分离允许高效组织和管理类库。
+    - 自定义类加载：开发人员可以利用双亲委派机制实现具有特定加载行为的自定义类加载器。通过扩展现有的类加载器并重写类加载过程，开发人员可以引入自定义逻辑，从非标准位置加载类或对加载的类应用自定义转换。
+- 双亲委派机制原理
+  - 双亲委派机制是Java中的一种类加载机制。其原理如下：
+    - 当Java程序需要加载一个类时，首先会委托给当前类加载器的父类加载器进行加载。
+    - 父类加载器会按照相同的方式尝试加载该类。如果父类加载器能够成功加载该类，则加载过程结束。
+    - 如果父类加载器无法加载该类，则会将加载请求再次委托给它的父类加载器，直到达到顶层的引导类加载器。
+    - 引导类加载器是Java虚拟机内置的类加载器，它负责加载核心类库，如java.lang包下的类。
+    - 如果引导类加载器也无法加载该类，则会回到初始的类加载器，尝试使用自身的加载机制加载该类。
+    - 如果自身的加载机制仍然无法加载该类，则会抛出ClassNotFoundException异常。
+  - 通过这种双亲委派的机制，Java实现了类加载的层次结构。它可以确保类的加载是有序的，避免了重复加载和类的冲突。同时，它也提供了一种安全机制，防止恶意代码的加载和执行。
+
+
+
+### 5.4 线程上下文类加载器
+
+- 线程上下文类加载器（Thread Context ClassLoader，TCCL）是Java中一种特殊的类加载器，用于处理多线程环境下的类和资源加载问题。它确保了每个线程都能维护自己的类加载器上下文，从而实现了线程安全。线程上下文类加载器是解决线程局部变量和类加载问题的有效机制。当线程需要加载类时，它会首先使用与其关联的上下文类加载器，从而确保了类加载的一致性和正确性。
+- 案例：在JDBC中，DriverManager用于管理不同数据库的驱动。例如，MySQL的驱动和Oracle的驱动。DriverManager类位于rt.jar包中，由启动类加载器加载。然而，用户JAR包中的驱动需要由应用程序类加载器来加载，这就违反了双亲委派机制。
+
+![线程上下文类加载器](图片/类加载/线程上下文类加载器.png)
+
+- 为了解决这个问题，JDBC采用了SPI（Service Provider Interface）机制。SPI是一种JDK内置的服务提供发现机制。
+- **在ClassPath路径下的META-INF/services文件夹中，以接口的全限定名来命名文件名，对应的文件中写该接口的实现：**
+- 例如，在MySQL JDBC驱动中，有一个名为java.sql.Driver的文件在META-INF/services文件夹中，文件内容为com.mysql.cj.jdbc.Driver。这样，当DriverManager需要加载MySQL驱动时，它会首先查看当前线程的上下文类加载器（通常是应用程序类加载器）是否能加载这个驱动。由于驱动的实现类是由应用程序类加载器加载的，这就打破了双亲委派机制。
+
+![jdbc驱动](图片/类加载/jdbc驱动.png)
+
+![驱动信息](图片/类加载/驱动信息.png)
+
+- **使用ServiceLoader加载实现类：**使用ServiceLoader加载对应的Driver对象：
+
+~~~java
+ServiceLoader<Driver> serviceLoader = ServiceLoader.load(Driver.class);
+~~~
+
+- 在这个过程中，DriverManager使用了SPI机制来加载jar包中对应的驱动类。SPI机制通过在META-INF/services目录下查找实现了特定接口的类的配置文件，并使用线程上下文类加载器来加载这些实现类。
+
+![SPI](图片/类加载/SPI.png)
+
+- **完整流程分析**：
+  - 启动类加载器加载DriverManager。
+  - 在初始化DriverManager时，通过SPI机制加载jar包中的myql驱动。
+  - SPI中利用了线程上下文类加载器（应用程序类加载器）去加载类并创建对象。
+
+- SPI机制中使用的线程上下文类加载器通常是应用程序类加载器。这是因为线程上下文类加载器是线程特有的，每个线程都可以关联一个不同的上下文类加载器。这使得SPI机制能够灵活地加载类，打破了双亲委派机制的限制。在ServiceLoader的load方法中，通过获取当前线程的上下文类加载器来实现类的加载。
+
+~~~JAVA
+public static <S> ServiceLoader<S> load(Class<S> var0) {
+    ClassLoader var1 = Thread.currentThread().getContextClassLoader();
+    return load(var0, var1);
+}
+~~~
+
+- 为了验证线程上下文类加载器的使用，可以创建一个新的线程并在其中打印线程上下文类加载器的信息。
+
+~~~java
+public class NewThreadDemo {
+    public static void main(String[] args) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                System.out.println(Thread.currentThread().getContextClassLoader());
+            }
+        }).start();
+    }
+}
+
+// 运行结果：应用程序类加载器
+~~~
+
+- **这种由启动类加载器加载的类，委派应用程序类加载器去加载类的方式，打破了双亲委派机制。**
+
+
+
+### 5.5 自定义类加载器
+
+- **使用场景**
+
+  - 想加载非 classpath 随意路径中的类文件
+
+  - 通过接口来使用实现，希望解耦时，常用在框架设计
+
+  - 这些类希望予以隔离，不同应用的同名类都可以加载，不冲突，常见于 tomcat 容器
+
+- **步骤**
+
+  - 继承 ClassLoader 父类
+  - 要遵从双亲委派机制，重写 ﬁndClass 方法。是重写 loadClass 方法，否则不会走双亲委派机制
+  - 读取类文件的字节码
+  - 调用父类的 deﬁneClass 方法来加载类
+  - 使用者调用该类加载器的 loadClass 方法
+
+
+
+
+
+## 6、运行期优化
+
+~~~java
+package org.example.jvm;
+
+public class JIT1 {
+    public static void main(String[] args) {
+        for (int i = 0; i < 200; i++) {
+            long start = System.nanoTime();
+            for (int j = 0; j < 1000; j++) {
+                new Object();
+            }
+            long end = System.nanoTime();
+            System.out.printf("%d\t%d\n",i,(end - start));
+        }
+    }
+}
+~~~
+
+- 上述代码执行的过程，刚开始循环每次要花费时间为5位数
+- 从169次开始，花费时间变为3位数
+- 加上jvm参数-XX:-DoEscapeAnalysis后，就没有上述情况，花费时间全部为5位数
+
+
+
+### 6.1 即时编译
+
+- 分层编译：JVM 将执行状态分成了 5 个层次
+  - 0层：解释执行，用解释器将字节码翻译为机器码
+  - 1层：使用 C1 **即时编译器**编译执行（不带 proﬁling）
+  - 2层：使用 C1 即时编译器编译执行（带基本的profiling）
+  - 3层：使用 C1 即时编译器编译执行（带完全的profiling）
+  - 4层：使用 C2 即时编译器编译执行
+- proﬁling 是指在运行过程中收集一些程序执行状态的数据，例如【方法的调用次数】，【循环的 回边次数】等
+- 即时编译器（JIT）和解释器的区别
+  - 解释器
+    - 将字节码**解释**为机器码，下次即使遇到相同的字节码，仍会执行重复的解释
+    - 是将字节码解释为针对所有平台都通用的机器码
+  - 即时编译器
+    - 将一些字节码**编译**为机器码，**并存入 Code Cache**，下次遇到相同的代码，直接执行，无需再编译
+    - 根据平台类型，生成平台特定的机器码
+- 对于大部分的不常用的代码，我们无需耗费时间将其编译成机器码，而是采取解释执行的方式运行；另一方面，对于仅占据小部分的热点代码，我们则可以将其编译成机器码，以达到理想的运行速度。 执行效率上简单比较一下 Interpreter < C1 < C2，<font color="red">**总的目标是发现热点代码（hotspot名称的由来），并优化这些热点代码**</font>
+- **逃逸分析**：逃逸分析（Escape Analysis）简单来讲就是，Java Hotspot 虚拟机可以分析新创建对象的使用范围，并决定是否在 Java 堆上分配内存的一项技术
+  - 逃逸分析的 JVM 参数如下：
+    - 开启逃逸分析：-XX:+DoEscapeAnalysis
+    - 关闭逃逸分析：-XX:-DoEscapeAnalysis
+    - 显示分析结果：-XX:+PrintEscapeAnalysis
+  - 逃逸分析技术在 Java SE 6u23+ 开始支持，并默认设置为启用状态，可以不用额外加这个参数
+  - 对象逃逸状态
+    - 全局逃逸（GlobalEscape）
+      - 即一个对象的作用范围逃出了当前方法或者当前线程，有以下几种场景：
+        - 对象是一个静态变量
+        - 对象是一个已经发生逃逸的对象
+        - 对象作为当前方法的返回值
+    - 参数逃逸（ArgEscape）
+      - 即一个对象被作为方法参数传递或者被参数引用，但在调用过程中不会发生全局逃逸，这个状态是通过被调方法的字节码确定的
+    - 没有逃逸
+      - 即方法中的对象没有发生逃逸
+  - 逃逸分析优化：针对上面第三点，当一个对象没有逃逸时，可以得到以下几个虚拟机的优化
+    - **锁消除**
+      - 我们知道线程同步锁是非常牺牲性能的，当编译器确定当前对象只有当前线程使用，那么就会移除该对象的同步锁
+      - 例如，StringBuffer 和 Vector 都是用 synchronized 修饰线程安全的，但大部分情况下，它们都只是在当前线程中用到，这样编译器就会优化移除掉这些锁操作
+      - 锁消除的 JVM 参数如下：
+        - 开启锁消除：-XX:+EliminateLocks
+        - 关闭锁消除：-XX:-EliminateLocks
+        - 锁消除在 JDK8 中都是默认开启的，并且锁消除都要建立在逃逸分析的基础上
+    - **标量替换**
+      - 首先要明白标量和聚合量，基础类型和对象的引用可以理解为标量，它们不能被进一步分解。而能被进一步分解的量就是聚合量，比如：对象是聚合量，它又可以被进一步分解成标量，将其成员变量分解为分散的变量，这就叫做标量替换。
+      - 这样，如果一个对象没有发生逃逸，那压根就不用创建它，只会在栈或者寄存器上创建它用到的成员标量，节省了内存空间，也提升了应用程序性能
+      - 比如：有个student对象，里面有三个属性，如果这个对象没有发生逃逸，即：没有在别的地方被引用，那么都不需要创建他，只需要构造他的成员属性的标量信息
+      - 标量替换的 JVM 参数如下：
+        - 开启标量替换：-XX:+EliminateAllocations
+        - 关闭标量替换：-XX:-EliminateAllocations
+        - 显示标量替换详情：-XX:+PrintEliminateAllocations
+        - 标量替换同样在 JDK8 中都是默认开启的，并且都要建立在逃逸分析的基础上
+    - **栈上分配**
+      - 当对象没有发生逃逸时，该对象就可以通过标量替换分解成成员标量分配在栈内存中，和方法的生命周期一致，随着栈帧出栈时销毁，减少了 GC 压力，提高了应用程序性能
+
+
+
+### 6.2 方法内联
+
+- <font color="red">**内联函数**</font>：**内联函数就是在程序编译时，编译器将程序中出现的内联函数的调用表达式用内联函数的函数体来直接进行替换**
+- <font color="red">**JVM内联函数**</font>：**C++ 是否为内联函数由自己决定，Java 由编译器决定。Java 不支持直接声明为内联函数的，如果想让他内联，你只能够向编译器提出请求: <font color="red">关键字 final 修饰</font> 用来指明那个函数是希望被 JVM 内联的**
+  - 总的来说，一般的函数都不会被当做内联函数，只有声明了final后，编译器才会考虑是不是要把你的函数变成内联函数
+  - JVM内建有许多运行时优化。<font color="red">**首先短方法更利于JVM推断**</font>。流程更明显，作用域更短，副作用也更明显。如果是长方法JVM可能直接就跪了。
+  - 第二个原因则更重要：方法内联，如果JVM监测到一些小方法被频繁的执行，它会把方法的调用替换成方法体本身，如：
+
+~~~java
+private static int square(final int i) {
+    return i * i;
+}
+
+System.out.println(square(9));
+~~~
+
+- 如果发现 square 是热点方法，并且长度不太长时，会进行**内联**，所谓的内联就是把方法内代码拷贝、 粘贴到调用者的位置：
+
+~~~java
+System.out.println(9 * 9);
+~~~
+
+- 还能够进行**常量折叠**（constant folding）的优化，如果每次都是9，还会直接变成
+
+~~~java
+System.out.println(81);
+~~~
+
+- 实验
+  - 刚开始执行时间都是5位数
+  - 到67次开始就变为4位数
+  - 340次以后就开始出现0时间
+
+~~~java
+package org.example.jvm;
+
+public class JIT2 {
+    // -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlining -XX:CompileCommand=dontinline,*JIT2.square
+    // -XX:+PrintCompilation
+
+    public static void main(String[] args) {
+        int x = 0;
+
+        for (int i = 0; i < 500; i++) {
+            long start = System.nanoTime();
+            for (int j = 0; j < 1000; j++) {
+                x = square(9);
+            }
+            long end = System.nanoTime();
+            System.out.printf("%d\t%d\t%d\n", i, x, (end - start));
+        }
+    }
+
+    private static int square(final int i) { return i * i; }
+}
+~~~
+
+
+
+### 6.3 反射优化
+
+
 
