@@ -7447,8 +7447,6 @@ public final class Singleton {
 
 
 
-
-
 # 六、共享模型之无锁
 
 ## 1、问题
@@ -7563,25 +7561,9 @@ public void withdraw(Integer amount) {
 
 
 
-1.3 解决思路
-
-
-
-
-
-
-
-
-
-
-
-
-
-1.3 解决思路
-
 ### 1.3 解决思路
 
-#### 1.3.1 思路一
+#### 1.3.1 synchronized思路
 
 - synchronized思路
 
@@ -7610,7 +7592,7 @@ class AccountUnsafe implements Account {
 
 
 
-#### 1.3.2 思路二
+#### 1.3.2 无锁(AtomicInteger)
 
 - 无锁(AtomicInteger)
 
@@ -7702,21 +7684,185 @@ public void withdraw(Integer amount) {
 
 
 
+### 2.2 慢动作分析
+
+~~~java
+@Slf4j
+public class SlowMotion {
+    
+    public static void main(String[] args) {
+        AtomicInteger balance = new AtomicInteger(10000);
+        int mainPrev = balance.get();
+        log.debug("try get {}", mainPrev);
+        
+        new Thread(() -> {
+            sleep(1000);
+            int prev = balance.get();
+            balance.compareAndSet(prev, 9000);
+            log.debug(balance.toString());
+        }, "t1").start();
+        
+        sleep(2000);
+        log.debug("try set 8000...");
+        boolean isSuccess = balance.compareAndSet(mainPrev, 8000);
+        log.debug("is success ? {}", isSuccess);
+        if(!isSuccess){
+            mainPrev = balance.get();
+            log.debug("try set 8000...");
+            isSuccess = balance.compareAndSet(mainPrev, 8000);
+            log.debug("is success ? {}", isSuccess);
+        }
+        
+    }
+    
+    private static void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+    
+}
+
+/**
+2019-10-13 11:28:37.134 [main] try get 10000 
+2019-10-13 11:28:38.154 [t1] 9000 
+2019-10-13 11:28:39.154 [main] try set 8000... 
+2019-10-13 11:28:39.154 [main] is success ? false 
+2019-10-13 11:28:39.154 [main] try set 8000... 
+2019-10-13 11:28:39.154 [main] is success ? true
+ */
+~~~
 
 
 
+### 2.3 volatile
+
+- 获取共享变量时，为了保证该变量的可见性，需要使用volatile修饰
+- 它可以用来修饰成员变量和静态成员变量，他可以避免线程从自己的工作缓存中查找变量的值，必须到主存中获取它的值，线程操作 volatile 变量都是直接操作主存。即一个线程对 volatile 变量的修改，对另一个线程可见。 
+
+- <font color="red">**CAS 必须借助 volatile 才能读取到共享变量的最新值来实现【比较并交换】的效果**</font>
 
 
 
-https://www.yuque.com/mo_ming/gl7b70/el8wyu
+### 2.4 为什么(相对而言)无锁效率高 
+
+- 无锁情况下，即使重试失败，线程始终在高速运行，没有停歇，而 synchronized 会让线程在没有获得锁的时候，发生上下文切换，进入阻塞。
+  - 打个比喻, 线程就好像高速跑道上的赛车，高速运行时，速度超快，一旦发生上下文切换，就好比赛车要减速、熄火,等被唤醒又得重新打火、启动、加速... 恢复到高速运行，代价比较大 
+- 但无锁情况下，因为线程要保持运行，需要额外 CPU 的支持，CPU 在这里就好比高速跑道，没有额外的跑道，即一开始抢不到跑到跑，线程想高速运行也无从谈起，虽然不会进入阻塞，但由于没有分到时间片，仍然会进入可运行状态，还是会导致上下文切换。
 
 
 
+### 2.5 cas特点
+
+- 工作场景：结合 CAS 和 volatile 可以实现无锁并发，适用于线程数少、多核 CPU 的场景下。 
+- <font color="red">**CAS 是基于乐观锁的思想**</font>：最乐观的估计，不怕别的线程来修改共享变量，就算改了也没关系，我吃亏点再重试呗。 
+- <font color="red">**synchronized 是基于悲观锁的思想**</font>：：最悲观的估计，得防着其它线程来修改共享变量，我上了锁你们都别想改，我改完了解开锁，你们才有机会。 
+- CAS 体现的是无锁并发、无阻塞并发，请仔细体会这两句话的意思 
+  - 因为没有使用 synchronized，所以线程不会陷入阻塞，这是效率提升的因素之一 
+  - 但如果竞争激烈，可以想到重试必然频繁发生，反而效率会受影响
 
 
 
+## 3、原子整数 
+
+- J.U.C 并发包提供了： 
+  - AtomicBoolean：对boolean类型的封装
+  - AtomicInteger：对4字节整数类型的封装
+  - AtomicLong：对8字节整数类型的封装
+- 以AtomicInteger为例看源码，内容是以volatile修饰
+
+~~~java
+private volatile int value;
+~~~
+
+- AtomicInteger的API如下
+
+~~~java
+AtomicInteger i = new AtomicInteger(0);
+
+// 获取并自增（i = 0, 结果 i = 1, 返回 0），类似于 i++
+System.out.println(i.getAndIncrement());
+
+// 自增并获取（i = 1, 结果 i = 2, 返回 2），类似于 ++i
+System.out.println(i.incrementAndGet());
+
+// 自减并获取（i = 2, 结果 i = 1, 返回 1），类似于 --i
+System.out.println(i.decrementAndGet());
+
+// 获取并自减（i = 1, 结果 i = 0, 返回 1），类似于 i--
+System.out.println(i.getAndDecrement());
+
+// 获取并加值（i = 0, 结果 i = 5, 返回 0）
+System.out.println(i.getAndAdd(5));
+
+// 加值并获取（i = 5, 结果 i = 0, 返回 0）
+System.out.println(i.addAndGet(-5));
+
+// 获取并更新（i = 0, p 为 i 的当前值, 结果 i = -2, 返回 0）
+// 其中函数中的操作能保证原子，但函数需要无副作用
+System.out.println(i.getAndUpdate(p -> p - 2));
+
+// 更新并获取（i = -2, p 为 i 的当前值, 结果 i = 0, 返回 0）
+// 其中函数中的操作能保证原子，但函数需要无副作用
+System.out.println(i.updateAndGet(p -> p + 2));
+
+// 获取并计算（i = 0, p 为 i 的当前值, x 为参数1, 结果 i = 10, 返回 0）
+// 其中函数中的操作能保证原子，但函数需要无副作用
+// getAndUpdate 如果在 lambda 中引用了外部的局部变量，要保证该局部变量是 final 的
+// getAndAccumulate 可以通过 参数1 来引用外部的局部变量，但因为其不在 lambda 中因此不必是 final
+System.out.println(i.getAndAccumulate(10, (p, x) -> p + x));
+
+// 计算并获取（i = 10, p 为 i 的当前值, x 为参数1, 结果 i = 0, 返回 0）
+// 其中函数中的操作能保证原子，但函数需要无副作用
+System.out.println(i.accumulateAndGet(-10, (p, x) -> p + x));
+~~~
 
 
+
+## 4、原子引用
+
+- 为什么需要原子引用类型？     对引用类型也实现CAS功能
+  - AtomicReference 
+  - AtomicMarkableReference 
+  - AtomicStampedReference 
+
+~~~java
+public interface DecimalAccount {
+    // 获取余额
+    BigDecimal getBalance();
+    
+    // 取款
+    void withdraw(BigDecimal amount);
+    
+    /**
+    * 方法内会启动 1000 个线程，每个线程做 -10 元 的操作
+    * 如果初始余额为 10000 那么正确的结果应当是 0
+    */
+    static void demo(DecimalAccount account) {
+        List<Thread> ts = new ArrayList<>();
+        for (int i = 0; i < 1000; i++) {
+            ts.add(new Thread(() -> {
+                account.withdraw(BigDecimal.TEN);
+            }));
+        }
+        ts.forEach(Thread::start);
+        
+        ts.forEach(t -> {
+            try {
+                t.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+        System.out.println(account.getBalance());
+    }
+    
+}
+~~~
+
+- 试着提供不同的 DecimalAccount 实现，实现安全的取款操作
 
 
 
