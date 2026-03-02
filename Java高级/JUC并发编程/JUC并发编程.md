@@ -6686,8 +6686,6 @@ public class Test2 {
 
 
 
-
-
 ### 1.3 模式之两阶段终止 
 
 ~~~java
@@ -6724,16 +6722,15 @@ class TwoPhaseTermination {
                     // 停止标志为真时
                     log.debug("料理后事");
                     break;
-                } else {
-                    // 当前线程不想停止
-                    try {
-                        // 正常的执行监控记录
-                        Thread.sleep(1000);
-                        log.debug("执行监控记录");
-                    } catch (InterruptedException exception) {
-                        log.debug("料理后事");
-                        break;
-                    }
+                }
+                // 当前线程不想停止
+                try {
+                    // 正常的执行监控记录
+                    Thread.sleep(1000);
+                    log.debug("执行监控记录");
+                } catch (InterruptedException exception) {
+                    log.debug("料理后事");
+                    break;
                 }
             }
         });
@@ -6758,31 +6755,102 @@ class TwoPhaseTermination {
 
 
 
-
-
 ### 1.4 同步模式之Balking(犹豫模式)
 
 - Balking （犹豫）模式用在一个线程发现另一个线程或本线程已经做了某一件相同的事，那么本线程就无需再做了，直接结束返回
+- 例子说明：如果在主线程中调用两次termination对象的start方法，那么就会开启两个同样的监控对象，但是做的都是同一件事，都是监控后台程序。现在是只需要一个后台线程，监控就完了，没必要两次
+
+~~~java
+package com.example.juc;
+
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 两阶段中止模式之volatile使用
+ */
+@Slf4j
+public class Test3 {
+    public static void main(String[] args) throws InterruptedException {
+        TwoPhaseTermination termination = new TwoPhaseTermination();
+        // 启用后台监控程序：这里调用两次
+        termination.start();
+        termination.start();
+        // 3.5s后打断监控
+        Thread.sleep(3500);
+        termination.stop();
+    }
+}
+
+/**
+11:18:43.741 [Thread-1] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:43.741 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:44.759 [Thread-1] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:44.759 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:45.773 [Thread-1] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:45.773 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:46.233 [Thread-1] DEBUG com.example.juc.TwoPhaseTermination - 料理后事
+11:18:46.786 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:18:46.789 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 料理后事
+ */
+~~~
+
+- 改进方法
 
 
 ~~~java
-public class MonitorService {
-    
+@Slf4j
+class TwoPhaseTermination {
+    private Thread monitor;
+    // 停止标志
+    private volatile boolean stop = false;
     // 用来表示是否已经有线程已经在执行启动了
-    private volatile boolean starting;
-    
+    private volatile boolean starting = false;
+
+    // 启动监控线程
     public void start() {
-        log.info("尝试启动监控线程...");
+        // 如果有线程已经启动过了，那么直接return返回就行了，不需要再启动一个线程来做同样的事
+        // 这里要加锁的原因，是因为这里标志多线程可以同时修改，会有线程安全问题，所以必须加锁，保持一致
         synchronized (this) {
             if (starting) {
                 return;
             }
             starting = true;
         }
-        
-        // 真正启动监控线程...
+        // 如果是第一次进来，那么就没有线程启动过，这时候就正常做后面的事，并且将这个启动标志置为true
+        monitor = new Thread(() -> {
+            while (true) {
+                if(stop) {
+                    // 停止标志为真时
+                    log.debug("料理后事");
+                    break;
+                }
+                // 当前线程不想停止
+                try {
+                    // 正常的执行监控记录
+                    Thread.sleep(1000);
+                    log.debug("执行监控记录");
+                } catch (InterruptedException exception) {
+                    log.debug("料理后事");
+                    break;
+                }
+            }
+        });
+        monitor.start();
+    }
+
+    // 停止监控线程
+    public void stop() {
+        stop = true;
+        monitor.interrupt();
     }
 }
+
+/**
+11:26:14.478 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:26:15.490 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:26:16.504 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 执行监控记录
+11:26:16.976 [Thread-0] DEBUG com.example.juc.TwoPhaseTermination - 料理后事
+ */
 ~~~
 
 - 例子解析：如果有两个线程同时执行start方法，第一个进来执行到if判断，此时starting还没有为true，那么第二个线程只能等待，等线程1执行完之后锁释放，线程2判断发现starting已经是true，就不会再有后续执行了
@@ -6850,7 +6918,69 @@ public final class Singleton {
 
 ##### 1.5.2.1 名词
 
-- 
+- Clock Cycle Time ：时钟周期时间
+  - 主频的概念大家接触的比较多，而 CPU 的 Clock Cycle Time（时钟周期时间），等于主频的倒数，**意思是 CPU 能够识别的最小时间单位**，比如说 4G 主频的 CPU 的 Clock Cycle Time 就是 0.25 ns，作为对比，我们墙上挂钟的Cycle Time 是 1s 
+  - 例如，运行一条加法指令一般需要一个时钟周期时间 
+- CPI：平均时钟周期数
+  - 有的指令需要更多的时钟周期时间，所以引出了CPI（Cycles Per Instruction）指令平均时钟周期数，**表示每条指令所需的时钟周期数**
+- IPC：即CPI 的倒数
+  - IPC（Instruction Per Clock Cycle）即 CPI 的倒数，**表示每个时钟周期能够运行的指令数** 
+- CPU 执行时间 
+  - 程序的 CPU 执行时间，即我们前面提到的 user + system 时间，可以用下面的公式来表示 ：
+  - 程序 CPU 执行时间 = 指令数 * CPI * Clock Cycle Time 
+
+
+
+##### 1.5.2.2 类比故事
+
+- 加工一条鱼需要 50 分钟，只能一条鱼、一条鱼顺序加工...
+
+![沙丁鱼1](图片/共享模型之内存/沙丁鱼1.png)
+
+- 可以将每个鱼罐头的加工流程细分为 5 个步骤： 
+  - 去鳞清洗 10分钟 
+  - 蒸煮沥水 10分钟 
+  - 加注汤料 10分钟 
+  - 杀菌出锅 10分钟 
+  - 真空封罐 10分钟
+
+![沙丁鱼2](图片/共享模型之内存/沙丁鱼2.png)
+
+- 即使只有一个工人，最理想的情况是：他能够在 10 分钟内同时做好这 5 件事，因为对第一条鱼的真空装罐，不会，影响对第二条鱼的杀菌出锅。比如机器1专门用来去鳞，机器2专门用来蒸煮，工人不需要一直等待一条鱼全部搞完，只需要分步去搞即可
+- 这个工人就类似于CPU，每个指令执行不需要一次全部执行完，而是可以分片进行，这样调度执行1的空闲时间，可以去执行2，保证CPU充分利用，这个排序调度就是cpu自行决定如何完成
+
+
+
+##### 1.5.2.3 指令重排序优化
+
+- 事实上，现代处理器会设计为一个时钟周期完成一条执行时间最长的 CPU 指令。为什么这么做呢？
+- 可以想到指令还可以再划分成一个个更小的阶段，例如，每条指令都可以分为： 
+  - 取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回
+
+![指令重排序1](图片/共享模型之内存/指令重排序1.png)
+
+- 在不改变程序结果的前提下，这些指令的各个阶段可以通过**重排序和组合**来实现<font color="red">**指令级并行**</font>，这一技术在 80's 中叶到 90's 中叶占据了计算架构的重要地位。
+
+- 指令重排的前提是，重排指令不能影响结果，例如
+
+~~~java
+// 可以重排的例子
+int a = 10; // 指令1
+int b = 20; // 指令2
+System.out.println( a + b );
+
+// 不能重排的例子
+int a = 10; // 指令1
+int b = a - 5; // 指令2
+~~~
+
+
+
+##### 1.5.2.4 支持流水线的处理器 
+
+- 现代 CPU 支持**多级指令流水线**，例如支持同时执行 **取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回**的处理器，就可以称之为**五级指令流水线**。这时 CPU 可以在一个时钟周期内，同时运行五条指令的不同阶段（相当于一条执行时间最长的复杂指令），IPC = 1，本质上，流水线技术并不能缩短单条指令的执行时间，但它变相地提高了指令地吞吐率。 
+
+![指令重排序2](图片/共享模型之内存/指令重排序2.png)
 
 
 
@@ -6911,15 +7041,409 @@ public void actor2(I_Result r) {
 
 
 
+#### 1.5.4 volatile原理
+
+- volatile 的底层实现原理是<font color="red">**内存屏障**</font>，Memory Barrier（Memory Fence）
+  - **对 volatile 变量的 写指令后会加入写屏障 :** 保证在该屏障之前的，对共享变量的改动，都同步到主存当中
+  - **对 volatile 变量的 读指令前会加入读屏障 :** 在该屏障之后，对共享变量的读取，加载的是主存中最新数据
 
 
 
+##### 1.5.4.1 如何保证可见性
+
+- 写屏障（sfence）保证在该屏障之前的，对共享变量的改动，都同步到主存当中
+
+~~~java
+public void actor2(I_Result r) {
+    num = 2;
+    ready = true; // ready 是 volatile 赋值带写屏障
+    // 写屏障
+}
+~~~
+
+- 而读屏障（lfence）保证在该屏障之后，对共享变量的读取，加载的是主存中最新数据
+
+~~~java
+public void actor1(I_Result r) {
+    // 读屏障
+    // ready 是 volatile 读取值带读屏障
+    if(ready) {
+        r.r1 = num + num;
+    } else {
+        r.r1 = 1;
+    }
+}
+~~~
+
+![如何保证可见性](图片/共享模型之内存/如何保证可见性.png)
 
 
 
+##### 1.5.4.2 如何保证有序性
+
+- 写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障之后
+
+~~~java
+public void actor2(I_Result r) {
+    num = 2;
+    ready = true; // ready 是 volatile 赋值带写屏障
+    // 写屏障
+}
+~~~
+
+- 读屏障会确保指令重排序时，不会将读屏障之后的代码排在读屏障之前
+
+~~~java
+public void actor1(I_Result r) {
+    // 读屏障
+    // ready 是 volatile 读取值带读屏障
+    if(ready) {
+        r.r1 = num + num;
+    } else {
+        r.r1 = 1;
+    }
+}
+~~~
+
+![如何保证有序性](图片/共享模型之内存/如何保证有序性.png)
 
 
 
+##### 1.5.4.3 不能解决指令交错
+
+还是那句话，不能解决指令交错： 
+
+- 写屏障仅仅是保证之后的读能够读到最新的结果，但不能保证读跑到它前面去 
+- 而有序性的保证也只是保证了本线程内相关代码不被重排序
+
+![不能解决指令交错](图片/共享模型之内存/不能解决指令交错.png)
+
+
+
+##### 1.5.4.4 double-checked locking
+
+- 未改进前
+  - t1、t2同时进来，只会有一个能进入到锁里面
+  - 但是synchronized是比较消耗性能的，每次只要调用getInstance方法都会去调这个synchronized就很慢
+
+~~~java
+public final class Singleton {
+    private Singleton() { }
+    private static Singleton INSTANCE = null;
+    
+    public static Singleton getInstance() {
+        synchronized (Singleton.class) { // t2
+            // 也许有其它线程已经创建实例，所以再判断一次
+            if (INSTANCE == null) { // t1
+                INSTANCE = new Singleton();
+            }
+        }
+        return INSTANCE;
+    }
+}
+~~~
+
+- 改进措施
+  - 在前面再加一次判断，实例没创建的时候才会进入synchronized代码块
+  - 这样就不会每次都直接进入synchronized代码块
+- 缺点：首次进来的时候，INSTANCE对象是在同步代码块外，多线程情况下会发生指令重排
+  - INSTANCE = new Singleton();代码jvm会优化，指令顺序会发生改变，从先分配地址后赋值变成先赋值后分配地址
+  - 那么if (INSTANCE == null) { 外部的这个对象，可能进来的时候它还没声明好，但是已经分配地址了，那么就会认为它已经不为空了
+
+~~~java
+public final class Singleton {
+    private Singleton() { }
+    private static Singleton INSTANCE = null;
+    
+    public static Singleton getInstance() {
+        // 实例没创建，才会进入内部的 synchronized代码块
+        if (INSTANCE == null) { 
+            synchronized (Singleton.class) { // t2
+                // 也许有其它线程已经创建实例，所以再判断一次
+                if (INSTANCE == null) { // t1
+                    INSTANCE = new Singleton();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+}
+~~~
+
+- 加volatile来解决指令重排指令
+
+~~~java
+public final class Singleton {
+    private Singleton() { }
+    private static volatile Singleton INSTANCE = null;
+    
+    public static Singleton getInstance() {
+        // 实例没创建，才会进入内部的 synchronized代码块
+        if (INSTANCE == null) { 
+            synchronized (Singleton.class) { // t2
+                // 也许有其它线程已经创建实例，所以再判断一次
+                if (INSTANCE == null) { // t1
+                    INSTANCE = new Singleton();
+                }
+            }
+        }
+        return INSTANCE;
+    }
+}
+~~~
+
+![double-checked locking1](图片/共享模型之内存/double-checked locking1.png)
+
+- 如上面的注释内容所示，读写 volatile 变量时会加入内存屏障（Memory Barrier（Memory Fence）），保证下面两点： 
+  - 可见性 
+    - 写屏障（sfence）保证在该屏障之前的 t1 对共享变量的改动，都同步到主存当中 
+    - 而读屏障（lfence）保证在该屏障之后 t2 对共享变量的读取，加载的是主存中最新数据
+
+- - 有序性 
+    - 写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障之后
+    - 读屏障会确保指令重排序时，不会将读屏障之后的代码排在读屏障之前 
+
+- - 更底层是读写变量时使用 lock 指令来多核 CPU 之间的可见性与有序性
+
+![double-checked locking2](图片/共享模型之内存/double-checked locking2.png)
+
+
+
+#### 1.5.5 happens-before
+
+- <font color="red">**happens-before 规定了对共享变量的写操作对其它线程的读操作可见**</font>，它是可见性与有序性的一套规则总结，抛开以下 happens-before 规则，JMM 并不能保证一个线程对共享变量的写，对于其它线程对该共享变量的读可见 
+
+- 情况1：线程解锁 m 之前对变量的写，对于接下来对 m 加锁的其它线程对该变量的读可见
+
+~~~java
+static int x;
+static Object m = new Object();
+
+new Thread(()->{
+    synchronized(m) {
+        x = 10;
+    }
+},"t1").start();
+
+new Thread(()->{
+    synchronized(m) {
+        System.out.println(x);
+    }
+},"t2").start();
+~~~
+
+- 情况2：线程对 volatile 变量的写，对接下来其它线程对该变量的读可见
+
+~~~java
+volatile static int x;
+
+new Thread(()->{
+    x = 10;
+},"t1").start();
+
+new Thread(()->{
+    System.out.println(x);
+},"t2").start();
+~~~
+
+- 情况3：线程 start 前对变量的写，对该线程开始后对该变量的读可见
+
+~~~java
+static int x; 
+x = 10;
+
+new Thread(()->{
+    System.out.println(x);
+},"t2").start();
+~~~
+
+- 情况4：线程结束前对变量的写，对其它线程得知它结束后的读可见（比如其它线程调用 t1.isAlive() 或 t1.join()等待它结束）
+
+~~~java
+static int x;
+
+Thread t1 = new Thread(()->{
+    x = 10;
+},"t1");
+t1.start();
+
+t1.join();
+System.out.println(x);
+~~~
+
+- 情况5：线程 t1 打断 t2（interrupt）前对变量的写，对于其他线程得知 t2 被打断后对变量的读可见（通过t2.interrupted 或 t2.isInterrupted）
+
+~~~java
+static int x;
+
+public static void main(String[] args) {
+    Thread t2 = new Thread(()->{
+        while(true) {
+            if(Thread.currentThread().isInterrupted()) {
+                System.out.println(x);
+                break;
+            }
+        }
+    },"t2");
+    t2.start();
+    
+    new Thread(()->{
+        sleep(1);
+        // 打断之前的赋值对其他线程可见
+        x = 10;
+        t2.interrupt();
+    },"t1").start();
+    
+    while(!t2.isInterrupted()) {
+        Thread.yield();
+    }
+    System.out.println(x);
+}
+~~~
+
+- 情况6: 对变量默认值（0，false，null）的写，对其它线程对该变量的读可见 
+- 情况7: 具有传递性，如果 x hb-> y 并且 y hb-> z 那么有 x hb-> z ，配合 volatile 的防指令重排，有下面的例子
+
+~~~java
+volatile static int x;
+static int y;
+
+new Thread(()->{ 
+    y = 10;
+    x = 20;
+    // 因为x后面有个写屏障，y在x前面，所以y被x顺带同步到主存了
+},"t1").start();
+
+new Thread(()->{
+    // x=20 对 t2 可见, 同时 y=10 也对 t2 可见
+    System.out.println(x); 
+},"t2").start();
+~~~
+
+
+
+### 1.6 习题
+
+- balking 模式习题 
+
+  - 希望 doInit() 方法仅被调用一次，下面的实现是否有问题，为什么？  **有问题，不能保证原子性，要加锁**
+
+  ~~~java
+  public class TestVolatile {
+      volatile boolean initialized = false;
+      
+      void init() {
+          if (initialized) { 
+              return;
+          } 
+          doInit();
+          initialized = true;
+      }
+      
+      private void doInit() {
+      }
+  }
+  ~~~
+
+
+
+### 1.7 线程安全单例习题
+
+- 单例模式有很多实现方法，饿汉、懒汉、静态内部类、枚举类，试分析每种实现下获取单例对象（即调用getInstance）时的线程安全，并思考注释中的问题 
+  - 饿汉式：类加载就会导致该单实例对象被创建 
+  - 懒汉式：类加载不会导致该单实例对象被创建，而是首次使用该对象时才会创建 
+- 实现1
+
+~~~java
+// 问题1：为什么加 final
+// 问题2：如果实现了序列化接口, 还要做什么来防止反序列化破坏单例
+public final class Singleton implements Serializable {
+    // 问题3：为什么设置为私有? 是否能防止反射创建新的实例?
+    private Singleton() {}
+    // 问题4：这样初始化是否能保证单例对象创建时的线程安全?
+    private static final Singleton INSTANCE = new Singleton();
+    // 问题5：为什么提供静态方法而不是直接将 INSTANCE 设置为 public, 说出你知道的理由
+    public static Singleton getInstance() {
+        return INSTANCE;
+    }
+    public Object readResolve() {
+        return INSTANCE;
+    }
+}
+~~~
+
+- 实现2
+
+~~~java
+// 问题1：枚举单例是如何限制实例个数的
+// 问题2：枚举单例在创建时是否有并发问题
+// 问题3：枚举单例能否被反射破坏单例
+// 问题4：枚举单例能否被反序列化破坏单例
+// 问题5：枚举单例属于懒汉式还是饿汉式
+// 问题6：枚举单例如果希望加入一些单例创建时的初始化逻辑该如何做
+enum Singleton { 
+    INSTANCE; 
+}
+~~~
+
+- 实现3
+
+```java
+public final class Singleton {
+    private Singleton() { }
+    private static Singleton INSTANCE = null;
+    // 分析这里的线程安全, 并说明有什么缺点
+    public static synchronized Singleton getInstance() {
+        if( INSTANCE != null ){
+            return INSTANCE;
+        } 
+        INSTANCE = new Singleton();
+        return INSTANCE;
+    }
+}
+```
+
+- 实现4：DCL
+
+```java
+public final class Singleton {
+    private Singleton() { }
+    
+    // 问题1：解释为什么要加 volatile ?
+    private static volatile Singleton INSTANCE = null;
+    
+    // 问题2：对比实现3, 说出这样做的意义 
+    public static Singleton getInstance() {
+        if (INSTANCE != null) { 
+            return INSTANCE;
+        }
+        synchronized (Singleton.class) { 
+            // 问题3：为什么还要在这里加为空判断, 之前不是判断过了吗
+            if (INSTANCE != null) { // t2 
+                return INSTANCE;
+            }
+            INSTANCE = new Singleton(); 
+            return INSTANCE;
+        } 
+    }
+}
+```
+
+- 实现5
+
+```java
+public final class Singleton {
+    private Singleton() { }
+    // 问题1：属于懒汉式还是饿汉式  懒汉式
+    private static class LazyHolder {
+        static final Singleton INSTANCE = new Singleton();
+    }
+    // 问题2：在创建时是否有并发问题   JVM保证其安全性
+    public static Singleton getInstance() {
+        return LazyHolder.INSTANCE;
+    }
+}
+```
 
 
 
