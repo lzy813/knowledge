@@ -8112,6 +8112,23 @@ public String(char value[], int offset, int count) {
 - 在JDK中 Boolean，Byte，Short，Integer，Long，Character 等包装类提供了 valueOf 方法，例如 Long 的valueOf 会缓存 -128~127 之间的 Long 对象，在这个范围之间会重用对象，大于这个范围，才会新建 Long 对象：
 
 ~~~java
+/**
+ * 初始化的时候会把-128~127之间的数据缓存在cache里
+ */
+private static class LongCache {
+    private LongCache(){}
+
+    static final Long cache[] = new Long[-(-128) + 127 + 1];
+
+    static {
+        for(int i = 0; i < cache.length; i++)
+            cache[i] = new Long(i - 128);
+    }
+}
+
+/**
+ * 这里如果要用这个区间的数据，就直接从缓存里拿
+ */
 public static Long valueOf(long l) {
     final int offset = 128;
     if (l >= -128 && l <= 127) { // will cache
@@ -8136,7 +8153,7 @@ public static Long valueOf(long l) {
 
 #### 3.2.2 String串池 
 
-见jvm资料
+见jvm资料，它可以重用串池里的对象
 
 
 
@@ -8184,9 +8201,187 @@ private static BigDecimal add(final long xs, int scale1, final long ys, int scal
 - 这时预先创建好一批连接，放入连接池。一次请求到达后，从连接池获取连接，使用完毕后再还回连接池，
 - 这样既节约了连接的创建和关闭时间，也实现了连接的重用，不至于让庞大的连接数压垮数据库。
 
+~~~java
+class Pool {
+    
+    // 1. 连接池大小
+    private final int poolSize;
+    
+    // 2. 连接对象数组
+    private Connection[] connections;
+    
+    // 3. 连接状态数组 0 表示空闲， 1 表示繁忙
+    private AtomicIntegerArray states;
+    
+    // 4. 构造方法初始化
+    public Pool(int poolSize) {
+        this.poolSize = poolSize;
+        this.connections = new Connection[poolSize];
+        this.states = new AtomicIntegerArray(new int[poolSize]);
+        for (int i = 0; i < poolSize; i++) {
+            connections[i] = new MockConnection("连接" + (i+1));
+        }
+    }
+    
+    // 5. 借连接
+    public Connection borrow() {
+        while(true) {
+            for (int i = 0; i < poolSize; i++) {
+                // 获取空闲连接
+                if(states.get(i) == 0) {
+                    if (states.compareAndSet(i, 0, 1)) {
+                        log.debug("borrow {}", connections[i]);
+                        return connections[i];
+                    }
+                }
+            }
+            // 如果没有空闲连接，当前线程进入等待
+            synchronized (this) {
+                try {
+                    log.debug("wait...");
+                    this.wait();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
+    // 6. 归还连接
+    public void free(Connection conn) {
+        for (int i = 0; i < poolSize; i++) {
+            if (connections[i] == conn) {
+                states.set(i, 0);
+                synchronized (this) {
+                    log.debug("free {}", conn);
+                    this.notifyAll();
+                }
+                break;
+            }
+        }
+    }
+    
+}
+
+class MockConnection implements Connection {
+    // 实现略
+}
+~~~
+
+- 使用连接池
+
+~~~java
+Pool pool = new Pool(2);
+
+for (int i = 0; i < 5; i++) {
+    new Thread(() -> {
+        Connection conn = pool.borrow();
+        try {
+            Thread.sleep(new Random().nextInt(1000));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        pool.free(conn);
+    }).start();
+}
+~~~
+
+- 以上实现没有考虑： 
+  - 连接的动态增长与收缩 
+  - 连接保活（可用性检测） 
+  - 等待超时处理 
+  - 分布式 hash 
+- 对于关系型数据库，有比较成熟的连接池实现，例如c3p0, druid等 
+- 对于更通用的对象池，可以考虑使用apache commons pool，例如redis连接池可以参考jedis中关于连接池的实现
 
 
 
+### 3.4 final原理
+
+#### 3.4.1 设置final变量的原理
+
+~~~java
+public class TestFinal {
+    final int a = 20; 
+}
+~~~
+
+- 字节码
+
+![final字节码](图片/共享模型之内存/final字节码.png)
+
+- 发现 final 变量的赋值也会通过 putfifield 指令来完成，同样在这条指令之后也会加入写屏障，保证在其它线程读到 ，它的值时不会出现为 0 的情况
+  - 如果没有这个写屏障，int a = 0。是分为两步的，一步是分配地址空间，这个时候值为0，第二步才是设置初始值20，那么如果在中间这个时间点有其他线程来看，就有可能读取的是0了（可见性问题）
+
+
+
+#### 3.4.2 获取final变量的原理
+
+~~~java
+
+public class TestFinal {
+    static int A = 10;
+    static int B = Short.MAX_VALUE+1;
+    
+    final int a = 20;
+    final int b = Integer.MAX_VALUE;
+    
+    final void test1() {
+        final int c = 30;
+        
+        new Thread(()->{
+            System.out.println(c);
+        }).start();
+        
+        final int d = 30;
+        class Task implements Runnable {
+            
+            @Override
+            public void run() {
+                System.out.println(d);
+            }
+        }
+        new Thread(new Task()).start();
+        
+    }
+    
+}
+
+class UseFinal1 {
+    public void test() {
+        System.out.println(TestFinal.A);
+        System.out.println(TestFinal.B);
+        System.out.println(new TestFinal().a);
+        System.out.println(new TestFinal().b);
+        new TestFinal().test1();
+    }
+}
+
+class UseFinal2 {
+    public void test() {
+        System.out.println(TestFinal.A);
+    }
+}
+~~~
+
+![获取final变量的字节码](图片/共享模型之内存/获取final变量的字节码.png)
+
+- 如果不加final修饰，那么test方法访问其他类的静态变量是通过getStatic()方法来获取的
+- 加了final修饰，那就是直接把其他类的静态变量复制拷贝到test方法的栈内存中
+
+
+
+#### 3.4.3 匿名内部类
+
+- **匿名内部类之所以可以访问局部变量，是因为在底层将这个局部变量的值传入到了匿名内部类中，并且以匿名内部类的成员变量的形式存在，这个值的传递过程是通过匿名内部类的构造器完成的。**
+- 为什么需要用final修饰局部变量呢?
+  - **用final修饰实际上就是为了保护数据的一致性。**
+  - 这里我插一点，final修饰符对变量来说，深层次的理解就是保障变量值的一致性。为什么这么说呢？因为引用类型变量其本质是存入的是一个引用地址，说白了还是一个值（可以理解为内存中的地址值）。用final修饰后，这个这个引用变量的地址值不能改变，所以这个引用变量就无法再指向其它对象了。
+- 为什么需要用final保护数据的一致性呢？
+  - 因为将数据拷贝完成后，**如果不用final修饰，则原先的局部变量可以发生变化。**这里到了问题的核心了，如果局部变量发生变化后，匿名内部类是不知道的（因为他只是拷贝了局部变量的值，并不是直接使用的局部变量）
+  - 这里举个栗子：原先局部变量指向的是对象A，在创建匿名内部类后，匿名内部类中的成员变量也指向A对象。但过了一段时间局部变量的值指向另外一个B对象，但此时匿名内部类中还是指向原先的A对象。那么程序再接着运行下去，可能就会导致程序运行的结果与预期不同。
+
+![匿名内部类问题](图片/共享模型之内存/匿名内部类问题.png)
 
 
 
