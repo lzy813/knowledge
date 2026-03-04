@@ -284,6 +284,10 @@ public class CollectionDemo3 {
  */
 ~~~
 
+- 迭代器源码
+
+![迭代器源码1](图片/迭代器源码1.png)
+
 - 细节注意点
   - 当指针已经指向最后没有元素的位置，再强行使用next()方法，就会报错 NoSuchElementException
   - 迭代器遍历完毕，指针不会复位，想再重新遍历，只能重新再次获取一个新的迭代器对象
@@ -692,8 +696,17 @@ public class ListDemo3 {
 
   - <font color="red">**如果一次添加添加多个元素，1.5倍还放不下，则新创建数组的长度以实际为准**</font>
 
-
 ![arrayList4](图片/arrayList4.png)
+
+- ArrayList源码
+
+  - 不需要扩容的
+
+  ![arrayList代码1](图片/arrayList代码1.png)
+
+  - 需要扩容的
+
+  ![arrayList代码2](图片/arrayList代码2.png)
 
 - 使用场景
   - ArrayList 适合：根据索引查询数据，比如根据随机索引取数据（高效）！或者数据量不是很大时！
@@ -727,6 +740,10 @@ public class ListDemo3 {
 |    public E getLast()     |    返回此列表中的最后一个元素    |
 |  public E removeFirst()   |  从此列表中删除并返回第一个元素  |
 |   public E removeLast()   | 从此列表中删除并返回最后一个元素 |
+
+- 底层源码
+
+![linkedList源码](图片/linkedList源码.png)
 
 - 使用场景
 
@@ -815,7 +832,8 @@ public class ListDemo3 {
   }
   ~~~
 
-  
+
+
 
 ### 2.3 Set
 
@@ -969,4 +987,664 @@ public class SetDemo2 {
   - 比如：内容一样的两个学生对象存入到HashSet集合中，HashSet是不能去重的
   - 原因：因为HashSet的存储首先是得到hash值，再用equals判定，如果都相同的话才不会存入，而默认的Object方法hash值可能不同
   - <font color="red">**如果希望Set集合认为两个内容一样的对象是重复的，必须重写对象的equals()和hashcode()方法**</font>
+
+
+
+#### 2.3.3 LinkedHashSet
+
+- 特点：
+
+  - <font color="red">**有序**</font>
+    - 每个元素多了个双链表的机制来记录前后元素的位置，这样当取值的，顺着双链表取就能得到有序的数列
+
+  - 不重复
+
+  - 无索引
+
+- 缺点：
+
+  - 内存占用大，因为有多了前后地址
+
+![LinkedHashSet底层原理](图片/LinkedHashSet底层原理.png)
+
+
+
+#### 2.3.4 TreeSet
+
+- 特点
+  - <font color="red">**可排序(他会把数据按照大小进行排序，默认升序)**</font>
+  - 不重复
+  - 无索引
+- <font color="red">**底层是基于红黑树实现的排序。**</font>
+- 注意
+  - 对于数值类型：Integer, Double，默认按照数值本身的大小进行升序排序。
+  - 对于字符串类型：默认按照首字符的编号升序排序。
+  - **对于自定义类型如 Student 对象，TreeSet 默认是无法直接排序的。**
+  - 如果要比较自定义类型，必须指定比较方法，不指定的话会报错：Exception in thread "main" java.lang.ClassCastException: class org.example.collectiondemo.Student cannot be cast to class java.lang.Comparable (org.example.collectiondemo.Student is in unnamed module of loader 'app'; java.lang.Comparable is in module java.base of loader 'bootstrap')
+
+~~~java
+package org.example.setdemo;
+
+import org.example.collectiondemo.Student;
+
+import java.util.Set;
+import java.util.TreeSet;
+
+public class SetDemo3 {
+    public static void main(String[] args) {
+        Student s1 = new Student("郭姝萌", 25);
+        Student s2 = new Student("紫霞", 22);
+
+        Set<Student> sets = new TreeSet<>();
+        sets.add(s1);
+        sets.add(s2);
+        System.out.println(sets);
+    }
+}
+
+/**
+Exception in thread "main" java.lang.ClassCastException: class org.example.collectiondemo.Student cannot be cast to class java.lang.Comparable (org.example.collectiondemo.Student is in unnamed module of loader 'app'; java.lang.Comparable is in module java.base of loader 'bootstrap')
+	at java.base/java.util.TreeMap.compare(TreeMap.java:1569)
+	at java.base/java.util.TreeMap.addEntryToEmptyMap(TreeMap.java:776)
+	at java.base/java.util.TreeMap.put(TreeMap.java:785)
+	at java.base/java.util.TreeMap.put(TreeMap.java:534)
+	at java.base/java.util.TreeSet.add(TreeSet.java:255)
+	at org.example.setdemo.SetDemo3.main(SetDemo3.java:14)
+ */
+~~~
+
+- 自定义排序规则：TreeSet 集合存储自定义类型的对象时，必须指定排序规则，支持如下两种方式来指定比较规则。
+  - 让自定义的类（如学生类）**实现 Comparable 接口**，重写里面的**compareTo 方法**来指定比较规则。
+  - 通过调用 TreeSet 集合有参数构造器，可以设置**Comparator 对象**（比较器对象，用于指定比较规则）。
+
+~~~java
+package org.example.setdemo;
+
+import org.example.collectiondemo.Student;
+
+import java.util.Comparator;
+import java.util.Set;
+import java.util.TreeSet;
+
+public class SetDemo3 {
+    public static void main(String[] args) {
+        Student s1 = new Student("郭姝萌", 25, 160.0);
+        Student s2 = new Student("紫霞", 22, 172.1);
+        Student s3 = new Student("猪八戒", 27, 158.3);
+        Student s4 = new Student("牛魔王", 27, 172.1);
+
+        Set<Student> sets = new TreeSet<>(new Comparator<Student>() {
+            @Override
+            public int compare(Student o1, Student o2) {
+                return Double.compare(o1.getHeight(), o2.getHeight());
+            }
+        });
+        sets.add(s1);
+        sets.add(s2);
+        sets.add(s3);
+        sets.add(s4);
+        System.out.println(sets);
+    }
+}
+
+
+
+
+
+
+package org.example.collectiondemo;
+
+public class Student implements Comparable<Student> {
+    private String name;
+    private int age;
+    private double height;
+
+    public Student(String name, int age, double height) {
+        this.name = name;
+        this.age = age;
+        this.height = height;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
+
+    @Override
+    public String toString() {
+        return "Student{" +
+                "name='" + name + '\'' +
+                ", age=" + age +
+                ", height=" + height +
+                '}';
+    }
+
+    @Override
+    public int compareTo(Student o) {
+        return this.age - o.age;
+    }
+}
+
+/**
+ * [Student{name='猪八戒', age=27, height=158.3}, Student{name='郭姝萌', age=25, height=160.0}, Student{name='紫霞', age=22, height=172.1}]
+ */
+~~~
+
+- 注意：
+  - 如果compareTo方法返回的是相同的值，则只会插入一个进去
+  - 如果对象和set都有compareTo方法，优先用近的，即：set自带的
+
+
+
+### 2.4 集合的并发修改异常
+
+- 集合的并发修改异常
+  - 使用迭代器遍历集合时，又同时在删除集合中的数据，程序就会出现并发修改异常的错误。
+  - 由于增强 for 循环遍历集合就是迭代器遍历集合的简化写法，因此，使用增强 for 循环遍历集合，又在同时删除集合中的数据时，程序也会出现并发修改异常的错误。
+- 怎么保证遍历集合同时删除数据时不出 bug？
+  - 使用迭代器遍历集合，<font color="red">**但用迭代器自己的删除方法删除数据即可。**</font>
+  - 如果能用 for 循环遍历时：<font color="red">**可以倒着遍历并删除；或者从前往后遍历，但删除元素后做 i-- 操作。</font>**
+
+~~~java
+package org.example.setdemo;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public class SetDemo4 {
+    public static void main(String[] args) {
+        List<String> list = new ArrayList<>();
+        list.add("张三");
+        list.add("李四");
+        list.add("王五");
+        list.add("小李子");
+        list.add("李二狗");
+
+        // 1、迭代器删除会报错
+        Iterator<String> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            String name = iterator.next();
+            if (name.contains("李")) {
+                // 这里会报错：java.util.ConcurrentModificationException
+                // list.remove(name);
+                // 解决方案：用迭代器本身的方法
+                iterator.remove();
+            }
+        }
+
+        // 2、for循环: 不会报错，但会漏删，因为执行后索引下标在往前
+        for (int i = 0; i < list.size(); i++) {
+            String name = list.get(i);
+            if (name.contains("李")) {
+                list.remove(i);
+                // 解决方案：将索引往回走一个
+                i--;
+            }
+        }
+        // 或者从后往前删
+        for (int i = list.size() - 1; i > 0; i--) {
+            String name = list.get(i);
+            if (name.contains("李")) {
+                list.remove(i);
+            }
+        }
+        
+        // 3、增强forEach没有办法解决
+        for (String name : list) {
+            if (name.contains("李")) {
+                list.remove(name);
+            }
+        }
+
+        System.out.println(list);
+
+    }
+}
+~~~
+
+
+
+### 2.5 Collections工具类
+
+#### 2.5.1 可变参数
+
+- 可变参数
+  - 就是一种特殊形参，定义在方法、构造器的形参列表里，格式是：<font color="red">**数据类型... 参数名称**</font>
+
+- 可变参数的特点和好处
+
+  - 特点：可以不传数据给它；可以传一个或者同时传多个数据给它；也可以传一个数组给它。
+
+  - 好处：常常用来灵活的接收数据。
+
+- 可变参数的注意事项：
+
+  - <font color="red">**可变参数在方法内部就是一个数组。**</font>
+
+  - 一个形参列表中可变参数只能有一个
+
+  - 可变参数必须放在形参列表的最后面
+
+~~~java
+package org.example.setdemo;
+
+import java.util.Arrays;
+
+/**
+ * 目标：认识可变参数，掌握其作用。
+ */
+public class ParamTest {
+    public static void main(String[] args) {
+        // 特点：
+        test(); // 不传数据
+        test(10); // 传输一个数据给它
+        test(10, 20, 30); // 传输多个数据给它
+        test(10, new int[]{10, 20, 30, 40}); // 传输一个数组给可变参数
+    }
+
+    // 注意事项1：一个形参列表中，只能有一个可变参数。
+    // 注意事项2：可变参数必须放在形参列表的最后面
+    public static void test(int age, int... nums) {
+        // 可变参数在方法内部，本质就是一个数组。
+        System.out.println(nums.length);
+        System.out.println(Arrays.toString(nums));
+        System.out.println("-------------------");
+    }
+}
+~~~
+
+
+
+#### 2.5.2 工具类
+
+- 是一个用来操作集合的工具类
+
+|                           方法名称                           |                         说明                         |
+| :----------------------------------------------------------: | :--------------------------------------------------: |
+| public static <T> boolean addAll(Collection<? super T> c, T... elements) |                  给集合批量添加元素                  |
+|           public static void shuffle(List<?> list)           |              打乱 List 集合中的元素顺序              |
+|           public static <T> void sort(List<T> list           |           对 List 集合中的元素进行升序排序           |
+| public static <T> void sort(List<T> list, Comparator<? super T> c | 对 List 集合中元素，按照比较器对象指定的规则进行排序 |
+
+~~~java
+package org.example.setdemo;
+
+import org.example.collectiondemo.Student;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class CollectionsTest {
+    public static void main(String[] args) {
+        // 1. public static <T> boolean addAll(Collection<? super T> c, T... elements)
+        List<String> names = new ArrayList<>();
+        Collections.addAll(names, "张三", "王五", "李四", "张麻");
+        System.out.println(names);
+
+        // 2. public static void shuffle(List<?> list); 打乱 List 集合中的元素顺序
+        Collections.shuffle(names);
+        System.out.println(names);
+
+        // 3. public static <T> void sort(List<T> list); 对List集合中的元素进行升序排序
+        List<Integer> list = new ArrayList<>();
+        list.add(3);
+        list.add(5);
+        list.add(2);
+        Collections.sort(list);
+        System.out.println(list);
+
+        // 对自定义类型排序
+        List<Student> students = new ArrayList<>();
+        Student s1 = new Student("郭姝萌", 25, 160.0);
+        Student s2 = new Student("紫霞", 22, 172.1);
+        Student s3 = new Student("猪八戒", 27, 158.3);
+        Student s4 = new Student("牛魔王", 27, 172.1);
+        Collections.addAll(students, s1, s2, s3, s4);
+        Collections.sort(students, (o1, o2) -> Double.compare(o1.getHeight(), o2.getHeight()));
+        System.out.println(students);
+    }
+
+}
+~~~
+
+
+
+## 3、双列集合
+
+### 3.1 map
+
+- Map 集合称为双列集合，格式：`{key1=value1, key2=value2, key3=value3, ...}`，一次需要存一对数据做为一个元素。
+- Map 集合的每个元素 “key=value” 称为一个键值对 / 键值对对象 / 一个 Entry 对象，Map 集合也被叫做 **“键值对集合”**。
+- Map 集合的<font color="red">**所有键是不允许重复的**</font>，但值可以重复，键和值是一一对应的，每一个键只能找到自己对应的值。
+
+![map](图片/map.png)
+
+- 特点：<font color="red">**Map 系列集合的特点都是由键决定的，值只是一个附属品，值是不做要求的。**</font>
+  - **HashMap**（由键决定特点）：无序、不重复、无索引；（用的最多）
+  - **LinkedHashMap**（由键决定特点）：由键决定的特点：<font color="red">**有序**</font>、不重复、无索引。
+  - **TreeMap**（由键决定特点）：<font color="red">**按照大小默认升序排序**</font>、不重复、无索引。
+
+~~~java
+public class MapTest1 {
+    public static void main(String[] args) {
+        // Map<String, Integer> map = new HashMap<>(); // 一行经典代码。按照键 无序，不重复，无索引。
+        Map<String, Integer> map = new LinkedHashMap<>(); // 有序，不重复，无索引。
+        map.put("手表", 100);
+        map.put("手表", 220); // 后面重复的数据会覆盖前面的数据（键）
+        map.put("手机", 2);
+        map.put("Java", 2);
+        map.put(null, null);
+        System.out.println(map);
+
+        Map<Integer, String> map1 = new TreeMap<>(); // 可排序，不重复，无索引
+        map1.put(23, "Java");
+        map1.put(23, "MySQL");
+        map1.put(19, "李四");
+        map1.put(20, "王五");
+        System.out.println(map1);
+    }
+}
+~~~
+
+
+
+### 3.2 常用方法
+
+- public int size():获取集合的大小
+- public void clear():清空集合
+- public boolean isEmpty():判断集合是否为空，为空返回true，反之为false
+- public V get(Object key):根据键获取对应值
+- public V remove(Object key):根据键删除整个元素(删除键会返回键的值)
+- public boolean containsKey(Object key):判断是否包含某个键，包含返回true，反之为false
+- public boolean containsValue(Object value):判断是否包含某个值。
+- public Set<K> keySet():获取Map集合的全部键。
+- public Collection<V> values():获取Map集合的全部值。
+- void putAll(Map<? extends K, ? extends V> m);把其他map集合的数据导入到自己的集合中来
+
+~~~java
+package org.example.mapdemo;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+public class MapDemo1 {
+    public static void main(String[] args) {
+        Map<String, Integer> map = new HashMap<>();
+        map.put("手表", 100);
+        map.put("手表", 220);
+        map.put("手机", 2);
+        map.put("Java", 2);
+        map.put(null, null);
+        System.out.println(map);
+        // map = {null=null, 手表=220, Java=2, 手机=2}
+
+        // 2.public int size():获取集合的大小
+        System.out.println(map.size());
+
+        // 3.public void clear():清空集合
+        // map.clear();
+
+        // 4.public boolean isEmpty():判断集合是否为空，为空返回true，反之为false
+        System.out.println(map.isEmpty());
+
+        // 5.public V get(Object key):根据键获取对应值
+        int v1 = map.get("手表");
+        System.out.println(v1);
+        System.out.println(map.get("手表"));  // 2
+        System.out.println(map.get("张三"));  // null
+
+        // 6.public V remove(Object key):根据键删除整个元素(删除键会返回键的值)
+        System.out.println(map.remove("手表"));  // 2
+        System.out.println(map);
+
+        // 7.public boolean containsKey(Object key):判断是否包含某个键，包含返回true，反之为false
+        System.out.println(map.containsKey("手表"));         // false
+        System.out.println(map.containsKey("手机"));         // true
+        System.out.println(map.containsKey("java"));         // false
+        System.out.println(map.containsKey("Java"));         // true
+
+        // 8.public boolean containsValue(Object value):判断是否包含某个值。
+        System.out.println(map.containsValue(2));   // true
+        System.out.println(map.containsValue("2"));   // false
+
+        // 9.public Set<K> keySet():获取Map集合的全部键。
+        Set<String> sets = map.keySet();
+        System.out.println(sets);
+
+        // 10.public Collection<V> values():获取Map集合的全部值。
+        Collection<Integer> values = map.values();
+        System.out.println(values);
+
+        // 11.把其他map集合的数据导入到自己的集合中来
+        Map<String, Integer> map1 = new HashMap<>();
+        map1.put("Java1", 10);
+        map1.put("Java2", 220);
+        Map<String, Integer> map2 = new HashMap<>();
+        map2.put("Java2", 10);
+        map2.put("Java3", 220);
+        map1.putAll(map2);      // 把map2集合中的元素全部拷贝一份到map1中
+    }
+}
+~~~
+
+
+
+### 3.3. 遍历方式
+
+![map遍历方式](图片/map遍历方式.png)
+
+- 键找值
+
+  - public Set<K> keySet()：获取所有键的集合
+  - public V get(Object key)：根据键获取其对应的值
+
+  ~~~java
+  public class MapTest1 {
+      public static void main(String[] args) {
+          // 准备一个Map集合。
+          Map<String, Double> map = new HashMap<>();
+          map.put("蜘蛛精", 162.5);
+          map.put("蜘蛛精", 169.8);
+          map.put("紫霞", 165.8);
+          map.put("至尊宝", 169.5);
+          map.put("牛魔王", 183.6);
+          System.out.println(map);
+          // map = {蜘蛛精=169.8, 牛魔王=183.6, 至尊宝=169.5, 紫霞=165.8}
+  
+          // 1、获取Map集合的全部键
+          Set<String> keys = map.keySet();
+          System.out.println(keys);
+          // 2、遍历全部的键，根据键获取其对应的值
+          for (String key : keys) {
+              // 根据键获取对应的值
+              double value = map.get(key);
+              System.out.println(key + "：" + value);
+          }
+      }
+  }
+  ~~~
+
+- 键值对
+
+  - Set<Map.Entry<K, V>> entrySet()：获取所有 “键值对” 的集合
+    - Map.Entry 提供的方法
+      - K getKey()：获取键
+      - V getValue()：获取值
+
+  ~~~java
+  */
+  public class MapTest2 {
+      public static void main(String[] args) {
+          Map<String, Double> map = new HashMap<>();
+          map.put("蜘蛛精", 169.8);
+          map.put("紫霞", 165.8);
+          map.put("至尊宝", 169.5);
+          map.put("牛魔王", 183.6);
+          System.out.println(map);
+          // map = {蜘蛛精=169.8, 牛魔王=183.6, 至尊宝=169.5, 紫霞=165.8}
+          // entries = [(蜘蛛精=169.8), (牛魔王=183.6), (至尊宝=169.5), (紫霞=165.8)]
+          // entry
+  
+          // 1、调用Map集合提供的entrySet方法，把Map集合转换成键值对类型的Set集合
+          Set<Map.Entry<String, Double>> entries = map.entrySet();
+          for (Map.Entry<String, Double> entry : entries) {
+              String key = entry.getKey();
+              double value = entry.getValue();
+  
+              System.out.println(key + "---->" + value);
+          }
+      }
+  }
+  ~~~
+
+- Lambda表达式
+
+  - default void forEach(BiConsumer<? super K, ? super V> action)：结合 lambda 遍历 Map 集合
+
+  ~~~java
+  public class MapTest3 {
+      public static void main(String[] args) {
+          Map<String, Double> map = new HashMap<>();
+          map.put("蜘蛛精", 169.8);
+          map.put("紫霞", 165.8);
+          map.put("至尊宝", 169.5);
+          map.put("牛魔王", 183.6);
+          System.out.println(map);
+          // map = {蜘蛛精=169.8, 牛魔王=183.6, 至尊宝=169.5, 紫霞=165.8}
+  
+          // Lambda表达式写法
+          map.forEach((k, v) -> {
+              System.out.println(k + "---->" + v);
+          });
+  
+          // 匿名内部类写法
+          map.forEach(new BiConsumer<String, Double>() {
+              @Override
+              public void accept(String k, Double v) {
+                  System.out.println(k + "---->" + v);
+              }
+          });
+      }
+  }
+  ~~~
+
+  - forEach源码：底层实际上还是用的entrySet获取键值对
+
+  ~~~java
+  default void forEach(BiConsumer<? super K, ? super V> action) {
+      Objects.requireNonNull(action);
+      for (Map.Entry<K, V> entry : entrySet()) {
+          K k;
+          V v;
+          try {
+              k = entry.getKey();
+              v = entry.getValue();
+          } catch (IllegalStateException ise) {
+              // this usually means the entry is no longer in the map.
+              throw new ConcurrentModificationException(ise);
+          }
+          action.accept(k, v);
+      }
+  }
+  ~~~
+
+
+
+### 3.3.4 HashMap
+
+- HashMap 跟 HashSet 的底层原理是一模一样的，<font color="red">**都是基于哈希表实现的**</font>
+- 实际上：原来学的 Set 系列集合的底层就是基于 Map 实现的，只是 Set 集合中的元素只要键数据，不要值数据而已。
+
+~~~java
+public HashSet() {
+    map = new HashMap<>();
+}
+~~~
+
+![hashset底层](图片/hashset底层.png)
+
+- JDK8 之前，哈希表 = **数组 + 链表**
+- JDK8 开始，哈希表 = **数组 + 链表 + 红黑树**
+- 哈希表是一种增删改查数据，性能都较好的数据结构。
+- 总结
+  - HashMap 集合是一种增删改查数据，性能都较好的集合
+  - 但是它是无序，不能重复，没有索引支持的（由键决定特点）
+  - HashMap 的键依赖`hashCode`方法和`equals`方法保证键的唯一
+  - 如果键存储的是自定义类型的对象，可以通过重写`hashCode`和`equals`方法，这样可以保证多个对象内容一样时，HashMap 集合就能认为是重复的。
+
+
+
+### 3.3.4 LinkedHashMap
+
+- 底层数据结构依然是基于哈希表实现的，只是每个键值对元素又额外多了一个双链表的机制记录元素顺序（**保证有序**）。
+- 实际上：<font color="red">**原来学习的 LinkedHashSet 集合的底层原理就是 LinkedHashMap。**</font>
+
+~~~java
+HashSet(int initialCapacity, float loadFactor, boolean dummy) {
+    map = new LinkedHashMap<>(initialCapacity, loadFactor);
+}
+~~~
+
+![linkedHashSet](图片/linkedHashSet.png)
+
+- <font color="red">**有序**</font>、不重复、无索引。
+
+
+
+### 3.3.5 TreeMap
+
+- <font color="red">**按照大小默认升序排序(只能对键排序)**</font>、不重复、无索引。
+
+- **原理**：TreeMap 跟 TreeSet 集合的底层原理是一样的，都是基于红黑树实现的排序。
+
+​	![TreeSet](图片/TreeSet.png)
+
+- TreeMap 集合指定排序规则的两种方式
+
+  - 让类实现`Comparable`接口，重写比较规则。
+
+  - TreeMap 集合有一个有参数构造器，支持创建`Comparator`比较器对象，以便用来指定比较规则。
+
+~~~java
+public class Test3TreeMap {
+    public static void main(String[] args) {
+        Map<Student, String> map = new TreeMap<>(new Comparator<Student>() {
+            @Override
+            public int compare(Student o1, Student o2) {
+                return Double.compare(o2.getHeight(), o1.getHeight());
+            }
+        });
+
+        map.put(new Student("蜘蛛精", 25, 168.5), "盘丝洞");
+        map.put(new Student("蜘蛛精", 25, 168.5), "水帘洞");
+        map.put(new Student("至尊宝", 23, 163.5), "水帘洞");
+        map.put(new Student("牛魔王", 28, 183.5), "牛头山");
+
+        System.out.println(map);
+    }
+}
+~~~
 
