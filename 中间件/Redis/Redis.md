@@ -5450,4 +5450,34 @@ public class Test1 {
 
 ### 8.1 锁的种类
 
-- 单机版同一个JVM虚拟机
+- <font color="red">**单机版同一个JVM虚拟机内**</font>，synchronized或者lock接口
+- <font color="red">**分布式多个不同JVM虚拟机**</font>，单机的线程锁机制不再起作用，资源类在不同的服务器之间共享
+
+
+
+### 8.2 分布式锁条件和刚需
+
+- <font color="red">**独占性**</font>：OnlyOne，任何时刻只能有且仅有一个线程持有
+- <font color="red">**高可用**</font>
+  - 若redis集群环境下，不能因为某一个节点挂了而出现获取锁和释放锁失败的情况
+  - 高并发请求下，依旧性能OK好使
+- <font color="red">**防死锁**</font>：杜绝死锁，必须先有超时控制机制或者撤销操作，有个兜底进程终止跳出方案
+- <font color="red">**不乱抢**</font>：防止张冠李戴，不能私下unlocl别人的锁，只能自己加锁自己释放，自己约的锁自己解
+- <font color="red">**重入性**</font>：同一个节点的同一个线程如果获得锁之后，他可以再次获取这个锁
+
+
+
+### 8.3 分布式锁
+
+- setnx key value
+- <font color="red">**set key value [EX seconds] [PX milliseconds] [NX|XX]**</font>
+  - EX：key在多少秒后过期
+  - PX：key在多少毫秒之后过期
+  - NX：当key不存在的时候，才创建key，效果等同于setnx
+  - XX：当key存在的时候，覆盖key
+- 重点：JUC中的AQS锁的规范 + 可重入锁考虑 + Lua脚本 + Redis命令
+
+
+
+### 8.4 案例代码
+
