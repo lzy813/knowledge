@@ -1410,7 +1410,7 @@ private static class Deallocator
 
 #### 6.4.3 总结
 
-- 使用Unsage对象完成直接内存的分配回收，并且回收需要主动调用freeMemory方法
+- 使用Unsafe对象完成直接内存的分配回收，并且回收需要主动调用freeMemory方法
 - ByteBuffer的实现类内部，使用了Cleaner（虚引用）来监测ByteBuffer对象，一旦ByteBuffer对象被垃圾回收，那么就会由ReferenceHandler线程通过Cleaner的clean方法调用freeMemory来释放直接内存
 - **-XX:+DisableExplicitGC**  显示禁用GC垃圾回收，即代码层面的，**让System.gc()无效**
   - 用法：因为它回收不仅要回收新生代，也要回收老年代，所以会占用大量时间，故而有时候会使用这个命令禁用、
