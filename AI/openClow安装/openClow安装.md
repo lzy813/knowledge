@@ -178,3 +178,31 @@
 - 找到openclaw禁用
 
 ![禁用1](图片/禁用1.png)
+
+
+
+# 9、卸载
+
+打开终端（Terminal）
+
+Windows用户：按键盘上的Win+R键，在弹出的框中输入cmd，然后按回车；或者直接在开始菜单里搜索“命令提示符“或“PowerShell”。
+
+Mac用户：按键盘上的Command+Space（空格键），在搜索框输入Terminal或终端，然后按回车。
+
+输入下面这行命令并回车
+
+代码块：openclaw uninstall --all --yes，其中：
+
+uninstall：告诉程序我要卸载。
+
+--all：彻底删除，包括网关服务、本地[数据库](https://cloud.tencent.com/product/tencentdb-catalog?from=20067&from_column=20067)、配置文件等所有数据。
+
+--yes：全程自动确认，不需要你手动按 Y 确认。
+
+删除[命令行工具](https://cloud.tencent.com/product/cli?from=20067&from_column=20067)
+
+以上指令跑完后，电脑里就只剩下OpenClaw的外壳（CLI工具）了。如果想把它彻底清除，再执行一行——代码块：npm uninstall -g openclaw。至此，电脑就彻底干净了。
+
+注意事项
+
+执行完上述操作后，建议重启一次电脑，确保所有后台进程彻底关闭。如果曾在OpenClaw里绑定过API Key（如OpenAI、Claude的密钥），建议去对应的官网废弃旧密钥，生成新密钥，以防万一。
