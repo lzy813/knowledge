@@ -112,6 +112,7 @@
   - mkdir myredis
   - cp redis.conf myredis/redis7.conf
 - 7、<font color="red">**修改myredis/redis7.conf配置文件做初始化设置**</font>，改完记得重启才能生效
+
   - <font color="red">**默认daemonize no  改为  daemonize yes**</font>，意思是改为后台服务端启动
   - <font color="red">**默认protected-mode yes  改为  protected-mode no**</font>，如果想要让别人访问连接，这里的保护模式就得禁用掉
   - <font color="red">**默认bind 127.0.0.1 -::1注释掉，这个意思是默认只能访问本机，不注释掉会影响远程IP访问**</font>
@@ -251,7 +252,7 @@ set k1 v1 ex 100
 ttl
 # 结果：93（还有多少秒过期），过期了会打印-1
 
-# px: 设置有效时间，单位：毫秒
+# px: 设置有效时间，单位：毫秒(1000毫秒)
 set k1 v1 px 10000
 ttl
 # 结果：8（还有多少秒过期），过期了会打印-1
@@ -2214,7 +2215,7 @@ OK
 "hxllo"
 
 # 设置第8位开始自增，u8无符号整数121：y
-127.0.0.1:6379> bitfield bitkey incrby u8 8 1
+127.0.0.1:6379> bitfield bitkey incrby u8 8 121
 1) (integer) 121
 127.0.0.1:6379> get bitkey
 "hyllo"
