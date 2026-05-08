@@ -2080,33 +2080,344 @@ lzy，您好，欢迎来到ATM
 
 ## 5、数据容器
 
-5.1 
+### 5.1 容器入门
+
+- 什么是容器
+  - 一种<font color="red">**可以容纳多份数据**</font>的数据类型，容纳的<font color="red">**每一份数据称之为1个元素**</font>
+  - 每一个元素，可以是<font color="red">**任意类型**</font>的数据，如字符串、数字、布尔等
+- 数据容器根据特点的不同，如
+  - 是否支持重复元素
+  - 是否可以修改
+  - 是否有序等
+- 分为5类
+  - 列表（list）
+  - 元组（tuple）
+  - 字符串（str）
+  - 集合（set）
+  - 字典（dict）
 
 
 
+### 5.2 列表（list）
+
+#### 5.2.1 定义
+
+- 问题引入
+
+  - 思考：有一个人的姓名 (TOM) 怎么在程序中存储？
+    - 答：**字符串变量**
+
+  - 思考：如果一个班级 100 位学生，每个人的姓名都要存储，应该如何书写程序？声明 100 个变量吗？
+    - 答：No，我们使用列表就可以了， 列表一次可以存储多个数据
+
+- 定义基本语法
+
+~~~python
+# 字面量
+[元素1, 元素2, 元素3, 元素4, ...]
+
+# 定义变量
+变量名称 = [元素1, 元素2, 元素3, 元素4, ...]
+
+# 定义空列表
+变量名称 = []
+变量名称 = list()
+~~~
+
+- **列表核心概念：**
+  - 列表内的<font color="red">**每一个数据，称之为元素**</font>
+  - 以 `[]` 作为标识
+  - 列表内每一个元素之间用 `,`（逗号）隔开
+
+~~~python
+# 字符串列表
+name_list = ["lzy", "djb", "hz"]
+print(name_list)
+print(type(name_list))
+
+# 不同类型的列表
+my_list = ["lzy", 18, True]
+print(my_list)
+print(type(my_list))
+
+# 嵌套列表
+sub_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+print(sub_list)
+print(type(sub_list))
+
+"""
+输出
+['lzy', 'djb', 'hz']
+<class 'list'>
+['lzy', 18, True]
+<class 'list'>
+[[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+<class 'list'>
+"""
+~~~
 
 
 
+#### 5.2.2 下标索引
+
+- 可以通过下标索引取出对应位置的数据：<font color="red">**列表[下标]**</font>
+
+- 要注意下标的范围，超出范围无法取出元素，并会报错：<font color="red">**IndexError: list index out of range**</font>
+
+- 正向下标索引
+
+  - 列表中的每一个元素，都有其位置下标索引，从前往后的方向，<font color="red">**从0开始，依次递增**</font>
+  - 只需要按照下标索引，即可取出对应位置的元素
+
+  ~~~python
+  # 字符串列表
+  name_list = ["lzy", "djb", "hz"]
+  # 通过下标索引取出对应的数据
+  print(name_list[0])       # 输出: lzy
+  print(name_list[1])       # 输出: djb
+  print(name_list[2])       # 输出: hz
+  ~~~
+
+![list下标索引](图片/list下标索引.png)
+
+- 反向下标索引
+
+  - 从后往前：<font color="red">**从-1开始，依次递减**</font>
+
+  ~~~python
+  # 字符串列表
+  name_list = ["lzy", "djb", "hz"]
+  # 通过下标索引取出对应的数据
+  print(name_list[-1])       # 输出: hz
+  print(name_list[-2])       # 输出: djb
+  print(name_list[-3])       # 输出: lzy
+  ~~~
+
+![list反向下标索引](图片/list反向下标索引.png)
+
+- 嵌套索引
+
+  - 每个子列表作为一个元素看待
+  - 然后每个子列表，又是一个列表，继续取对应的下标索引
+
+  ~~~python
+  # 嵌套列表
+  sub_list = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+  # 通过下标索引取出对应的数据
+  print(sub_list[0])       # 输出: [1, 2, 3]
+  print(sub_list[0])       # 输出: [4, 5, 6]
+  print(sub_list[2])       # 输出: [7, 8, 9]
+  # 子列表的下标索引
+  print(sub_list[0][0])       # 输出: 1
+  print(sub_list[0][1])       # 输出: 2
+  print(sub_list[0][2])       # 输出: 3
+  ~~~
+
+![list嵌套下标索引](图片/list嵌套下标索引.png)
+
+#### 5.2.3 常用操作
+
+- 常用方法
+
+| 方法 / 语法               | 功能描述                                         |
+| ------------------------- | ------------------------------------------------ |
+| `列表.append(元素)`       | 向列表中追加一个元素                             |
+| `列表.extend(容器)`       | 将数据容器的内容依次取出，追加到列表尾部         |
+| `列表.insert(下标, 元素)` | 在指定下标处，插入指定的元素                     |
+| `del 列表[下标]`          | 删除列表指定下标元素                             |
+| `列表.pop(下标)`          | 删除列表指定下标元素                             |
+| `列表.remove(元素)`       | 从前向后，删除此元素第一个匹配项                 |
+| `列表.clear()`            | 清空列表                                         |
+| `列表.count(元素)`        | 统计此元素在列表中出现的次数                     |
+| `列表.index(元素)`        | 查找指定元素在列表的下标，找不到报错`ValueError` |
+| `len(列表)`               | 统计容器内有多少元素                             |
+
+- 特点
+  - 可以容纳多个元素（上限为 `2**63-1`，即 9223372036854775807 个）
+  - 可以容纳不同类型的元素（混装）
+  - 数据是<font color="red">**有序存储**</font>的（有下标序号）
+  - <font color="red">**允许重复**</font>数据存在
+  - <font color="red">**可以修改**</font>（增加或删除元素等）
+- 例子
+
+~~~python
+# 定义一个列表
+name_list = ["Java", "Python", "C/C++"]
+
+# 1.1 查找某元素在列表内的下标索引
+index = name_list.index("Java")
+print(f"Java在列表中的下标索引值是: {index}")
+# 1.2 如果被查找的元素不存在，会报错
+# index = name_list.index("php")
+# print(f"php在列表中的下标索引值是: {index}")     # 没有值会报错：ValueError: 'php' is not in list
+
+# 2. 修改特定下标索引的值
+name_list[2] = "php"
+print(f"列表被修改后的值: {name_list}")
+
+# 3. 在指定下标位置插入新元素
+name_list.insert(2, "Go")
+print(f"列表插入值后的值: {name_list}")
+
+# 4. 在列表的尾部追加``单个``新元素
+name_list.append("golang")
+print(f"在列表的尾部追加后的值: {name_list}")
+
+# 5. 在列表的尾部追加``一批``新元素
+my_list = ["1", "2", "3"]
+name_list.extend(my_list)
+print(f"在列表的尾部追加一批后的值: {name_list}")
+
+
+# 6. 删除指定下标索引的元素（2种方式）
+# 6.1 方式1: del 列表[下标]
+name_list = ["Java", "Python", "C/C++"]
+del name_list[1]
+print(f"列表删除后的值: {name_list}")
+
+# 6.2 方式2: 列表.pop(下标)，同时可以取出元素让变量接收
+name_list = ["Java", "Python", "C/C++"]
+name = name_list.pop(1)
+print(f"列表删除后的值: {name_list}")
+print(f"删除后接收的值: {name}")
+
+# 6.3 方式3：从前向后，删除此元素第一个匹配项
+name_list = ["Java", "Python", "C/C++"]
+name_list.remove("Python")
+print(f"列表删除后的值: {name_list}")
+
+# 7. 清空列表
+name_list = ["Java", "Python", "C/C++"]
+name = name_list.clear()
+print(f"清空列表后的值: {name_list}")
+
+# 8. 统计列表某一个元素的数量
+name_list = ["Java", "Python", "C/C++", "Java", "Java"]
+count = name_list.count("Java")
+print(f"列表中Java的数量: {count}")
+
+# 8. 统计列表所有元素的数量
+name_list = ["Java", "Python", "C/C++", "Java", "Java"]
+count = len(name_list)
+print(f"列表所有元素的数量: {count}")
+
+
+"""
+Java在列表中的下标索引值是: 0
+列表被修改后的值: ['Java', 'Python', 'php']
+列表插入值后的值: ['Java', 'Python', 'Go', 'php']
+在列表的尾部追加后的值: ['Java', 'Python', 'Go', 'php', 'golang']
+在列表的尾部追加一批后的值: ['Java', 'Python', 'Go', 'php', 'golang', '1', '2', '3']
+列表删除后的值: ['Java', 'C/C++']
+列表删除后的值: ['Java', 'C/C++']
+删除后接收的值: Python
+列表删除后的值: ['Java', 'C/C++']
+清空列表后的值: []
+列表中Java的数量: 3
+列表所有元素的数量: 5
+"""
+~~~
 
 
 
+#### 5.2.4 案例
+
+```python
+"""
+有一个列表，内容是：[21, 25, 21, 23, 22, 20]，记录的是一批学生的年龄
+请通过列表的功能（方法），对其进行
+定义这个列表，并用变量接收它
+追加一个数字 31，到列表的尾部
+追加一个新列表[29, 33, 30]，到列表的尾部
+取出第一个元素（应是：21）
+取出最后一个元素（应是：30）
+查找元素 31，在列表中的下标位置
+"""
+
+# 1. 定义列表
+num_list = [21, 25, 21, 23, 22, 20]
+
+# 2. 追加31到尾部
+num_list.append(31)
+
+# 3. 追加新列表到尾部
+num_list.extend([29, 33, 30])
+
+# 4. 取出第一个元素
+first = num_list[0]
+print(f"第一个元素：{first}")  # 输出 21
+
+# 5. 取出最后一个元素
+last = num_list[-1]
+print(f"最后一个元素：{last}")  # 输出 30
+
+# 6. 查找31的下标
+index = num_list.index(31)
+print(f"元素31的下标位置：{index}")  # 输出 6
+```
 
 
 
+#### 5.2.5 列表遍历
+
+- 什么是遍历？
+  - 将容器内的元素依次**取出，并处理**，称之为遍历操作。
+
+- 如何遍历列表的元素？
+  - 可以使用 **while 或 for** 循环。
+- while循环的语法：
+
+~~~python
+while 下标索引变量 < 列表元素数量:
+    临时变量 = 列表[下标索引变量]
+    下标索引变量+1
+~~~
+
+- for 循环的语法：
+
+```python
+for 临时变量 in 数据容器:
+    # 对临时变量进行处理
+```
+
+- for 循环和 while 对比
+
+  - for 循环更简单，while 更灵活
+
+  - for 用于从容器内依次取出元素并处理，while 用以任何需要循环的场景
+
+~~~python
+def while_function(my_list):
+    """
+    while的循环
+    :param my_list:
+    :return:
+    """
+    index = 0
+    while index < len(my_list):
+        print(my_list[index])
+        index += 1
+
+
+def for_function(my_list):
+    """
+    for的循环
+    :param my_list:
+    :return:
+    """
+    for item in my_list:
+        print(item)
+
+
+# 定义列表
+num_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+while_function(num_list)
+for_function(num_list)
+~~~
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+### 5.3 元组（tuple）
 
 
 
@@ -2318,3 +2629,34 @@ clock2.ring()
 
 
 ### 1.4 构造方法
+
+- 在上述代码中，为对象的属性赋值需要依次进行，略显繁琐，需要引入一种更加高效的方法，一行代码完成所有数据赋值
+- python类使用：<font color="red">**\_\_init\_\_()，称之为构造方法**</font>
+  - 在创建类对象（构造类）的时候，<font color="red">**会自动执行**</font>
+  - 在创建类对象（构造类）的时候，<font color="red">**将传入参数自动传递给\_\_init\_\_()方法使用**</font>
+- 注意
+  - 构造方法名称：`__init__`，<font color="red">**init 前后都有 2 个下划线**</font>，千万不要忘记。
+  - 构造方法也是成员方法，<font color="red">**参数列表中必须提供 `self`**</font>。
+  - 在构造方法内定义成员变量，需要使用 `self` 关键字原因：<font color="red">**变量定义在构造方法内部，要成为对象的成员变量，需要用 `self` 绑定到对象本身**</font>。
+
+- 例子
+
+~~~python
+# 定义一个学生类
+class Student():
+    # 构造方法
+    def __init__(self,name,age,tel):
+        self.name = name
+        self.age = age
+        self.tel = tel
+
+# 构造学生对象
+stu = Student("lzy", 18, "18271660939")
+print(stu.name)
+print(stu.age)
+print(stu.tel)
+~~~
+
+
+
+1.5 
