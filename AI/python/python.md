@@ -2376,7 +2376,7 @@ while 下标索引变量 < 列表元素数量:
 - for 循环的语法：
 
 ```python
-for 临时变量 in 数据容器:
+for 临时变量 in 列表容器:
     # 对临时变量进行处理
 ```
 
@@ -2417,8 +2417,273 @@ for_function(num_list)
 
 
 
+#### 5.2.6 特点总结
+
+- 可以容纳多个数据
+
+- 可以容纳不同类型的数据（混装）
+
+- 数据是有序存储的（下标索引）
+
+- 允许重复数据存在
+
+- <font color="red">**可以修改**</font>（增加或删除元素等）
+
+- 支持 for 循环
+
+
+
 ### 5.3 元组（tuple）
 
+#### 5.3.1 定义
+
+- 思考：列表是<font color="red">**可以修改**</font>的。
+  - 如果想要传递的信息，<font color="red">**不被篡改**</font>，列表就不合适了。
+  - 元组同列表一样，都是可以封装多个、不同类型的元素在内。
+- 但最大的不同点在于：
+  - <font color="red">**元组一旦定义完成，就不可修改**</font>
+  - 所以，当我们需要在程序内封装数据，又不希望封装的数据被篡改，那么元组就非常合适了
+- 定义
+  - 定义元组使用<font color="red">**小括号**</font>，且使用<font color="red">**逗号**</font>隔开各个数据，数据可以是<font color="red">**不同的数据类型**</font>
+  - 注意事项：<font color="red">**元组只有一个数据的时候，这个数据后面要添加逗号**</font>
+  - <font color="red">**元组支持嵌套**</font>
+  - 取值跟列表一样，通过下标索引来取
+
+~~~python
+# 定义元组字面量
+(元素, 元素, ... , 元素)
+# 定义元组变量
+变量名称 = (元素, 元素, ... , 元素)
+# 定义空元组
+变量名称 = ()        # 方式1
+变量名称 = tuple()   # 方式2
+# 根据下标索引取值
+元组[索引下标]
+~~~
+
+- 例子
+
+~~~python
+# 定义一个3个元素的元组
+t1 = ("lzy", 18, True)
+# 定义一个1个元素的元组
+t2 = ("djb",)
+# 定义一个嵌套元组
+t3 = ((1, 2, 3), (4, 5, 6))
+print(t1)
+print(type(t1))
+print(t2)
+print(type(t2))
+print(t3)
+print(type(t3))
+# 根据索引下标取值
+print(t1[1])
+print(t3[1][1])
+
+"""
+输出结果
+('lzy', 18, True)
+<class 'tuple'>
+('djb',)
+<class 'tuple'>
+((1, 2, 3), (4, 5, 6))
+<class 'tuple'>
+18
+5
+"""
+~~~
+
+
+
+#### 5.3.2 常用方法
+
+| 编号 | 方法        | 作用                                               |
+| ---- | ----------- | -------------------------------------------------- |
+| 1    | `index()`   | 查找某个数据，如果数据存在返回对应的下标，否则报错 |
+| 2    | `count()`   | 统计某个数据在当前元组出现的次数                   |
+| 3    | `len(元组)` | 统计元组内的元素个数                               |
+
+- 例子
+
+~~~python
+# 定义一个元组
+t1 = ("lzy", "hz", "djb", "lzy", "djb")
+
+# index查找方法
+index = t1.index("hz")
+print(f"hz的下标是：{index}")
+
+# count统计方法
+num = t1.count("lzy")
+print(f"lzy的出现的个数是：{num}")
+
+# len统计个数方法
+num = len(t1)
+print(f"t1元组中的元素个数是：{num}")
+
+
+"""
+输出结果
+hz的下标是：1
+lzy的出现的个数是：2
+t1元组中的元素个数是：5
+"""
+~~~
+
+
+
+#### 5.3.3 遍历
+
+- while循环的语法：
+
+~~~python
+while 下标索引变量 < 元组元素数量:
+    临时变量 = 元组[下标索引变量]
+    下标索引变量+1
+~~~
+
+- for 循环的语法：
+
+```python
+for 临时变量 in 元组容器:
+    # 对临时变量进行处理
+```
+
+- 例子
+
+~~~python
+def while_function(my_tuple):
+    """
+    while的循环
+    :param my_tuple:
+    :return:
+    """
+    index = 0
+    while index < len(my_tuple):
+        print(my_tuple[index])
+        index += 1
+
+
+def for_function(my_tuple):
+    """
+    for的循环
+    :param my_tuple:
+    :return:
+    """
+    for item in my_tuple:
+        print(item)
+
+
+# 定义元组
+num_tuple = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+while_function(num_tuple)
+for_function(num_tuple)
+~~~
+
+
+
+#### 5.3.4 不可修改
+
+- <font color="red">**元组定义之后就不可修改**</font>
+- 如果尝试修改，就会报错：<font color="red">**TypeError: 'tuple' object does not support item assignment**</font>
+
+~~~python
+t1 = (1, 2, 3, 4, 5)
+# 尝试修改
+t1[0] = 100
+print(t1)
+
+"""
+报错：
+Traceback (most recent call last):
+  File "D:\pythonProject\Test\test1.py", line 3, in <module>
+    t1[0] = 100
+    ~~^^^
+TypeError: 'tuple' object does not support item assignment
+"""
+~~~
+
+
+
+#### 5.3.5 特点总结
+
+- 可以容纳多个数据
+
+- 可以容纳不同类型的数据（混装）
+
+- 数据是有序存储的（下标索引）
+
+- 允许重复数据存在
+
+- <font color="red">**不可以修改**</font>（增加或删除元素等）
+
+- 支持 for 循环
+
+
+
+### 5.4 字符串（str）
+
+- 定义
+
+  - 尽管字符串看起来并不像：列表、元组那样，一看就是存放了许多数据的容器。
+  - 但不可否认的是，字符串同样也是数据容器的一员。
+
+  - <font color="red">**字符串是字符的容器，一个字符串可以存放任意数量的字符**</font>
+
+![字符串](图片/字符串.png)
+
+- 和其它容器如：列表、元组一样，字符串也可以通过下标进行访问
+  - 从前向后，下标从 0 开始
+  - 从后向前，下标从 - 1 开始
+
+~~~python
+# 通过下标获取特定位置字符
+name = "itheima"
+print(name[0])   # 结果i
+print(name[-1])  # 结果a
+~~~
+
+- 字符串是一个：<font color="red">**无法修改**</font>的数据容器。
+  - 修改指定下标的字符（如：`字符串[0] = "a"`）
+  - 移除特定下标的字符（如：`del 字符串[0]`、`字符串.remove()`、`字符串.pop()`等）
+  - 追加字符等（如：`字符串.append()`）
+  - 均无法完成。如果必须要做，<font color="red">**只能通过创建新字符串来间接实现**</font>
+  - 修改报错：TypeError: 'str' object does not support item assignment
+
+~~~python
+# 定义一个字符串
+str1 = "lzy love djb"
+# 输出索引下标为1的
+print(str1[1])
+# 尝试修改
+str1[1] = "x"
+
+
+"""
+z
+Traceback (most recent call last):
+  File "D:\pythonProject\Test\test1.py", line 6, in <module>
+    str1[1] = "x"
+    ~~~~^^^
+TypeError: 'str' object does not support item assignment
+"""
+~~~
+
+- 字符串的常用操作
+
+| 方法 / 语法                        | 功能描述                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `字符串.index(字符串)`             | 查找特定字符串的下标索引值                                   |
+| `字符串.replace(字符串1, 字符串2)` | 将字符串内的全部**字符串1**，替换为**字符串 2**<br />注意：<font color="red">**不是修改字符串本身，而是得到了一个新字符串**</font> |
+| `字符串.split(分隔符字符串)`       | 按照指定的**分隔符字符串**，将字符串划分为多个字符串，并存入**列表对象**中<br />**注意**：<font color="red">字符串本身不变，而是得到了一个**列表对象**</font> |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
+|                                    |                                                              |
 
 
 
@@ -2450,6 +2715,651 @@ for_function(num_list)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6、函数进阶
+
+### 6.1 函数多返回值
+
+- 问题
+  - 如果一个函数写两个`return`（如下所示），程序如何执行？
+  - 答：只执行了第一个`return`，原因是`return`会退出当前函数，导致`return`下方的代码不会执行。
+
+~~~python
+def return_num():
+    return 1
+    return 2
+
+result = return_num()
+print(result)  # 1
+~~~
+
+- <font color="red">**函数多返回值的写法**</font>
+  - **返回规则**：多个变量用逗号隔开
+  - **接收规则**：按照返回值的顺序，写对应顺序的多个变量接收即可，变量之间用逗号隔开。
+  - **数据类型**：支持不同类型的数据一起`return`。
+
+~~~python
+# 定义一个多返回值的函数
+def test_return():
+    return "lzy", 1, False
+
+x, y, z = test_return()
+print(x)  # 结果 "lzy"
+print(y)  # 结果 1
+print(z)  # 结果 False
+~~~
+
+
+
+### 6.2 函数多种传参方式
+
+#### 6.2.1 位置参数
+
+- **定义**：调用函数时根据函数定义的参数位置来传递参数
+
+~~~python
+def user_info(name, age, gender):
+    print(f'您的名字是{name}，年龄是{age}，性别是{gender}')
+
+user_info('TOM', 20, '男')
+~~~
+
+- 注意：传递的参数和定义的参数的<font color="red">**顺序及个数必须一致**</font>
+
+
+
+#### 6.2.2 关键字参数
+
+- **定义**：函数调用时通过「**键 = 值**」形式传递参数
+- **作用**：可以让函数更加清晰、容易使用，同时也清除了参数的顺序需求
+
+~~~python
+def user_info(name, age, gender):
+    print(f"您的名字是：{name}，年龄是：{age}，性别是：{gender}")
+
+# 关键字传参
+user_info(name="小明", age=20, gender="男")
+
+# 可以不按照固定顺序
+user_info(age=20, gender="男", name="小明")
+
+# 可以和位置参数混用，位置参数必须在前，且匹配参数顺序
+user_info("小明", age=20, gender="男")
+~~~
+
+- 注意：函数调用时，如果有位置参数，<font color="red">**位置参数必须在关键字参数的前面，但关键字参数之间不存在先后顺序**</font>
+  - 如果没遵循这个原则，就会报错：SyntaxError: positional argument follows keyword argument
+
+
+
+#### 6.2.3 缺省参数（默认参数）
+
+- **定义**：缺省参数也叫默认参数，用于定义函数，为参数提供默认值，调用函数时可不传该默认参数的值（注意：所有位置参数必须出现在默认参数前，包括函数定义和调用）。
+
+- **作用**：当调用函数时没有传递参数，就会使用缺省参数对应的默认值。
+
+~~~python
+def user_info(name, age, gender='男'):
+    print(f'您的名字是{name}，年龄是{age}，性别是{gender}')
+
+# 不传默认参数，使用默认值
+user_info('TOM', 20)
+# 传值则覆盖默认值
+user_info('Rose', 18, '女')
+~~~
+
+- **注意**：函数调用时，<font color="red">**如果为缺省参数传值则修改默认参数值，否则使用这个默认值**</font>
+
+
+
+#### 6.2.4 不定长参数不定长参数
+
+- **定义**：不定长参数也叫**可变参数**，用于 <font color="red">**不确定调用时会传递多少个参数（不传参也可以）** </font>的场景。
+
+- **作用**：当调用函数时不确定参数个数时，可以使用不定长参数。
+
+- **不定长参数的类型**：
+
+  - <font color="red">**位置传递（不定长参数之位置传递）**</font>
+
+    - <font color="red">**用 * 号定义**</font>
+
+    ~~~python
+    def user_info(*args):
+        print(args)
+        print(type(args))			# <class 'tuple'>
+    
+    # 输出: ('TOM',)
+    user_info('TOM')
+    # 输出: ('TOM', 18)
+    user_info('TOM', 18)
+    ~~~
+  
+    - 注意：传进的所有参数都会被`args`变量收集，它会根据传进参数的位置<font color="red">合并为一个**元组 (tuple)**</font>，`args`是元组类型，这就是位置传递。
+  
+  - <font color="red">**关键字传递（不定长参数之关键字传递）**</font>
+  
+    - <font color="red">**用 \** 号定义**</font>
+  
+    ~~~python
+    def user_info(**kwargs):
+        print(kwargs)
+        print(type(kwargs))			# <class 'dict'>
+    
+    # 输出: {'name': 'TOM', 'age': 18, 'id': 110}
+    user_info(name='TOM', age=18, id=110)
+    ~~~
+    
+    - 注意：参数是 “键 = 值” 形式的情况下，所有的 “键 = 值” 都会被`kwargs`接受，同时会根据 “键 = 值” 自动<font color="red">组织成**字典（dict）** </font>类型的数据，`kwargs`是字典类型
+
+
+
+### 6.3 匿名函数
+
+#### 6.3.1 函数作为参数传递
+
+- 函数本身可以作为参数，传入另一个函数中进行使用
+- 将函数传入的作用在于：<font color="red">**传入计算逻辑，而非传入数据**</font>
+- <font color="red">**任何逻辑都可以自行定义并作为函传入**</font>
+- 例如
+  - 函数 compute，作为参数，传入了 param_func 函数中使用
+    - param_func 需要一个函数作为参数传入，这个函数需要接收 2 个数字进行计算，计算逻辑由这个被传入函数决定
+    - compute 函数接收 2 个数字对其进行计算，compute 函数作为参数，传递给了 test_func 函数使用
+    - 最终，在 param_func 函数内部，由传入的 func 函数，完成了对数字的计算操作
+
+~~~python
+# 定义一个参数为函数的函数
+def param_func(func):
+    result = func(1, 2)
+    print(result)
+
+# 定义一个加法函数
+def add(x, y):
+    return x + y
+
+# 定义一个减法函数
+def sub(x, y):
+    return x - y
+
+# 定义一个除法函数
+def mul(x, y):
+    return x * y
+
+# 调用时传入这些函数
+param_func(add)  # 结果：3
+param_func(sub)  # 结果：-1
+param_func(mul)  # 结果：2
+~~~
+
+
+
+#### 6.3.2 lambda匿名函数
+
+- 函数定义的两种方式
+  - <font color="red">**def 关键字**</font>：可以定义<font color="red">**带有名称**</font>的函数，这类函数可以基于名称<font color="red">**重复使用**</font>
+  - <font color="red">**lambda 关键字**</font>：可以定义<font color="red">**匿名函数（无名称）**</font>，这类函数只可<font color="red">**临时使用一次**</font>
+- 定义语法：
+  - `lambda` 是关键字，专门用于定义匿名函数。
+  - <font color="red">**传入参数**</font>：表示匿名函数的形式参数，例如 `x, y` 代表接收 2 个参数。
+  - <font color="red">**函数体**</font>：是函数的执行逻辑，<font color="red">**只能写一行代码**</font>，无法编写多行逻辑。
+
+~~~python
+lambda 传入参数: 函数体(一行代码)
+~~~
+
+- 例子
+
+~~~python
+# 定义一个参数为函数的函数
+def param_func(func):
+    result = func(1, 2)
+    print(result)
+
+# 通过def关键字，定义一个函数，并传入
+# ===================================
+# 定义一个加法函数
+def add(x, y):
+    return x + y
+# 调用时传入这个函数
+param_func(add)  # 结果：3
+
+
+# 通过lambda关键字，传入一个一次性使用的匿名函数
+# ===================================
+param_func(lambda x, y: x + y)  # 结果：3
+~~~
+
+
+
+## 7、文件操作
+
+### 7.1 文件的编码
+
+- 思考：
+  - 问题：计算机只能识别0和1，那么丰富的文本文件是如何被计算机识别，并存储在硬盘的？
+  - 答案：<font color="red">**使用编码技术（密码本）将内容翻译成1和1存入**</font>
+- 编码技术：<font color="red">**翻译的规则，记录了如何将内容翻译成二进制，以及如何将二进制翻译回可识别内容**</font>
+- 计算机中有许多可用编码：
+  - UTF-8
+  - GBK
+  - Big5
+  - 等
+- <font color="red">**不同的编码，将内容翻译成二进制也是不同的**</font>
+
+![文件编码](图片/文件编码.png)
+
+- <font color="red">**UTF-8是目前全球通用的编码格式**</font>
+- 除非有特殊需求，否则，一律使用UTF-8格式进行文件编码即可
+
+
+
+### 7.2 文件读取
+
+- 文件作用
+
+  - 内存中存放的数据在计算机关机后就会消失。要长久保存数据，就要使用硬盘、光盘、U 盘等设备。为了便于数据的管理和检索，引入了 <font color="red">**“文件”** </font>的概念。
+
+  - <font color="red">**一篇文章、一段视频、一个可执行程序，都可以被保存为一个文件，并赋予一个文件名。**</font>操作系统以文件为单位管理磁盘中的数据。一般来说，<font color="red">**文件可分为文本文件、视频文件、音频文件、图像文件、可执行文件等多种类别。**</font>
+
+- 文件操作
+
+  - 主要包含：<font color="red">**打开、关闭、读、写等操作**</font>
+
+- 文件的操作步骤，大致分为三个步骤
+
+  - 打开文件
+  - 读写文件
+  - 关闭文件
+
+- 注意：**可以只打开和关闭文件，但是不进行读写**
+
+
+
+#### 7.2.1 open()打开函数
+
+- 在 Python 中，<font color="red">**使用`open`函数，可以打开一个已经存在的文件，或者创建一个新文件**</font>，语法如下：
+  - **name**：要打开的目标文件名的字符串（可以包含文件所在的具体路径）
+  - **mode**：设置打开文件的模式（访问模式）：只读、写入、追加等
+  - **encoding**：编码格式（推荐使用 UTF-8）
+
+~~~python
+open(name, mode, encoding)
+~~~
+
+- 示例代码
+
+~~~python
+f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+# encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+print(type(f))
+# 输出：<class '_io.TextIOWrapper'>
+~~~
+
+- 注意：此时的`f`是`open`函数的**文件对象**，对象是 Python 中一种特殊的数据类型，拥有属性和方法，可以使用`对象.属性`或`对象.方法`对其进行访问，后续面向对象课程会给大家进行详细的介绍
+
+- <font color="red">**mode 常用的三种基础访问模式**</font>
+
+| 模式  | 描述                                                         |
+| ----- | ------------------------------------------------------------ |
+| **r** | 以只读方式打开文件。文件的指针将会放在文件的开头。这是默认模式。 |
+| **w** | 打开一个文件只用于写入。如果该文件已存在则打开文件，并从开头开始编辑，**原有内容会被删除**。如果该文件不存在，创建新文件。 |
+| **a** | 打开一个文件用于追加。如果该文件已存在，**新的内容将会被写入到已有内容之后**。如果该文件不存在，创建新文件进行写入。 |
+
+
+
+#### 7.2.2 读取方法
+
+- read()方法
+
+  - `num` 表示要从文件中读取的数据的长度（单位是字节）。
+  - 如果没有传入 `num`，就表示读取文件中**所有数据**。
+
+  ~~~python
+  文件对象.read(num)
+  ~~~
+
+  - 例子
+
+  ~~~python
+  f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+  # encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+  
+  print(type(f))
+  print(f"读取10个字节的结果：{f.read(10)}")
+  print(f"read方法读取全部内容的结果：{f.read()}")
+  
+  """
+  <class '_io.TextIOWrapper'>
+  读取10个字节的结果：李卓洋
+  111111
+  read方法读取全部内容的结果：
+  222222
+  333333
+  444444
+  555555
+  """
+  ~~~
+
+- readlines () 方法
+  - `readlines()` <font color="red">**会按行一次性读取整个文件内容，返回一个列表**</font>，列表中每一行数据作为一个元素。
+
+~~~python
+f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+# encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+
+content = f.readlines()
+print(content)
+print(type(content))
+
+# 关闭文件
+f.close()
+
+"""
+['111111\n', '222222\n', '333333\n', '444444\n', '555555']
+<class 'list'>
+"""
+~~~
+
+- readline () 方法
+
+  - `readline()` 方法： <font color="red">**一次读取一行内容**</font>
+
+  ~~~python
+  f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+  # encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+  
+  print(f"第一行数据：{f.readline()}")
+  print(f"第二行数据：{f.readline()}")
+  print(f"第三行数据：{f.readline()}")
+  
+  
+  """
+  第一行数据：李卓洋
+  
+  第二行数据：111111
+  
+  第三行数据：222222
+  """
+  ~~~
+
+- for循环读取文件
+
+  - 每一个 `line` 临时变量，就记录了文件的一行数据。
+
+  ~~~python
+  for line in f:
+      print(line)
+  ~~~
+
+  - 例子
+
+  ~~~python
+  f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+  # encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+  
+  for line in f:
+      print(line)
+  
+  
+  """
+  李卓洋
+  
+  111111
+  
+  222222
+  
+  333333
+  
+  444444
+  
+  555555
+  """
+  ~~~
+
+
+
+#### 7.2.3 close()关闭函数
+
+~~~python
+f = open("python.txt", "r")
+f.close()
+~~~
+
+- 最后通过 `close()`，关闭文件对象，也就是关闭对文件的占用
+- <font color="red">**如果不调用 `close()`，同时程序没有停止运行，那么这个文件将一直被 Python 程序占用**</font>
+
+~~~python
+f = open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8")
+# encoding的顺序不是第三位，所以不能用位置参数，用关键字参数直接指定
+
+# 关闭文件
+f.close()
+~~~
+
+
+
+#### 7.2.4 with open语句
+
+~~~python
+with open("python.txt", "r") as f:
+    f.readlines()
+~~~
+
+- 通过在 `with open` 的语句块中对文件进行操作
+- 可以在操作完成后<font color="red">**自动关闭（close）文件**</font>，避免遗忘掉 `close()` 方法
+
+~~~python
+# 通过with open语句，代码执行完后会自动关闭close文件
+with open('D:/pythonProject/Test/test.txt', 'r', encoding="UTF-8") as f:
+    print(f.read())
+
+"""
+李卓洋
+111111
+222222
+333333
+444444
+555555
+"""
+~~~
+
+
+
+#### 7.2.5 读取案例
+
+- 通过 Windows 的文本编辑器软件，将如下内容复制到 `word.txt` 中：
+
+~~~bash
+itheima itcast python
+itheima python itcast
+beijing shanghai itheima
+shenzhen guangzhou itheima
+wuhan hangzhou itheima
+zhengzhou bigdata itheima
+~~~
+
+- 通过文件读取操作，读取此文件，统计 `itheima` 单词出现的次数。
+
+~~~python
+"""
+通过文件读取操作，读取此文件，统计 `itheima` 单词出现的次数。
+"""
+
+# 方式一：一次性读取所有，然后直接用count方法取出有多少次
+with open('D:/pythonProject/Test/word.txt', 'r', encoding="UTF-8") as f:
+    content = f.read()
+    num = content.count('itheima')
+    print(f"itheima出现的次数：{num}")
+
+# 方式二：读取每行数据，然偶判断每行数据有多少
+# 单词出现次数
+count = 0
+with open('D:/pythonProject/Test/word.txt', 'r', encoding="UTF-8") as f:
+    # 读取文件的每行数据
+    lines = f.readlines()
+    # 将每行数据按照空格分割成单个单词
+    for line in lines:
+        # 去除每行数据开头的\n和空格
+        line = line.strip()
+        words = line.split(" ")
+        # 判断每个单词是否是itheima
+        for word in words:
+            if word == "itheima":
+                count = count + 1
+
+# 关闭文件
+f.close()
+
+print(f"itheima出现的次数：{count}")
+~~~
+
+
+
+### 7.3 文件写入
+
+- 使用write方法写入文件
+
+~~~python
+# 打开文件
+f = open('python.txt', 'w')
+
+# 读写（写入）
+f.write('hello world')
+
+# 内容刷新写入
+f.flush()  # 手动刷新缓冲区
+f.close()  # 关闭文件（close 会自动调用 flush）
+~~~
+
+- 注意事项
+  - 直接调用 `write()`，内容并不会立即写入磁盘，而是先积攒在程序的**内存缓冲区**中。
+  - 调用 `flush()` 时，缓冲区中的内容才会真正写入文件。
+  - 设计目的：避免频繁操作硬盘，提升效率（攒够一批数据后一次性写入磁盘）。
+  - 补充：调用 `close()` 时会自动执行 `flush()`，所以一般场景下可以省略 `flush()`，直接用 `close()` 或 `with open` 即可。
+  - 模式为w：打开一个文件只用于写入。如果该文件已存在则打开文件，并从开头开始编辑，**原有内容会被删除**。如果该文件不存在，创建新文件。
+  - 模式为a：打开一个文件用于追加。如果该文件已存在，**新的内容将会被写入到已有内容之后**。如果该文件不存在，创建新文件进行写入
+- 例子
+
+~~~python
+# 不存在的文件
+# 打开文件
+with open('D:/pythonProject/Test/test.txt', 'w', encoding="UTF-8") as f:
+    # 写入文件
+    f.write("李卓洋")
+    # 刷新缓存区
+    f.flush()
+
+# 关闭文件
+f.close()
+
+"""李卓洋"""
+
+
+# 存在的文件追加
+# 打开文件
+with open('D:/pythonProject/Test/test.txt', 'a', encoding="UTF-8") as f:
+    # 写入文件
+    f.write("李卓洋")
+    # 刷新缓存区
+    f.flush()
+
+# 关闭文件
+f.close()
+"""李卓洋李卓洋"""
+~~~
+
+
+
+### 7.4 文件综合案例
+
+- **需求**：有一份账单文件bill.txt，记录了消费收入的具体记录，内容如下：
+
+~~~bash
+name,date,money,type,remarks
+周杰轮,2022-01-01,100000,消费,正式
+周杰轮,2022-01-02,300000,收入,正式
+周杰轮,2022-01-03,100000,消费,测试
+林俊节,2022-01-01,300000,收入,正式
+林俊节,2022-01-02,100000,消费,测试
+林俊节,2022-01-03,100000,消费,正式
+林俊节,2022-01-04,100000,消费,测试
+林俊节,2022-01-05,500000,收入,正式
+张学油,2022-01-01,100000,消费,正式
+张学油,2022-01-02,500000,收入,正式
+张学油,2022-01-03,900000,收入,测试
+王力鸿,2022-01-01,500000,消费,正式
+王力鸿,2022-01-02,300000,消费,测试
+王力鸿,2022-01-03,950000,收入,正式
+刘德滑,2022-01-01,300000,消费,测试
+刘德滑,2022-01-02,100000,消费,正式
+刘德滑,2022-01-03,300000,消费,正式
+~~~
+
+- 任务
+  - 读取文件 `bill.txt`
+  - 将文件写出到 `bill.txt.bak` 文件作为备份
+  - 同时，将文件内标记为**测试**的数据行丢弃
+
+~~~python
+# 打开读取文件
+reda_f = open('D:/pythonProject/Test/bill.txt', 'r', encoding="UTF-8")
+# 打开写入文件
+write_f = open('D:/pythonProject/Test/bill.txt.bak', 'w', encoding="UTF-8")
+
+# 读取每行数据
+for line in reda_f:
+    # 遇到测试就跳过
+    if line.count("测试"):
+        continue
+    # 否则就写入
+    write_f.write(line)
+
+# 刷新
+write_f.flush()
+
+# 关闭文件
+reda_f.close()
+write_f.close()
+~~~
+
+
+
+## 8、异常、模块和包
 
 
 
