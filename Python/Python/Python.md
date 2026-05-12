@@ -3849,6 +3849,18 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名称
 
 
 
+#### 4、创建隔离化项目
+
+- 新建文件夹，并进入到文件夹里，cmd打开
+- 创建虚拟环境：<font color="red">**python -m venv venv**</font>，这将创建一个名为`venv`的虚拟环境目录
+- 激活虚拟环境：
+  - win：<font color="red">**.\venv\Scripts\activate**</font>
+  - macOS和Linux：<font color="red">**source venv/bin/activate**</font>
+
+- pip安装依赖
+
+
+
 ## 9、一阶段基础综合案例
 
 
