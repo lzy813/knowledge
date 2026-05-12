@@ -3364,17 +3364,492 @@ write_f.close()
 
 ### 8.1 异常
 
+- 什么是异常：当检测到一个错误时，python解释器就无法继续执行了，反而出现了一些错误的提示，这就是所谓的异常，也就是常说的bug
+- 总的来说：<font color="red">**就是程序运行过程中出现了错误**</font>
 
 
 
+#### 8.1.1 捕获异常
+
+- 为什么要捕获异常
+  - 世界上没有完美的程序，任何程序在运行的过程中，都有可能出现：异常，也就是出现 bug，导致程序无法完美运行下去
+  - 我们要做的，不是力求程序完美运行。而是在力所能及的范围内，对可能出现的 bug，进行提前准备、提前处理
+  - 这种行为我们称之为：<font color="red">**异常处理（捕获异常）**</font>
+- 当我们的程序遇到了 BUG，那么接下来有两种情况：
+  - ① 整个程序因为一个 BUG 停止运行
+  - ② 对 BUG 进行提醒，整个程序继续运行
+  - 在真实工作中，我们肯定不能因为一个小的 BUG 就让整个程序全部奔溃，也就是我们希望的是达到②的这种情况
+- <font color="red">**捕获异常的作用在于：提前假设某处会出现异常，做好提前准备，当真的出现异常的时候，可以有后续手段**</font>
 
 
 
+#### 8.1.2 基本语法
+
+- <font color="red">**语法1：捕获常规异常**</font>
+
+  ~~~python
+  try:
+      可能发生错误的代码
+  except:
+      如果出现异常执行的代码
+  ~~~
+
+  - 例子
+
+  ~~~python
+  try:
+      f = open('linux.txt', 'r')
+  except:
+      print("出现异常了，因为文件不存在，我将open的形式，改为w模式去打开")
+      f = open('linux.txt', 'w')
+      
+  """
+  不加异常，这里会直接报错，文件不存在：
+  Traceback (most recent call last):
+    File "D:\pythonProject\Test\test1.py", line 1, in <module>
+      f = open('linux.txt', 'r')
+  FileNotFoundError: [Errno 2] No such file or directory: 'linux.txt'
+  
+  加了之后会优雅打印：
+  出现异常了，因为文件不存在，我将open的形式，改为w模式去打开
+  """
+  ~~~
+
+- <font color="red">**语法2：捕获指定异常**</font>
+
+  - 注意事项
+    - <font color="red"> **如果尝试执行的代码的异常类型和要捕获的异常类型不一致，则无法捕获异常**</font>
+    -  <font color="red"> **一般 try 下方只放一行尝试执行的代码**</font>
+
+  ~~~python
+  try:
+      可能发生错误的代码
+  except 指定异常 as e:
+      如果出现异常执行的代码
+  ~~~
+
+  - 例子
+
+  ~~~python
+  try:
+      num = 1 / 0
+      f = open('linux.txt', 'r')
+  except FileNotFoundError as e:
+      print(f"文件未找到：{e}")
+  
+     
+  """
+  只能捕获文件未找到的异常，计算异常捕获不到
+  文件未找到：[Errno 2] No such file or directory: 'linux.txt'
+  """
+  ~~~
+
+- <font color="red">**语法3：捕获指定异常**</font>
+
+  - 当捕获多个异常时，可以把要捕获的异常类型的名字，放到`except`后，并使用元组的方式进行书写，用逗号隔开
+
+  ~~~python
+  try:
+      可能发生错误的代码
+  except (异常1, 异常2, ...):
+      如果出现异常执行的代码
+  ~~~
+
+  - 例子
+
+  ~~~python
+  try:
+      num = 1 / 0
+  except (FileNotFoundError, ZeroDivisionError) as e:
+      print(f"文件未找到：{e}")
+  
+      
+  """
+  文件未找到：division by zero
+  """
+  ~~~
+
+- <font color="red">**语法4：捕获所有异常**</font>
+
+  - 异常为最顶层：Exception
+
+  ~~~python
+  try:
+      可能发生错误的代码
+  except Exception as e:
+      如果出现异常执行的代码
+  ~~~
+
+  - 例子
+
+  ~~~python
+  try:
+      num = 1 / 0
+  except Exception as e:
+      print(f"文件未找到：{e}")
+  
+      
+  """
+  文件未找到：division by zero
+  """
+  ~~~
 
 
 
+#### 8.1.3 异常的else和finally
+
+- <font color="red">**else是没有出现异常的时候执行的**</font>
+- <font color="red">**finally是不管有没有异常的时候都会执行**</font>
+
+~~~python
+try:
+    可能发生错误的代码
+except Exception as e:
+    如果出现异常执行的代码
+else: 
+    没有出现异常的时候执行的代码
+finally:
+    不管有没有异常的时候都会执行
+~~~
+
+- 例子
+
+~~~python
+try:
+    num = 1 / 0
+except Exception as e:
+    print(f"出现了异常：{e}")
+else:
+    print("没有出现异常")
+finally:
+    print("最终代码")
+    
+"""
+出现了异常：division by zero
+最终代码
+"""
 
 
+try:
+    num = 1
+except Exception as e:
+    print(f"出现了异常：{e}")
+else:
+    print("没有出现异常")
+finally:
+    print("最终代码")
+    
+"""
+没有出现异常
+最终代码
+"""
+~~~
+
+
+
+#### 8.1.4 异常传递性
+
+- 异常是具有传递性的。
+- 当函数`func01`中发生异常，并且没有捕获处理这个异常的时候，异常会传递到函数`func02`；当`func02`也没有捕获处理这个异常的时候，`main`函数会捕获这个异常，这就是**异常的传递性**。
+- 提示：<font color="red">**当所有函数都没有捕获异常的时候，程序就会报错**</font>
+
+~~~python
+def func01():
+    print("这是func01开始")
+    num = 1 / 0  # 异常在func01中没有被捕获
+    print("这是func01结束")
+
+def func02():
+    print("这是func02开始")
+    func01()  # 异常在func02中没有被捕获
+    print("这是func02结束")
+
+def main():
+    try:
+        func02()
+    except Exception as e:  # 异常在main中被捕获
+        print(e)
+
+main()
+
+"""
+这是func02开始
+这是func01开始
+division by zero
+"""
+~~~
+
+
+
+### 8.2 模块
+
+#### 8.2.1 模块概念
+
+- Python 模块（Module），<font color="red">**是一个 Python 文件，以 `.py` 结尾**</font>。模块能定义函数、类和变量，模块里也能包含可执行的代码。
+
+- 作用：Python 中有很多各种不同的模块，每一个模块都可以帮助我们快速实现一些功能，比如实现和时间相关的功能就可以使用 `time` 模块。<font color="red">**可以认为一个模块就是一个工具包，每一个工具包中都有各种不同的工具供我们使用，进而实现各种不同的功能**</font>
+- 大白话：模块就是一个 Python 文件，里面有类、函数、变量等，我们可以拿过来用（导入模块去使用）
+
+
+
+#### 8.2.2 导入方式
+
+- 模块在使用前需要先导入，导入的语法如下：、
+
+~~~python
+[from 模块名] import [模块 | 类 | 变量 | 函数 | *] [as 别名]
+~~~
+
+- 常用的组合形式如下：
+  - `import 模块名`
+  - `from 模块名 import 类、变量、方法等`
+  - `from 模块名 import *`
+  - `import 模块名 as 别名`
+  - `from 模块名 import 功能名 as 别名`
+- 注意事项
+  - from可以省略，直接import即可
+  - as可以省略
+  - 通过"."来确定层级关系
+  - 模块的导入一般写在文件的最开头位置
+- 基本语法
+
+~~~python
+import 模块名
+import 模块名1, 模块名2
+
+模块名.功能名()
+~~~
+
+- 例子
+
+~~~python
+# 使用 import 导入 time 模块
+import time       # 导入Python内置的time模块（time.py这个代码文件）
+print("你好")
+time.sleep(5)     # 通过. 就可以使用模块内部的全部功能（类、函数、变量）
+print("我好")
+
+# 使用 from 导入 time 的 sleep 功能
+from time import sleep
+print("你好")
+sleep(5)
+print("我好")
+
+
+# 使用 * 导入 time 模块的全部功能
+from time import *    # *表示全部的意思
+print("你好")
+sleep(5)
+print("我好")
+
+
+# 使用 as 给特定功能加上别名
+from time import sleep as sl
+print("你好")
+sl(5)
+print("我好")
+~~~
+
+
+
+#### 8.2.3 自定义模块
+
+- Python 中已经帮我们实现了很多的模块。不过有时候我们需要一些个性化的模块，这里就可以通过**自定义模块**实现，也就是自己制作一个模块
+
+- <font color="red">**每个 Python 文件都可以作为一个模块，模块的名字就是文件名。自定义模块名必须要符合标识符命名规则**</font>
+
+- 注意：
+
+  - <font color="red">**如果导入多个模块的时候，且模块内有相同功能，当调用这个同名功能时，后面导入的模块功能会覆盖前面的**</font>
+
+- 例子
+
+  - 新建一个 Python 文件，命名为 `my_module1.py`，并定义 `test` 函数：
+
+  ~~~python
+  def add(x, y):
+      return x + y
+  
+  def sub(x, y):
+      return x - y
+  ~~~
+
+  - 新建测试文件 `test_my_module.py`，导入并使用自定义模块：
+
+  ~~~python
+  # 写法一：导入自定义模块
+  from my_module1 import add
+  from my_module1 import sub
+  # 调用模块中的方法
+  num1 = add(10, 2)
+  num2 = sub(10, 2)
+  print(num1)
+  print(num2)
+  
+  
+  # 写法二：导入自定义模块
+  import my_module1
+  # 调用模块中的方法
+  num1 = my_module1.add(10, 2)
+  num2 = my_module1.sub(10, 2)
+  print(num1)
+  print(num2)
+  
+  
+  # 写法三：导入自定义模块
+  from my_module1 import *
+  # 调用模块中的方法
+  num1 = add(10, 2)
+  num2 = sub(10, 2)
+  print(num1)
+  print(num2)
+  ~~~
+
+
+
+#### 8.2.4 \_\_main\_\_方法
+
+- 在实际开发中，当一个开发人员编写完一个模块后，为了让模块能够在项目中达到想要的效果，这个开发人员会自行在 py 文件中添加一些测试信息，例如，在`my_module1.py`文件中添加测试代码`test(1, 1)`
+
+~~~python
+def test(a, b):
+    print(a + b)
+
+test(1, 1)
+~~~
+
+- 问题：此时，无论是当前文件，还是其他已经导入了该模块的文件，在运行的时候都会**自动执行`test`函数的调用**。
+
+- 解决方案：使用 `if __name__ == '__main__':` 包裹测试代码，让测试代码<font color="red">**只在当前文件运行时执行，被其他文件导入时不执行**</font>
+
+~~~python
+def test(a, b):
+    print(a + b)
+
+# 只在当前文件中调用该函数，其他导入的文件内不会执行这部分代码
+if __name__ == '__main__':
+    test(1, 1)
+~~~
+
+
+
+#### 8.2.5 \_\_all\_\_方法
+
+- <font color="red">**如果一个模块文件中有 `__all__` 变量，当使用 `from xxx import *` 导入时，只能导入这个列表中的元素**</font>
+- 可以控制哪些方法能给外部导入
+- my_module1.py
+
+~~~python
+__all__ = ['test_A']
+
+def test_A():
+    print('testA')
+
+def test_B():
+    print('testB')
+~~~
+
+- test_my_module.py
+
+~~~python
+from my_module1 import *
+# 只能使用 test_A 函数，test_B 无法被导入
+test_A()
+~~~
+
+
+
+### 8.3 包
+
+#### 8.3.1 概念
+
+- 从物理上看，<font color="red">**包就是一个文件夹**</font>，在该文件夹下包含了一个 `__init__.py` 文件，该文件夹可用于包含多个模块文件。
+- 从逻辑上看，包的本质依然是<font color="red">**模块**</font>
+
+- 包的作用：当我们的模块文件越来越多时，包可以帮助我们**管理这些模块**，包的作用就是包含多个模块，让代码结构更清晰、更易于维护。
+
+![包](图片/包.png)
+
+
+
+#### 8.3.2 自定义新建包
+
+![自定义新建包步骤](图片/自定义新建包步骤.png)
+
+- <font color="red">**新建包之后，包内会有一个"\_\_init_\_.py"文件，这个文件控制着包的导入行为**</font>
+- 通过\_\_init\_\_.py判定这个文件夹是不是包，没有的话就是普通的文件夹
+
+- \_\_init\_\_.py
+
+~~~python
+__all__ = ['my_module1']
+~~~
+
+- 调用方
+
+~~~python
+# # 传统方式一
+# import my_package.my_module1
+# import my_package.my_module2
+# print(my_package.my_module1.add(10, 2))
+# print(my_package.my_module2.sub(10, 2))
+#
+#
+# # 传统方式二
+# from my_package import my_module1
+# from my_package import my_module2
+# print(my_module1.add(10, 2))
+# print(my_module2.sub(10, 2))
+#
+#
+# # 传统方式三
+# from my_package.my_module1 import add
+# from my_package.my_module2 import sub
+# print(add(10, 2))
+# print(sub(10, 2))
+
+
+# 方式四
+from my_package import *
+print(my_module1.add(10, 2))
+print(my_module2.sub(10, 2))
+~~~
+
+
+
+#### 8.3.3 安装第三方包
+
+- 我们知道，包可以包含一堆的 Python 模块，而每个模块又内含许多的功能。
+
+- 所以，我们可以认为：**一个包，就是一堆同类型功能的集合体**。
+
+- 在 Python 程序的生态中，有许多非常多的第三方包（非 Python 官方），可以极大的帮助我们提高开发效率，如：
+
+  - 科学计算中常用的：`numpy`包
+
+  - 数据分析中常用的：`pandas`包
+
+  - 大数据计算中常用的：`pyspark`、`apache-flink`包
+
+  - 图形可视化常用的：`matplotlib`、`pyecharts`
+
+  - 人工智能常用的：`tensorflow`
+
+  - 等
+
+- 这些第三方的包，极大的丰富了 Python 的生态，提升了开发效率。
+
+- 但是由于是第三方，所以 Python 没有内置，所以我们需要**安装它们**才可以导入使用哦。
+- 如何安装第三方包
+
+~~~bash
+pip install 包名称
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名称
+~~~
+
+
+
+## 9、一阶段基础综合案例
 
 
 
