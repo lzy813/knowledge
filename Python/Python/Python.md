@@ -2623,6 +2623,8 @@ TypeError: 'tuple' object does not support item assignment
 
 ### 5.4 字符串（str）
 
+#### 5.4.1 定义
+
 - 定义
 
   - 尽管字符串看起来并不像：列表、元组那样，一看就是存放了许多数据的容器。
@@ -2669,6 +2671,10 @@ TypeError: 'str' object does not support item assignment
 """
 ~~~
 
+
+
+#### 5.4.2 常用方法
+
 - 字符串的常用操作
 
 - | 方法 / 语法                      | 功能描述                                                     |
@@ -2677,75 +2683,592 @@ TypeError: 'str' object does not support item assignment
   | 字符串.replace(字符串1, 字符串2) | 将字符串内的全部**字符串1**，替换为**字符串 2**<br />注意：<font color="red">**不是修改字符串本身，而是得到了一个新字符串**</font> |
   | 字符串.split(分隔符字符串)       | 按照指定的**分隔符字符串**，将字符串划分为多个字符串，并存入**列表对象**中<br />**注意**：<font color="red">字符串本身不变，而是得到了一个**列表对象**</font> |
   | 字符串.strip()                   | 字符串的规整操作（去前后空格）                               |
-  | 字符串.strip(字符串)             | 字符串的规整操作（去前后指定字符串）                         |
-  |                                  |                                                              |
-  |                                  |                                                              |
-  |                                  |                                                              |
-  |                                  |                                                              |
-  |                                  |                                                              |
-  |                                  |                                                              |
+  | 字符串.strip(字符串)             | 字符串的规整操作（去前后指定字符串）<br />注意：<font color="red">传入的若是"12"，其实就是"1"和"2"，都会移除，是按照单个字符</font> |
+  | 字符串.count(字符串)             | 统计字符串内某字符串的出现次数                               |
+  | len(字符串)                      | 统计字符串的字符个数                                         |
+
+- 例子
+
+~~~python
+# 定义一个字符串
+my_str = "lzy love djb"
+
+# 通过索引下标取值
+value1 = my_str[2]
+value2 = my_str[-10]
+print(f"从字符串{my_str}取下标为2的元素，值是：{value1}, 取下标为-10的元素，值是：{value2}")
+
+# index方法，返回索引下标
+index = my_str.index("love")
+print(f"{my_str}中love的索引下标是：{index}")
+
+# replace替换方法
+new_str = my_str.replace("love", "like")
+print(f"{my_str}替换后的新字符串是：{new_str}")
+
+# spilt分割方法
+my_list = my_str.split(" ")
+print(f"{my_str}按空格分割后的新数据为：{my_list}")
+
+# strip去除前后多余的字符串方法
+# 不传值，就是去除前后的空格
+my_str = "   lzy love djb  "
+new_str = my_str.strip()
+print(f"{my_str}去除前后空格后值为：{new_str}")
+
+# 传值，就是去除前后的空格,传入的若是"12"，其实就是"1"和"2"，都会移除，是按照单个字符
+my_str = "12lzy love djb21"
+new_str = my_str.strip("12")
+print(f"{my_str}去除前后12后值为：{new_str}")
+
+# count统计字符串内某字符串的出现次数
+count = my_str.count("love")
+print(f"{my_str}中love出现的次数为：{count}")
+
+# len统计字符串长度
+count = len(my_str)
+print(f"{my_str}字符串长度为：{count}")
+
+
+"""
+从字符串lzy love djb取下标为2的元素，值是：y, 取下标为-10的元素，值是：y
+lzy love djb中love的索引下标是：4
+lzy love djb替换后的新字符串是：lzy like djb
+lzy love djb按空格分割后的新数据为：['lzy', 'love', 'djb']
+   lzy love djb  去除前后空格后值为：lzy love djb
+12lzy love djb21去除前后12后值为：lzy love djb
+12lzy love djb21中love出现的次数为：1
+12lzy love djb21字符串长度为：16
+"""
+~~~
+
+
+
+#### 5.4.3 特点总结
+
+- <font color="red">**只可以存储字符串**</font>
+- 长度任意（取决于内存大小）
+- 支持下标索引
+- 允许重复字符串存在
+- <font color="red">**不可以修改**</font>（增加或删除元素等）
+
+
+
+### 5.5 数据容器（序列）的切片
+
+#### 5.5.1 序列
+
+- 序列是指：<font color="red">**内容连续、有序、可使用下标索引的一类数据容器**</font>
+- font color="red">**列表、元组、字符串，均可以视为序列**</font>
+
+![序列](图片/序列.png)
 
 
 
 
 
+#### 5.5.2 切片
+
+- 序列支持切片，即：列表、元组、字符串，均支持进行切片操作
+
+- 切片：从一个序列中，取出一个子序列
+
+- **语法：序列 [起始下标：结束下标：步长]**
+
+- <font color="red">**表示从序列中，从指定位置开始，依次取出元素，到指定位置结束，得到一个新序列**</font>
+
+  - 起始下标表示从何处开始，可以留空，留空视作从头开始
+
+  - 结束下标<font color="red">**（不含）**</font>表示何处结束，可以留空，留空视作截取到结尾
+
+  - 步长表示，依次取元素的间隔，可以省略，省略则表示为1
+    - 步长 1 表示，一个个取元素
+    - 步长 2 表示，每次跳过 1 个元素取
+    - 步长 N 表示，每次跳过 N-1 个元素取
+    - 步长为负数表示，反向取（注意，<font color="red">**起始下标和结束下标也要反向标记**</font>）
+
+- 注意：<font color="red">**切片操作不会影响序列本身，而是会得到一个新的序列（列表、元组、字符串）**</font>
+
+~~~python
+# 对list进行切片，从1开始，4结束，步长1
+my_list = [0, 1, 2, 3, 4, 5, 6]
+new_list = my_list[1:5]
+print(f"new_list: {new_list}")
+
+# 对tuple进行切片，从头开始，到最后结束，步长1
+my_tuple = [0, 1, 2, 3, 4, 5, 6]
+new_tuple = my_tuple[::1]
+print(f"new_tuple: {new_tuple}")
+
+# 对str进行切片，从头开始，到最后结束，步长2
+my_str = "0123456"
+new_str = my_tuple[::2]
+print(f"new_str: {new_str}")
+
+# 对str进行切片，从头开始，到最后结束，步长-1,等于取反
+new_str = my_tuple[::-1]
+print(f"new_str: {new_str}")
+
+# 对列表进行切片，从3开始，到1结束，步长-1
+new_list = my_list[3:1:-1]
+print(f"new_list: {new_list}")
+
+# 对元组进行切片，从头开始，到尾结束，步长-2
+new_tuple = my_tuple[::-2]
+print(f"new_tuple: {new_tuple}")
+
+
+"""
+new_list: [1, 2, 3, 4]
+new_tuple: [0, 1, 2, 3, 4, 5, 6]
+new_str: [0, 2, 4, 6]
+new_str: [6, 5, 4, 3, 2, 1, 0]
+new_list: [3, 2]
+new_tuple: [6, 4, 2, 0]
+"""
+~~~
+
+- 例子
+
+~~~python
+my_str = "万过薪月，员序程马黑来，nohtyP"
+
+# 倒序字符串，切片取出
+result1 = my_str[::-1][9:14]
+print(f"方式1结果：{result1}")
+
+# 切片取出，然后倒序
+result2 = my_str[5:10][::-1]
+print(f"方式2结果：{result2}")
 
 
 
+"""
+方式1结果：马程序员，
+方式2结果：黑马程序员
+"""
+~~~
 
 
 
+### 5.6 集合（set）
+
+#### 5.6.1 定义
+
+- <font color="red">**不支持元素的重复（自带去重功能），并且内容无序**</font>
+
+~~~python
+# 定义集合字面量
+{元素, 元素, ......, 元素}
+
+# 定义集合变量
+变量名称 = {元素, 元素, ......, 元素}
+
+# 定义空集合
+变量名称 = set()
+~~~
+
+- 和列表、元组、字符串等定义基本相同
+  - 列表使用：[]
+  - 元组使用：()
+  - 字符串使用：""
+  - 集合使用：{}
+
+~~~~python
+my_set = {"lzy", "lyx", "lzy", "lyx", "djb", "djb"}
+my_set_empty = set()
+print(f"my_set的内容是：{my_set}, 类型是：{type(my_set)}")
+print(f"my_set_empty的内容是：{my_set_empty}, 类型是：{type(my_set_empty)}")
+
+"""
+my_set的内容是：{'lzy', 'djb', 'lyx'}, 类型是：<class 'set'>
+my_set_empty的内容是：set(), 类型是：<class 'set'>
+"""
+~~~~
 
 
 
+#### 5.6.2 常用方法
+
+- 首先，因为集合是无序的，所以集合<font color="red">**不支持：下标索引访问**</font>
+- 但是集合和列表一样，是<font color="red">**允许修改**</font>的，所以我们来看看集合的修改方法
+
+|              方法              | 描述                                                         |
+| :----------------------------: | :----------------------------------------------------------- |
+|         集合.add(元素)         | 功能：将指定元素，添加到集合内<br />结果：集合本身被修改，添加了新元素 |
+|       集合.remove(元素)        | 功能：将指定元素，从集合内移除<br />结果：集合本身被修改，移除了元素 |
+|           集合.pop()           | 功能：从集合中随机取出一个元素<br />结果：会得到一个元素的结果，同时集合本身被修改，元素被移除 |
+|          集合.clear()          | 功能：清空集合<br />结果：集合本身被清空                     |
+|    集合1.difference(集合2)     | 功能：取出集合 1 和集合 2 的差集（即集合 1 有而集合 2 没有的元素）<br />结果：<font color="red">**得到一个新集合，集合 1 和集合 2 本身保持不变**</font> |
+| 集合1.difference_update(集合2) | 功能：对比集合 1 和集合 2，<font color="red">**在集合 1 内删除和集合 2 相同的元素**</font><br />结果：<font color="red">**集合 1 被修改，集合 2 保持不变**</font> |
+|       集合1.union(集合2)       | 功能：将集合 1 和集合 2 组合成新集合（自动去重）<br />结果：<font color="red">**得到新集合，集合 1 和集合 2 本身保持不变**</font> |
+|           len(集合)            | 统计集合中的元素个数                                         |
+|       for item in 集合:        | 遍历集合                                                     |
+
+- 例子
+
+~~~python
+# 添加元素
+my_set = {"Hello", "World"}
+my_set.add("itheima")
+print(my_set)  # 结果 {'Hello', 'itheima', 'World'}
+
+# 移除元素
+my_set = {"Hello", "World", "itheima"}
+my_set.remove("Hello")
+print(my_set)  # 结果 {'world', 'itheima'}
+
+# pop随机移除元素
+my_set = {"Hello", "World", "itheima"}
+element = my_set.pop()
+print(my_set)      # 结果 {'world', 'itheima'}
+print(element)      # 结果 'Hello'
+
+# 清空元素
+my_set = {"Hello", "World", "itheima"}
+my_set.clear()
+print(my_set)       # 结果：set() （空集合）
+
+# 取差集
+set1 = {1, 2, 3}
+set2 = {1, 5, 6}
+set3 = set1.difference(set2)
+print(set3)      # 结果：{2, 3}（得到的新集合）
+print(set1)      # 结果：{1, 2, 3}（原集合不变）
+print(set2)      # 结果：{1, 5, 6}（原集合不变）
+
+# 集合合并
+set1 = {1, 2, 3}
+set2 = {1, 5, 6}
+set3 = set1.union(set2)
+print(set3)      # 结果：{1, 2, 3, 5, 6}（新集合）
+print(set1)      # 结果：{1, 2, 3}（set1不变）
+print(set2)      # 结果：{1, 5, 6}（set2不变）
+
+# 消除差集
+set1 = {1, 2, 3}
+set2 = {1, 5, 6}
+set1.difference_update(set2)
+print(set1)      # 结果：{2, 3}
+print(set2)      # 结果：{1, 5, 6}
+
+# 统计集合个数
+my_set = {1, 2, 3}
+print(len(my_set))   # 结果：3
+
+# 遍历集合
+my_set = {1, 2, 3}
+for item in my_set:
+    print(item)
+
+~~~
 
 
 
+#### 5.6.3 特点总结
+
+- 可以容纳多个数据
+- 可以容纳不同类型的数据（混装）
+- 数据是<font color="red">**无序存储的（不支持下标索引）**</font>
+- <font color="red">**不允许重复**</font>数据存在
+- <font color="red">**可以修改**</font>（增加或删除元素等）
+- 支持 for 循环
 
 
 
+### 5.7 字典
+
+#### 5.7.1 定义
+
+- 字典的定义，同样使用`{}`，不过存储的元素是一个个的：<font color="red">**键值对**</font>，如下语法：
+- 注意：<font color="red">key值不可重复</font>，重复添加等同于覆盖原有数据
+
+~~~python
+# 定义字典字面量
+{key: value, key: value, ......, key: value}
+
+# 定义字典变量
+my_dict = {key: value, key: value, ......, key: value}
+
+# 定义空字典
+my_dict = {}          # 空字典定义方式1
+my_dict = dict()      # 空字典定义方式2
+~~~
+
+- 字典同集合一样，不可以使用下标索引。但是<font color="red">字典可以通过 **Key 值** 来取得对应的 Value</font>
+
+~~~python
+value = 字典["key"]
+~~~
+
+- 字典可以嵌套，value值为另一个字典
+
+~~~python
+{key: value, key: {key: value}}
+~~~
+
+- 嵌套字典取值
+
+~~~python
+value = 字典["key"]["key"]
+~~~
+
+- 例子
+
+~~~python
+# 定义一个字典
+my_dict = {"id": "001", "name": "lzy", "age": 18}
+print(my_dict["name"])
+print(type(my_dict))
+
+# 定义一个空字典
+my_dict1 = {}
+my_dict2 = dict()
+print(type(my_dict1))
+print(type(my_dict2))
+
+# 字典嵌套
+other_dict = {"id": "002", "name": "djb", "age": 18}
+my_dict = {"id": "001", "name": "lzy", "age": 18, "lover": other_dict}
+print(my_dict)
+print(my_dict["lover"]["name"])
+
+"""
+lzy
+<class 'dict'>
+<class 'dict'>
+<class 'dict'>
+{'id': '001', 'name': 'lzy', 'age': 18, 'lover': {'id': '002', 'name': 'djb', 'age': 18}}
+djb
+"""
+~~~
 
 
 
+#### 5.7.2 常用操作
+
+| 操作                | 说明                                                         |
+| ------------------- | ------------------------------------------------------------ |
+| `字典[Key]`         | 获取指定 Key 对应的 Value 值                                 |
+| `字典[Key] = Value` | 添加或更新键值对<br /><font color="red">**字典 Key 不可以重复，所以对已存在的 Key 执行上述操作，就是更新 Value 值**</font> |
+| `字典.pop(Key)`     | 获得指定 Key 的 Value，同时字典被修改，指定 Key 的数据被删除 |
+| `字典.clear()`      | 字典被修改，元素被清空                                       |
+| `字典.keys()`/      | 获取字典的全部 Key，可用于 for 循环遍历字典                  |
+| `len(字典)`         | 计算字典内的元素数量                                         |
+
+- 例子
+
+```python
+# 定义一个字典
+a_dict = {"周杰伦": 90, "林俊杰": 91, "汪峰": 81, "王菲": 80}
+
+# 获取指定 Key 对应的 Value 值
+print(f"周杰伦的评分：{a_dict["周杰伦"]}")
+
+# 添加元素
+a_dict["陶喆"] = 89
+print(f"添加元素后：{a_dict}")
+
+# 修改元素
+a_dict["陶喆"] = 88
+print(f"修改元素后：{a_dict}")
+
+# 获得指定 Key 的 Value，同时字典被修改，指定 Key 的数据被删除
+num = a_dict.pop("陶喆")
+print(f"删除元素后：{a_dict}")
+print(f"删除元素：{num}")
+
+# 获取所有key方法1
+all_key = a_dict.keys()
+for key in all_key:
+    print(f"<UNK>{key}")
+
+# 获取所有key方法2
+for key in a_dict:
+    print(f"<UNK>{key}")
+
+# 获取长度
+print(len(a_dict))
+
+
+"""
+周杰伦的评分：90
+添加元素后：{'周杰伦': 90, '林俊杰': 91, '汪峰': 81, '王菲': 80, '陶喆': 89}
+修改元素后：{'周杰伦': 90, '林俊杰': 91, '汪峰': 81, '王菲': 80, '陶喆': 88}
+删除元素后：{'周杰伦': 90, '林俊杰': 91, '汪峰': 81, '王菲': 80}
+删除元素：88
+<UNK>周杰伦
+<UNK>林俊杰
+<UNK>汪峰
+<UNK>王菲
+<UNK>周杰伦
+<UNK>林俊杰
+<UNK>汪峰
+<UNK>王菲
+4
+"""
+```
 
 
 
+#### 5.7.3 特点总结
+
+- 可以容纳**多个数据**
+- 可以容纳不同**类型的数据**
+- 每一份数据是 **KeyValue 键值对**
+- 可以通过 Key 获取到 Value，**Key 不可重复**（重复会覆盖）
+- <font color="red">**不支持下标索引**</font>
+- <font color="red">**可以修改**</font>（增加或删除更新元素等）
+- <font color="red">**支持 for 循环，不支持 while 循环**</font>
 
 
 
+### 5.8 容器特点对比
+
+|              | 列表                             | 元组                               | 字符串             | 集合                   | 字典                                           |
+| ------------ | -------------------------------- | ---------------------------------- | ------------------ | ---------------------- | ---------------------------------------------- |
+| **元素数量** | 支持多个                         | 支持多个                           | 支持多个           | 支持多个               | 支持多个                                       |
+| **元素类型** | 任意                             | 任意                               | 仅字符             | 任意                   | Key: ValueKey：除字典外任意类型Value：任意类型 |
+| **下标索引** | 支持                             | 支持                               | 支持               | 不支持                 | 不支持                                         |
+| **重复元素** | 支持                             | 支持                               | 支持               | 不支持                 | 不支持                                         |
+| **可修改性** | 支持                             | 不支持                             | 不支持             | 支持                   | 支持                                           |
+| **数据有序** | 是                               | 是                                 | 是                 | 否                     | 否                                             |
+| **使用场景** | 可修改、可重复的一批数据记录场景 | 不可修改、可重复的一批数据记录场景 | 一串字符的记录场景 | 不可重复的数据记录场景 | 以 Key 检索 Value 的数据记录场景               |
 
 
 
+### 5.9 容器的通用操作
+
+- 在遍历上：
+  - 五类数据都支持for循环
+  - 列表、元组、字符串支持while循环；集合、字典不支持（没有索引下标）
+
+| 功能                           | 描述                                                         |
+| ------------------------------ | ------------------------------------------------------------ |
+| 通用 `for` 循环                | 遍历容器（字典是遍历 key）                                   |
+| `max()`                        | 容器内最大元素                                               |
+| `min()`                        | 容器内最小元素                                               |
+| `len()`                        | 容器元素个数                                                 |
+| `list()`                       | 转换为列表                                                   |
+| `tuple()`                      | 转换为元组                                                   |
+| `str()`                        | 转换为字符串                                                 |
+| `set()`                        | 转换为集合                                                   |
+| `sorted(序列, [reverse=True])` | 排序，`reverse=True` 表示降序；返回一个<font color="red">**排好序的新列表**</font>（注意：`sorted` 不修改原序列，列表的 `sort()` 方法才会直接修改原列表） |
+
+- 例子
+
+~~~python
+# 定义容器数据
+my_list = [1, 2, 3, 4, 5]
+my_tuple = (1, 2, 3, 4, 5)
+my_str = "abcdefg"
+my_set = {1, 2, 3, 4, 5}
+my_dict = {"key1": 5, "key2": 4, "key3": 3, "key4": 2, "key5": 1}
+
+# len 元素个数
+print(f"列表 元素个数有: {len(my_list)}")
+print(f"元组 元素个数有: {len(my_tuple)}")
+print(f"字符串 元素个数有: {len(my_str)}")
+print(f"集合 元素个数有: {len(my_set)}")
+print(f"字典 元素个数有: {len(my_dict)}")
+
+print("===================================")
+
+# max 最大元素
+print(f"列表 最大元素: {max(my_list)}")
+print(f"元组 最大元素: {max(my_tuple)}")
+print(f"字符串 最大元素: {max(my_str)}")
+print(f"集合 最大元素: {max(my_set)}")
+print(f"字典 最大元素: {max(my_dict)}")
+
+print("===================================")
+
+# min 最小元素
+print(f"列表 最小元素: {min(my_list)}")
+print(f"元组 最小元素: {min(my_tuple)}")
+print(f"字符串 最小元素: {min(my_str)}")
+print(f"集合 最小元素: {min(my_set)}")
+print(f"字典 最小元素: {min(my_dict)}")
+
+print("===================================")
+
+# 类型转换: 容器转列表
+print(f"列表 容器转列表: {list(my_list)}")
+print(f"元组 容器转列表: {list(my_tuple)}")
+print(f"字符串 容器转列表: {list(my_str)}")
+print(f"集合 容器转列表: {list(my_set)}")
+print(f"字典 容器转列表: {list(my_dict)}")
+
+print("===================================")
+
+# 类型转换: 容器转元组
+print(f"列表 容器转元组: {tuple(my_list)}")
+print(f"元组 容器转元组: {tuple(my_tuple)}")
+print(f"字符串 容器转元组: {tuple(my_str)}")
+print(f"集合 容器转元组: {tuple(my_set)}")
+print(f"字典 容器转元组: {tuple(my_dict)}")
+
+print("===================================")
+
+# 类型转换: 容器转字符串
+print(f"列表 容器转字符串: {str(my_list)}")
+print(f"元组 容器转字符串: {str(my_tuple)}")
+print(f"字符串 容器转字符串: {str(my_str)}")
+print(f"集合 容器转字符串: {str(my_set)}")
+print(f"字典 容器转字符串: {str(my_dict)}")
+
+print("===================================")
+
+# 类型转换: 容器转集合
+print(f"列表 容器转集合: {set(my_list)}")
+print(f"元组 容器转集合: {set(my_tuple)}")
+print(f"字符串 容器转集合: {set(my_str)}")
+print(f"集合 容器转集合: {set(my_set)}")
+print(f"字典 容器转集合: {set(my_dict)}")
+
+
+print("===================================")
+
+# 类型转换: 容器排序
+print(f"列表 容器排序: {sorted(my_list, reverse=True)}")
+print(f"元组 容器排序: {sorted(my_tuple, reverse=True)}")
+print(f"字符串 容器排序: {sorted(my_str, reverse=True)}")
+print(f"集合 容器排序: {sorted(my_set, reverse=True)}")
+print(f"字典 容器排序: {sorted(my_dict, reverse=True)}")
+~~~
 
 
 
+### 5.10 比较字符串大小
 
+- ASCII 码表
+  - 在程序中，字符串所用的所有字符如：
+    - 大小写英文单词
+    - 数字
+    - 特殊符号（!、\、|、@、#、空格等）
+  - 都有其对应的 ASCII 码表值
+  - 每一个字符都能对应上一个：<font color="red">**数字的码值**</font>
+  - <font color="red">**字符串进行比较就是基于数字的码值大小进行比较的**</font>
 
+![字符串比较](图片/字符串比较.png)
 
+~~~python
+# abc 比较 abd
+print(f"abd大于abc，结果：{'abd' > 'abc'}")
+# a 比较 ab
+print(f"ab大于a，结果：{'ab' > 'a'}")
+# a 比较 A
+print(f"a 大于 A，结果：{'a' > 'A'}")
+# key1 比较 key2
+print(f"key2 大于 key1，结果：{'key2' > 'key1'}")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
+abd大于abc，结果：True
+ab大于a，结果：True
+a 大于 A，结果：True
+key2 大于 key1，结果：True
+"""
+~~~
 
 
 
@@ -3863,6 +4386,38 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名称
 
 ## 9、一阶段基础综合案例
 
+### 9.1 JSON
+
+- JSON 是一种**轻量级的数据交互格式**，可以按照 JSON 指定的格式去**组织和封装**数据。
+
+- JSON 本质上是一个带有**特定格式的字符串**。
+
+- 主要功能：JSON 是一种在各个**编程语言**中流通的数据格式，负责不同编程语言中的**数据传递和交互**，类似于：
+
+![JSON](图片/JSON.png)
+
+- JSON 格式的数据要求很严格，主要有以下两种常见形式：
+
+  -  **对象格式（字典）**
+    - 用 `{}` 包裹，键值对结构，键必须是双引号字符串
+    - 对应 Python 中的 `dict` 类型
+
+  ```json
+  {"name":"admin","age":18}
+  ```
+
+  - **数组格式（列表）**
+
+    - 用 `[]` 包裹，元素可以是对象或其他 JSON 类型。
+
+    - 对应 Python 中的 `list` 类型。
+
+  ```json
+  [{"name":"admin","age":18},{"name":"root","age":16},{"name":"张三","age":20}]
+  ```
+
+
+
 
 
 # 三、二阶段
@@ -4069,4 +4624,178 @@ print(stu.tel)
 
 
 
-1.5 
+### 1.5 其他内置方法
+
+- 上文学习的 `__init__` 构造方法，是 Python 类内置的方法之一。
+
+- 这些内置的类方法各自有特殊功能，我们称之为：**魔术方法**。
+
+- 常见魔术方法一览
+
+|  魔术方法  |                           功能说明                           |
+| :--------: | :----------------------------------------------------------: |
+| `__init__` |     构造方法，用于初始化对象，等价于Java中的有参构造方法     |
+| `__str__`  | 字符串方法，自定义对象打印时的输出，等价于Java中的toString()重写方法 |
+|  `__lt__`  | 用于 `<`、`>` 符号的比较逻辑，等价于Java中的根据特定值比较方法 |
+|  `__le__`  | 用于 `<=`、`>=` 符号的比较逻辑，等价于Java中的根据特定值比较方法 |
+|  `__eq__`  |   用于 `==` 符号的比较逻辑，等价于Java中的根据equals()方法   |
+
+- 例子
+
+~~~python
+# 定义一个学生类
+class Student(object):
+    # 构造方法
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    # 重写方法
+    def __str__(self):
+        return f"Name: {self.name}, Age: {self.age}"
+
+    # 比较方法
+    def __lt__(self, other):
+        return self.age > other.age
+
+    # 比较方法
+    def __le__(self, other):
+        return self.age >= other.age
+
+    # 判断相同方法
+    def __eq__(self, other):
+        return self.name == other.name
+
+# 声明两个对象实例
+sut1 = Student('John', 22)
+sut2 = Student('Nike', 23)
+sut3 = Student('Nike', 22)
+
+# 测试重写方法: Name: John, Age: 22
+print(sut1.__str__())
+
+# 测试比较方法：False，True
+print(sut1.__lt__(sut2))
+print(sut1.__le__(sut3))
+
+# 测试判断相同方法：True
+print(sut2 == sut3)
+~~~
+
+
+
+### 1.6 封装
+
+- 封装表示的是：将现实世界事物的<font color="red">**属性和行为**</font>封装到类中，描述为：<font color="red">**成员变量和成员方法**</font>
+
+![封装](图片/封装.png)、
+
+- 现实生活中的事物，有属性和行为，但是不代表这些属性和行为都是开放给用户使用的
+
+- Python 类的私有成员
+
+  - 既然现实事物有不公开的属性和行为，那么作为现实事物在程序中映射的类，也应该支持这种封装。
+
+  - 类中提供了**私有成员**的形式来实现。
+
+    - 私有成员变量
+
+    - 私有成员方法
+
+  - 定义私有成员的方式
+
+    - <font color="red">**私有成员变量：变量名以 `__` 开头（2 个下划线）**</font>
+
+    - <font color="red">**私有成员方法：方法名以 `__` 开头（2 个下划线）**</font>
+
+  ~~~py
+  class Phone:
+      IMEI = None       # 序列号（公有）
+      producer = None   # 厂商（公有）
+      __current_voltage = None     # 当前电压（私有）
+  
+      def call_by_5g(self):
+          print("5g通话已开启")
+  
+      # 私有成员方法
+      def __keep_single_core(self):
+          print("让CPU以单核模式运行以节省电量")
+  ~~~
+
+- Python 私有成员的访问限制
+
+  - <font color="red">**私有方法无法直接被类对象使用**</font>
+
+  ~~~python
+  class Phone:
+      IMEI = None       # 序列号
+      producer = None   # 厂商
+      __current_voltage = None  # 当前电压（私有）
+  
+      def call_by_5g(self):
+          print("5g通话已开启")
+  
+      # 私有成员方法
+      def __keep_single_core(self):
+          print("让CPU以单核模式运行以节省电量")
+  
+  phone = Phone()
+  phone.__keep_single_core()  # 尝试直接调用私有方法
+  
+  
+  """
+  AttributeError: 'Phone' object has no attribute '__keep_single_core'
+  说明私有方法无法在类外部直接调用
+  """
+  ~~~
+
+  - <font color="red">**私有变量无法赋值，也无法获取值**</font>
+
+  ~~~python
+  class Phone:
+      IMEI = None       # 序列号
+      producer = None   # 厂商
+      __current_voltage = None  # 当前电压（私有）
+  
+      def __call_by_5g(self):
+          print("5g通话已开启")
+  
+  phone = Phone()
+  phone.__current_voltage = 33  # 尝试给私有变量赋值（不报错，但无效）
+  print(phone.__current_voltage)  # 尝试获取私有变量值（会报错）
+  print(type(phone.__current_voltage))
+  
+  """
+  33 
+  <class 'int'> 这里看出它是新增了一个属性，而不是在私有变量上修改
+  赋值操作不会报错，但不会真正修改类内部的私有变量
+  取值操作会直接报错，说明私有变量无法在类外部直接访问
+  """
+  ~~~
+
+- <font color="red">**私有成员无法被类对象直接使用，但可以被类内部的其他成员调用**</font>
+
+~~~python
+class Phone:
+    __current_voltage = 0.5  # 当前手机运行电压（私有成员变量）
+
+    def __keep_single_core(self):  # 私有成员方法
+        print("让CPU以单核模式运行")
+
+    def call_by_5g(self):  # 公有方法，内部可调用私有成员
+        if self.__current_voltage >= 1:
+            print("5g通话已开启")
+        else:
+            self.__keep_single_core()  # 在类内部调用私有方法
+            print("电量不足，无法使用5g通话，并已设置为单核运行进行省电。")
+
+phone = Phone()
+phone.call_by_5g()
+
+
+"""
+让CPU以单核模式运行
+电量不足，无法使用5g通话，并已设置为单核运行进行省电
+"""
+~~~
+
