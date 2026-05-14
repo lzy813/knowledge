@@ -4799,3 +4799,516 @@ phone.call_by_5g()
 """
 ~~~
 
+
+
+### 1.7 继承
+
+#### 1.7.1 继承的定义和使用
+
+- 继承就是一个类，继承（复制）另外一个类的成员变量和成员方法（不含私有）
+- 语法
+
+~~~python
+class 类(父类[, 父类2, ... , 父类N])
+	类内容体
+~~~
+
+- 子类构建的类对象，可以
+
+  - <font color="red">**有自己的成员变量和成员方法**</font>
+  - <font color="red">**使用父类的成员变量和成员方法**</font>
+
+- 继承分为单继承和多继承
+
+  - 单继承：只继承一个父类
+
+  ~~~python
+  # 单继承
+  class Phone:
+      IMEI = None     # 序列号
+      producer = 'HM' # 厂商
+  
+      def call_by_4g(self):
+          print('call_by_4g')
+  
+  class Phone2022(Phone):
+      face_id = '10001'   # 面部识别ID
+  
+      def call_by_5g(self):
+          print('call_by_5g')
+  
+  phone = Phone2022()
+  # 使用父类的成员变量
+  print(phone.producer)
+  # 使用父类的成员方法
+  phone.call_by_4g()
+  # 使用自己的成员方法
+  phone.call_by_5g()
+  
+  """
+  HM
+  call_by_4g
+  call_by_5g
+  """
+  ~~~
+
+  - 多继承：继承多个父类
+    - pass是占位语句，用来保证函数（方法）或类定义的完整性，表示无内容，空的意思
+    - <font color="red">**如果继承多个类，有相同的成员变量和成员方法，先继承的优先级高于后继承者**</font>
+
+  ~~~python
+  # 手机父类
+  class Phone:
+      IMEI = None     # 序列号
+      producer = 'HM1' # 厂商
+  
+      def call_by_4g(self):
+          print('call_by_4g')
+  
+  # NFC父类
+  class NFCReader:
+      nfc_reader = '第五代'
+      producer = 'HM2'
+  
+      def read_nfc(self):
+          print('read_nfc')
+  
+      def call_by_4g(self):
+          print('write_nfc')
+  
+  # 红外遥控父类
+  class RemoteControl:
+      rc_type = '红外遥控'
+  
+      def connect(self):
+          print('红外遥控开启')
+  
+  
+  
+  class MyPhone(Phone, NFCReader, RemoteControl):
+      pass    # 表示空，为了语法不错误
+  
+  phone = MyPhone()
+  # 使用Phone父类的成员变量
+  print(phone.producer)
+  # 使用父类的成员方法
+  phone.call_by_4g()
+  phone.read_nfc()
+  phone.connect()
+  
+  """
+  HM1
+  call_by_4g
+  read_nfc
+  红外遥控开启
+  """
+  ~~~
+
+  
+
+#### 1.7.2 复写
+
+- 定义：子类继承父类的成员属性和成员方法后，如果对其 “不满意”，那么可以进行复写。即：<font color="red">**在子类中重新定义同名的属性或方法即可**</font>
+- 语法：在子类中重新实现同名成员方法或成员属性即可
+- 在子类中，如何调用父类成员
+  - 注意：只可以在子类内部调用父类的同名成员，子类的实体类对象调用默认是调用子类复写的
+
+~~~python
+# 方式一：调用父类成员
+使用成员变量：父类名.成员变量
+使用成员方法：父类名.成员方法(self)
+
+# 方式二：使用super()调用父类成员
+使用成员变量：super().成员变量
+使用成员方法：super().成员方法()
+~~~
+
+- 例子
+
+~~~python
+class Phone:
+    IMEI = None          # 序列号
+    producer = "ITCAST"  # 厂商
+
+    def call_by_5g(self):
+        print("父类的5g通话")
+
+class MyPhone(Phone):
+    proucer = "ITHEIMA"       # 复写父类属性
+
+    def call_by_5g(self):     # 复写父类方法
+        print("开启CPU单核模式，确保通话的时候省电")
+        # 方式一
+        print(f"父类的厂商是：{Phone.producer}")
+        Phone.call_by_5g(self)
+
+        # 方式二
+        print(f"父类的厂商是：{super().producer}")
+        super().call_by_5g()
+        print("关闭CPU单核模式，确保性能")
+
+phone = MyPhone()
+phone.call_by_5g()
+
+"""
+开启CPU单核模式，确保通话的时候省电
+父类的厂商是：ITCAST
+父类的5g通话
+父类的厂商是：ITCAST
+父类的5g通话
+关闭CPU单核模式，确保性能
+"""
+~~~
+
+
+
+### 1.8 类型注解
+
+- Python 在 3.5 版本的时候引入了类型注解，以方便静态类型检查工具，IDE 等第三方工具。
+- 类型注解：在代码中涉及数据交互的地方，提供数据类型的注解（显式的说明）。
+- 主要功能：
+  - 帮助第三方 IDE 工具（如 PyCharm）对代码进行类型推断，协助做代码提示
+  - 帮助开发者自身对变量进行类型注释
+- 支持：
+  - 变量的类型注解
+  - 函数（方法）形参列表和返回值的类型注解
+
+
+
+#### 1.8.1 变量的类型注解
+
+- 语法：<font color="red">**变量:类型**</font>
+- 注意
+  - 元组类型设置类型详细注解，需要将每一个元素都标记出来
+  - 字典类型设置类型详细注解，需要 2 个类型，第一个是 key 第二个是 value
+
+~~~python
+# 基础数据类型注解
+my_num: int = 1
+my_fload: float = 3.1415926
+my_str: str = "123"
+my_bool: bool = True
+
+# 类对象类型注解
+class Student:
+    pass
+stu: Student = Student()
+
+# 基础容器类型注解
+new_list: list = [1, 2, 3]
+new_tuple: tuple = (1, 2, 3)
+new_set: set = {1, 2, 3}
+new_dict: dict = {"itheima": 666}
+new_str: str = "itheima"
+
+# 详细容器类型注解
+my_list: list[int] = [1, 2, 3]
+my_tuple: tuple[str, int, bool] = ("itheima", 666, True)
+my_set: set[int] = {1, 2, 3}
+my_dict: dict[str, int] = {"itheima": 666}
+~~~
+
+- 除了使用 `变量: 类型` 这种语法做注解外，也可以在**注释中**进行类型注解。
+  - 语法：<font color="red">**\# type: 类型**</font>
+
+~~~python
+class Student:
+    pass
+
+var_1 = random.randint(1, 10)    # type: int
+var_2 = json.loads(data)         # type: dict[str, int]
+var_3 = func()                   # type: Student
+~~~
+
+- 限制注意
+  - 类型注解主要功能在于：
+    - 帮助第三方 IDE 工具（如 PyCharm）对代码进行类型推断，协助做代码提示
+    - 帮助开发者自身对变量进行类型注释（备注）
+  - 并不会真正的对类型做验证和判断。也就是，类型注解仅仅是**提示性**的，不是**决定性**的。
+
+- <font color="red">**核心说明**</font>：Python 的类型注解只是<font color="red">**提示性语法**</font>，不会在运行时强制检查类型，即便变量实际类型与注解不符，代码也能正常执行
+
+
+
+#### 1.8.2 函数（方法）的类型注解
+
+- 形参注解
+
+  - 语法
+
+  ~~~python
+  def 函数方法名(形参名: 类型, 形参名: 类型, ...):
+  	pass
+  ~~~
+
+  - 例子
+
+  ~~~python
+  def add(num1: int, num2: int):
+      return num1 + num2
+  ~~~
+
+- 返回值注解
+
+  - 语法
+
+  ~~~python
+  def 函数方法名(形参名: 类型, 形参名: 类型, ...) -> 返回值类型:
+  	pass
+  ~~~
+
+  - 例子
+
+  ~~~python
+  def add(num1: int, num2: int) -> int: 
+      return num1 + num2
+  ~~~
+
+
+
+#### 1.8.3 Union联合类型注解
+
+- 使用场景：一个变量有多种不同类型时，这个时候就要用到Union联合类型注解
+  - 比如一个列表中有多种数据类型，int和str，那么单个的类型注解就不能正确表述出来
+  - 比如入参data有可能是str，也有可能是int
+
+- 语法：
+  - 导包：from typing import Union
+  - <font color="red">**Union[类型1, 类型2]**</font>
+
+```python
+from typing import Union
+
+my_list: list[Union[str, int]] = [1, 2, "123", "456"]
+my_dict: dict[str, Union[str, int]] = {"k1": 1, "k2": 2, "k3": "123"}
+
+def func(data: Union[str, int]) -> Union[str, int]:
+    pass
+```
+
+
+
+### 1.9 多态
+
+- 多态：多种状态，<font color="red">**即完成某个行为时，使用不同的对象会得到不同的状态**</font>
+- 比如
+
+~~~python
+class Animal:
+    def speak(self):
+        pass
+
+class Dog(Animal):
+    def speak(self):
+        print("汪汪汪")
+
+class Cat(Animal):
+    def speak(self):
+        print("喵喵喵")
+        
+        
+def make_noise(animal: Animal):
+    animal.speak()
+
+dog = Dog()
+cat = Cat()
+
+make_noise(dog)  # 输出：汪汪汪
+make_noise(cat)  # 输出：喵喵喵
+~~~
+
+![多态](图片/多态.png)
+
+- 抽象方法
+
+![抽象方法](图片/抽象方法.png)
+
+```python
+# 演示抽象类
+class AC:
+    def cool_wind(self):
+        """制冷"""
+        pass
+
+    def hot_wind(self):
+        """制热"""
+        pass
+
+    def swing_l_r(self):
+        """左右摆风"""
+        pass
+
+class Midea_AC(AC):
+    def cool_wind(self):
+        print("美的空调制冷")
+
+    def hot_wind(self):
+        print("美的空调制热")
+
+    def swing_l_r(self):
+        print("美的空调左右摆风")
+
+class GREE_AC(AC):
+    def cool_wind(self):
+        print("格力空调制冷")
+
+    def hot_wind(self):
+        print("格力空调制热")
+
+    def swing_l_r(self):
+        print("格力空调左右摆风")
+
+def make_cool(ac: AC):
+    ac.cool_wind()
+
+midea_ac = Midea_AC()
+midea_ac.cool_wind()
+gree_ac = GREE_AC()
+gree_ac.cool_wind()
+
+
+"""
+美的空调制冷
+格力空调制冷
+"""
+```
+
+- 总结
+  - 什么是多态？
+    - 多态指的是，同一个行为，使用不同的对象获得不同的状态。
+    - 如，定义函数（方法），通过类型注解声明需要父类对象，实际传入子类对象进行工作，从而获得不同的工作状态。
+  - 什么是抽象类（接口）
+    - 包含抽象方法的类，称之为抽象类。抽象方法是指：没有具体实现的方法（`pass`），称之为抽象方法。
+  - 抽象类的作用
+    - 多用于做顶层设计（设计标准），以便子类做具体实现
+    - 也是对子类的一种软性约束，要求子类必须复写（实现）父类的一些方法。
+
+
+
+## 2、SQL
+
+### 2.1 python执行SQL
+
+- 需要使用三方包：pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pymysql
+
+- 导包：from pymysql import Connection
+- 数据库连接方式
+
+```python
+from pymysql import Connection
+
+# 获取数据库连接对象
+conn = Connection(
+    host='localhost',
+    port=3306,
+    user='root',
+    password='li998813'
+)
+# 打印软件信息
+print(conn.get_server_info())
+# 关闭数据库连接
+conn.close()
+
+"""
+8.0.42
+"""
+```
+
+- 非查询方法：增删改（exceute）
+
+~~~python
+from pymysql import Connection
+
+# 获取数据库连接对象
+conn = Connection(
+    host='localhost',
+    port=3306,
+    user='root',
+    password='li998813'
+)
+
+# 获取游标
+cursor = conn.cursor()
+# 选择数据库
+conn.select_db("book")
+# 执行DDL
+cursor.execute(" create table test_table (id int, name varchar(20)) ")
+
+# 关闭数据库连接
+conn.close()
+~~~
+
+- 查询方法：查（execute）
+
+~~~python
+from pymysql import Connection
+
+# 获取数据库连接对象
+conn = Connection(
+    host='localhost',
+    port=3306,
+    user='root',
+    password='li998813'
+)
+
+# 获取游标
+cursor = conn.cursor()
+# 选择数据库
+conn.select_db("book")
+# 执行查询SQL
+cursor.execute("select * from book")
+# 结果接收
+result = cursor.fetchall()
+for row in result:
+    print(row)
+
+# 关闭数据库连接
+conn.close()
+~~~
+
+- 总结
+  - Python 中操作 MySQL 的第三方库
+    - 使用第三方库为：**pymysql**
+    - 安装命令：`pip install pymysql`
+  - 获取数据库连接对象
+    - 导包：`from pymysql import Connection`
+    - 创建连接：`Connection(主机, 端口, 账户, 密码)` 即可得到连接对象
+    - 关闭连接：`连接对象.close()` 用于关闭和 MySQL 数据库的连接
+  - 执行 SQL 查询的步骤
+    - 通过连接对象调用 `cursor()` 方法，得到**游标对象**
+    - 执行 SQL 语句：`游标对象.execute(SQL语句)`
+    - 查询结果会被封装到<font color="red">**元组**</font>内
+
+
+
+### 2.2 DML提交
+
+- 手动提交：在执行sql后，手动提交事物`conn.commit()`
+- 自动提交：在创建连接的时候加上参数`conn.commit()`
+
+```python
+from pymysql import Connection
+
+# 获取数据库连接对象
+conn = Connection(
+    host='localhost',
+    port=3306,
+    user='root',
+    password='li998813',
+    autocommit=True
+)
+
+# 获取游标
+cursor = conn.cursor()
+# 选择数据库
+conn.select_db("book")
+
+# 执行非查询SQL时要配合commit
+cursor.execute(" update book set book_name = '123' where book_id = 1 ")
+# 手动提交
+conn.commit()
+
+
+# 关闭数据库连接
+conn.close()
+```
