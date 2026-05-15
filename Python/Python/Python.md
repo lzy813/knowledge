@@ -3272,6 +3272,54 @@ key2 大于 key1，结果：True
 
 
 
+### 5.11  JSON
+
+- JSON 是一种**轻量级的数据交互格式**，可以按照 JSON 指定的格式去**组织和封装**数据。
+
+- JSON 本质上是一个带有**特定格式的字符串**。
+
+- 主要功能：JSON 是一种在各个**编程语言**中流通的数据格式，负责不同编程语言中的**数据传递和交互**，类似于：
+
+![JSON](图片/JSON.png)
+
+- JSON 格式的数据要求很严格，主要有以下两种常见形式：
+
+  -  **对象格式（字典）**
+     - 用 `{}` 包裹，键值对结构，键必须是双引号字符串
+     - 对应 Python 中的 `dict` 类型
+
+  ```json
+  {"name":"admin","age":18}
+  ```
+
+  - **数组格式（列表）**
+
+    - 用 `[]` 包裹，元素可以是对象或其他 JSON 类型。
+
+    - 对应 Python 中的 `list` 类型。
+
+  ```json
+  [{"name":"admin","age":18},{"name":"root","age":16},{"name":"张三","age":20}]
+  ```
+
+- python数据和Json数据相互转化
+  - 通过 <font color="red"> **json.dumps(data)** </font> 方法把python数据转化为了 json数据，如果有中文可以带上：`ensure_ascii=False` 参数来确保中文正常转换
+  - 通过 <font color="red"> **json.loads(data)** </font>方法把json数据转化为了 python数据
+
+~~~python
+# 导入json模块
+import json
+
+# 准备符合json格式要求的python数据
+data = [{"name": "老王", "age": 16}, {"name": "张三", "age": 20}]
+
+# 通过 json.dumps(data) 方法把python数据转化为了 json数据
+data = json.dumps(data, ensure_ascii=False)
+
+# 通过 json.loads(data) 方法把json数据转化为了 python数据
+data = json.loads(data)
+~~~
+
 
 
 
@@ -4384,37 +4432,56 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名称
 
 
 
-## 9、一阶段基础综合案例
+## 9、pyecharts
 
-### 9.1 JSON
+### 9.1 介绍
 
-- JSON 是一种**轻量级的数据交互格式**，可以按照 JSON 指定的格式去**组织和封装**数据。
+- 如果想要做出<font color="red">**数据可视化**</font>效果图，可以借助**pyecharts**模块来完成。
+- **概况**：ECharts 是由百度开源的数据可视化工具，凭借良好的交互性与精巧的图表设计，得到了众多开发者的认可。而 Python 是一门富有表达力的语言，很适合用于数据处理。当数据分析遇上数据可视化时，**pyecharts** 诞生
 
-- JSON 本质上是一个带有**特定格式的字符串**。
+- 安装：pip install pyecharts
+- 官方示例：https://gallery.pyecharts.org/#/README
 
-- 主要功能：JSON 是一种在各个**编程语言**中流通的数据格式，负责不同编程语言中的**数据传递和交互**，类似于：
 
-![JSON](图片/JSON.png)
 
-- JSON 格式的数据要求很严格，主要有以下两种常见形式：
+### 9.2 入门使用
 
-  -  **对象格式（字典）**
-    - 用 `{}` 包裹，键值对结构，键必须是双引号字符串
-    - 对应 Python 中的 `dict` 类型
+- 基础折线图
 
-  ```json
-  {"name":"admin","age":18}
-  ```
+~~~python
+# 导入pyecharts
+from pyecharts.charts import Line
+from pyecharts.options import TitleOpts, LegendOpts, ToolboxOpts, VisualMapOpts
 
-  - **数组格式（列表）**
+# 创建一个折线图对象
+line = Line()
+# 给折线图对象添加x轴的数据
+line.add_xaxis(["湖北", "湖南", "江西", "江苏"])
+# 给折线图对象添加y轴的数据
+line.add_yaxis("GDP", [30000, 20000, 22222, 50000])
 
-    - 用 `[]` 包裹，元素可以是对象或其他 JSON 类型。
+# 设置全局配置项：set_global_opts
+line.set_global_opts(
+    title_opts=TitleOpts(title="GDP展示", pos_left="center", pos_right="center"),            # 标题
+    legend_opts=LegendOpts(is_show=True),
+    toolbox_opts=ToolboxOpts(is_show=True),                                                 # 工具箱
+    visualmap_opts=VisualMapOpts(is_show=True),
+)
 
-    - 对应 Python 中的 `list` 类型。
 
-  ```json
-  [{"name":"admin","age":18},{"name":"root","age":16},{"name":"张三","age":20}]
-  ```
+# 通过render方法，给代码生成图像
+line.render()
+~~~
+
+- 代码执行后会生成一个render.html，运行就可以看到折线图
+- 可以通过<font color="red">**set_global_opts设置全局配置项**</font>
+  - 
+
+![折线图](图片/折线图.png)
+
+
+
+
 
 
 
@@ -5287,7 +5354,7 @@ conn.close()
 - 自动提交：在创建连接的时候加上参数`conn.commit()`
 
 ```python
-from pymysql import Connection
+![PySpark](D:\kn\knowledge\Python\Python\图片\PySpark.png)![PySpark](D:\kn\knowledge\Python\Python\图片\PySpark.png)from pymysql import Connection
 
 # 获取数据库连接对象
 conn = Connection(
@@ -5312,3 +5379,236 @@ conn.commit()
 # 关闭数据库连接
 conn.close()
 ```
+
+
+
+## 3、闭包
+
+- 什么是闭包
+
+  - **定义**：双层嵌套函数，内层函数可以访问外层函数的变量。
+
+  - **闭包函数**：将内层函数作为外层函数的返回值，此内层函数就是闭包函数。
+
+- 闭包的好处和缺点
+
+  - **优点**：
+    - 不定义全局变量，也可以让函数持续访问和修改一个外部变量。
+    - 闭包函数引用的外部变量，是外层函数的内部变量，作用域封闭，难以被误操作修改。
+  - **缺点**：
+    - 额外的内存占用。
+
+- nonlocal 关键字的作用
+
+  - 在闭包函数（内部函数）中想要修改外部函数的变量值时，需要用 `nonlocal` 声明这个外部变量。
+
+- 问题：通过全局变量account_amount来记录余额
+  - 代码在命名空间上（变量定义）不够干净、整洁
+  - <font color="red">**全局变量有被修改的风险**</font>
+
+~~~python
+account_amount = 0  # 账户余额
+
+def atm(num, deposit=True):
+    global account_amount
+    if deposit:
+        account_amount += num
+        print(f"存款:+{num}，账户余额:{account_amount}")
+    else:
+        account_amount -= num
+        print(f"取款:-{num}，账户余额:{account_amount}")
+
+atm(300)
+atm(300)
+atm(100, False)
+~~~
+
+- 用<font color="red">**闭包**</font>方式解决：在函数嵌套的前提下，内部函数使用了外部函数的变量，并且外部函数返回了内部函数，我们把这个使用外部函数变量的内部函数称为**闭包**。
+- 需要使用 <font color="red">**`nonlocal`**</font> 关键字修饰外部函数的变量，才可在内部函数中修改它
+
+~~~python
+def account_create(initial_amount=0):
+    def atm(num, deposit=True):
+        nonlocal initial_amount
+        if deposit:
+            initial_amount += num
+            print(f"存款:+{num}，账户余额:{initial_amount}")
+        else:
+            initial_amount -= num
+            print(f"取款:-{num}，账户余额:{initial_amount}")
+    return atm
+
+fn = account_create()
+fn(300)
+fn(200)
+fn(300, False)
+
+
+存款:+300，账户余额:300
+存款:+200，账户余额:500
+取款:-300，账户余额:200
+~~~
+
+- 简单闭包例子
+
+~~~python
+# 简单闭包
+def outer(logo):
+    def inner(msg):
+        print(f"<{logo}>{msg}<{logo}>")
+    return inner
+
+fn1 = outer("黑马程序员")
+fn1("大家好呀")
+fn1("学Python就来")
+
+fn2 = outer("传智教育")
+fn2("IT职业教育培训")
+fn2("学Python就来")
+
+# 使用nonlocal修改外部函数的值
+def outer(num1):
+    def inner(num2):
+        nonlocal num1
+        num1 = num2
+        return num1
+    return inner
+
+fn = outer(2)
+print(fn(3))
+print(fn(4))
+
+<黑马程序员>大家好呀<黑马程序员>
+<黑马程序员>学Python就来<黑马程序员>
+<传智教育>IT职业教育培训<传智教育>
+<传智教育>学Python就来<传智教育>
+~~~
+
+
+
+## 4、装饰器
+
+- 装饰器概念与示例需求
+  - 装饰器其实也是一种闭包，其功能就是在<font color="red">**不破坏目标函数原有的代码和功能**</font>的前提下，为目标函数增加新功能
+- 目标：给sleep函数增加一个功能
+  - 在调用sleep前输出：我要睡觉了
+  - 在调用sleep后输出：我起床了
+
+~~~python
+def sleep():
+    import random
+    import time
+    print("睡眠中......")
+    time.sleep(random.randint(1, 5))
+~~~
+
+- 装饰器的一般写法（闭包写法）
+
+~~~python
+def outer(func):
+    def inner():
+        print("我睡觉了")
+        func()
+        print("我起床了")
+
+    return inner
+
+
+def sleep():
+    import random
+    import time
+    print("睡眠中......")
+    time.sleep(random.randint(1, 5))
+
+fn = outer(sleep)
+fn()
+
+
+"""
+我睡觉了
+睡眠中......
+我起床了
+"""
+~~~
+
+- 装饰器的注解写法（@outer）：在要添加功能的方法上添加注解
+
+~~~python
+def outer(func):
+    def inner():
+        print("我睡觉了")
+        func()
+        print("我起床了")
+
+    return inner
+
+@outer
+def sleep():
+    import random
+    import time
+    print("睡眠中......")
+    time.sleep(random.randint(1, 5))
+
+sleep()
+~~~
+
+
+
+## 5、设计模式
+
+- 设计模式是一种编程套路，可以极大地方便程序的开发。
+- 最常见、最经典的设计模式，就是我们所学习的**面向对象**。
+- 除了面向对象外，在编程中也有很多既定的套路可以方便开发，我们称之为设计模式：
+  - **单例、工厂模式**
+  - 建造者、责任链、状态、备忘录、解释器、访问者、观察者、中介、模板、代理模式
+  - 等等模式
+
+
+
+### 5.1 单例模式
+
+- 单例模式核心概念
+
+  - **定义**：保证一个类只有一个实例，并提供一个访问它的全局访问点。
+  - **适用场景**：当一个类只能有一个实例，而客户可以从一个众所周知的访问点访问它时。
+  - **目的**：确保在整个系统中，某个类仅存在唯一实例
+
+- 写法
+
+  - 在 Test.py 文件中定义：
+
+  ~~~python
+  class StrTools:
+      pass
+  
+  str_tool = StrTools()
+  ~~~
+
+  - 在另一个文件中使用
+
+  ~~~python
+  from Test import str_tool
+  
+  s1 = str_tool
+  s2 = str_tool
+  
+  print(s1)
+  print(s2)
+  ~~~
+
+  - 运行结果：
+
+  ~~~bash
+  <test.StrTools object at 0x0000013D001DB910>
+  <test.StrTools object at 0x0000013D001DB910>
+  ~~~
+
+- 优点
+
+  - 节省内存
+  - 节省创建对象的开销
+
+
+
+### 5.2 工厂模式
+
