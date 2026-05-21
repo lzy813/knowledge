@@ -1799,7 +1799,6 @@ print(result)    # 结果 None
     name = None
     ~~~
 
-    
 
 ### 4.6 函数的说明
 
@@ -3648,6 +3647,7 @@ print(type(f))
   ~~~
 
 - readlines () 方法
+
   - `readlines()` <font color="red">**会按行一次性读取整个文件内容，返回一个列表**</font>，列表中每一行数据作为一个元素。
 
 ~~~python
@@ -4420,7 +4420,7 @@ pip install -i https://pypi.tuna.tsinghua.edu.cn/simple 包名称
 
 
 
-#### 4、创建隔离化项目
+#### 8.3.4 创建隔离化项目
 
 - 新建文件夹，并进入到文件夹里，cmd打开
 - 创建虚拟环境：<font color="red">**python -m venv venv**</font>，这将创建一个名为`venv`的虚拟环境目录
@@ -4971,7 +4971,6 @@ class 类(父类[, 父类2, ... , 父类N])
   """
   ~~~
 
-  
 
 #### 1.7.2 复写
 
@@ -5611,4 +5610,111 @@ sleep()
 
 
 ### 5.2 工厂模式
+
+- 当需要大量创建一个类的实例的时候，可以使用工厂模式
+- 即：从原生的使用类的构造去创建对象的形式转移到，基于工厂提供的方法去创建对象的形式
+- 优点
+  - 大批量创建对象的时候有统一的入口，易于代码维护
+  - 当发生修改，仅修改工厂类的创建方法即可
+  - 符合现实世界的模式，即由工厂来制作产品（对象）
+
+```python
+class Person:
+    pass
+
+class Student(Person):
+    pass
+class Teacher(Person):
+    pass
+class Worker(Person):
+    pass
+
+class Factory:
+    def get_person(self, p_type):
+        if p_type == 'w':
+            return Worker()
+        elif p_type == 't':
+            return Teacher()
+        else:
+            return Student()
+
+factory = Factory()
+worker = factory.get_person('w')
+stu = factory.get_person('s')
+tea = factory.get_person('t')
+```
+
+
+
+## 6、多线程
+
+- 使用threading模块来实现多线程编程
+- 语法
+
+~~~python
+import threading
+
+thread_obj = threading.Thread([group [, target [, name [, args [, kwargs]]]]])
+- group: 暂时无用，未来功能的预留参数
+- target: 执行的目标任务名
+- args: 以元组的方式给执行任务传参
+- kwargs: 以字典组方式给执行任务传参
+- name: 线程名，一般不用设置
+    
+# 启动线程
+thread_obj.start()
+~~~
+
+- 实例
+
+~~~python
+""""
+演示多线程
+"""
+import time
+import threading
+
+def sing(msg):
+    while True:
+        print(msg)
+        time.sleep(1)
+
+def dance(msg):
+    while True:
+        print(msg)
+        time.sleep(1)
+
+if __name__ == '__main__':
+    # 创建一个唱歌线程
+    sing_thread = threading.Thread(target=sing, args=("我在唱歌", ), name="sing")
+    # 创建一个跳舞线程
+    dance_thread = threading.Thread(target=dance, kwargs={"msg": "我在跳舞"}, name="dance")
+    # 线程开启
+    sing_thread.start()
+    dance_thread.start()
+~~~
+
+
+
+## 7、Socket网络编程
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+8
+
+## 8、正则表达式
 
