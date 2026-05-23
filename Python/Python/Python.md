@@ -5698,23 +5698,438 @@ if __name__ == '__main__':
 
 ## 7、Socket网络编程
 
+### 7.1 介绍
+
+- socket (简称 套接字) 是进程之间通信一个工具，好比现实生活中的插座，所有的家用电器要想工作都是基于插座进行，
+
+- <font color="red">**进程之间想要进行网络通信需要 socket**</font>
+
+- Socket 负责进程之间的<font color="red">**网络数据传输，好比数据的搬运工**</font>
+
+![socket](D:\kn\knowledge\Python\Python\图片\socket.png)
 
 
 
+### 7.2 服务端和客户端
+
+- 2 个进程之间通过 Socket 进行相互通讯，就必须有服务端和客户端
+
+- Socket 服务端：等待其它进程的连接、可接受发来的消息、可以回复消息
+
+- Socket 客户端：主动连接服务端、可以发送消息、可以接收回复
+
+![服务端和客户端](D:\kn\knowledge\Python\Python\图片\服务端和客户端.png)
 
 
 
+### 7.3 服务端编程
+
+- 1、创建 socket 对象
+
+```python
+import socket
+socket_server = socket.socket()
+```
+
+- 2、绑定 socket_server 到指定 IP 和地址
+
+```python
+socket_server.bind(host, port)
+```
+
+- 3、服务端开始监听端口
+
+```python
+socket_server.listen(backlog)
+# backlog 为 int 整数，表示允许的连接数量，超出的会等待，可以不填，不填会自动设置一个合理值
+```
+
+- 4、接收客户端连接，获得连接对象
+
+```python
+conn, address = socket_server.accept()
+print(f"接收到客户端连接，连接来自：{address}")
+# accept 方法是阻塞方法，如果没有连接，会卡在当前这一行不向下执行代码
+# accept 返回的是一个二元元组，可以使用上述形式，用两个变量接收二元元组的 2 个元素
+```
+
+- 客户端连接后，通过 recv 方法，接收客户端发送的消息
+
+~~~python
+while True:
+    data = conn.recv(1024).decode("UTF-8")
+    # recv方法的返回值是字节数组（Bytes），可以通过decode使用UTF-8解码为字符串
+    # recv方法的传参是buffsize，缓冲区大小，一般设置为1024即可
+    if data == 'exit':
+        break
+    print("接收到发送来的数据：", data)
+
+# 可以通过 while True 无限循环来持续和客户端进行数据交互
+# 可以通过判定客户端发来的特殊标记，如 exit，来退出无限循环
+~~~
+
+- 通过 conn（客户端当次连接对象），调用 send 方法可以回复消息
+
+~~~python
+while True:
+    data = conn.recv(1024).decode("UTF-8")
+    if data == 'exit':
+        break
+    print("接收到发送来的数据：", data)
+    conn.send("你好呀哈哈哈".encode("UTF-8"))
+~~~
+
+- conn（客户端当次连接对象）和 socket_server 对象调用 close 方法，关闭连接
 
 
 
+### 7.4 客户端编程
+
+- 创建 socket 对象
+
+~~~python
+import socket
+socket_client = socket.socket()
+~~~
+
+- 连接到服务端
+
+~~~python
+socket_client.connect(("localhost", 8888))
+~~~
+
+- 发送消息
+
+~~~python
+while True:  # 可以通过无限循环来确保持续的发送消息给服务端
+    send_msg = input("请输入要发送的消息")
+    if send_msg == 'exit':
+        # 通过特殊标记来确保可以退出无限循环
+        break
+    socket_client.send(send_msg.encode("UTF-8"))  # 消息需要编码为字节数组（UTF-8编码）
+~~~
 
 
 
+### 7.5 例子
+
+- 服务端
+
+~~~python
+import socket
+
+# 创建Socket对象
+socket_server = socket.socket()
+# 绑定ip地址和端口
+socket_server.bind(("localhost", 8888))
+# 监听端口
+socket_server.listen(1)
+# listen方法内接受一个整数作参数，表示接受的链接数量
+# 等待客户端链接
+# result: tuple = socket_server.accept()
+# conn = result[0]        # 客户端和服务器的链接
+# address = result[1]     # 客户端的地址信息
+conn, address = socket_server.accept()
+# accept方法返回的是二元元组(链接对象, 客户端地址信息)
+# 可以通过 变量1, 变量2 = socket_server.accept()
+# accept()方法, 是阻塞的方法, 等待客户端的链接, 如果没有链接会阻塞在此
+
+print(f"接收到了客户端的链接, 客户端的信息是: {address}")
+
+while True:
+    # 接受客户端信息, 要使用客户端和服务端的本次链接对象, 而非socket_server对象
+    data: str = conn.recv(1024).decode("UTF-8")
+    # recv接受的参数是缓冲区大小, 一般给1024即可
+    # recv方法的返回值是一个字节数组也就是bytes对象, 不是字符串, 可以通过decode方法通过UTF-8编码, 将字节数组转换为字符串对象
+    print(f"客户端发来的消息是: {data}")
+    # 发送回复消息
+    msg = input("请输入你要和客户端回复的消息: ")
+    if msg == 'exit':
+        break
+    conn.send(msg.encode("UTF-8"))
+~~~
+
+- 客户端
+
+~~~python
+import socket
+
+# 创建socket对象
+socket_client = socket.socket()
+# 连接到服务端
+socket_client.connect(("localhost", 8888))
+
+while True:
+    # 发送消息
+    msg = input("请输入要给服务端发送的消息: ")
+    if msg == 'exit':
+        break
+    socket_client.send(msg.encode("UTF-8"))
+    # 接收返回消息
+    recv_data = socket_client.recv(1024)    # 1024是缓冲区的大小, 一般1024即可。同样recv方法是阻塞方法
+    print(f"服务端回复的消息是: {recv_data.decode('UTF-8')}")
+# 关闭链接
+socket_client.close()
+~~~
 
 
-
-
-8
 
 ## 8、正则表达式
+
+### 8.1 概述
+
+- 正则表达式，又称规则表达式（Regular Expression），是使用单个字符串来描述、匹配某个句法规则的字符串，常被用来检索、替换那些符合某个模式（规则）的文本。
+  - 简单来说，正则表达式就是使用：字符串定义规则，并通过规则去验证字符串是否匹配。
+  - 比如，验证一个字符串是否是符合条件的电子邮箱地址，只需要配置好正则规则，即可匹配任意邮箱。
+  - 比如通过正则规则：`(^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$)` 即可匹配一个字符串是否是标准邮箱格式
+  - 但如果不使用正则，使用 if else 来对字符串做判断就非常困难了。
+
+- Python 正则表达式，使用 re 模块，并基于 re 模块中三个基础方法来做正则匹配。
+
+- 分别是：match、search、findall 三个基础方法
+
+  - <font color="red">**e.match(匹配规则, 被匹配字符串)**</font>：从被匹配字符串开头进行匹配，匹配成功返回匹配对象（包含匹配的信息），匹配不成功返回空。
+
+  ~~~python
+  import re
+  
+  # 匹配到了
+  s = 'python itheima python itheima python itheima'
+  result = re.match('python', s)
+  print(result)  # <re.Match object; span=(0, 6), match='python'>
+  print(result.span())  # (0, 6)
+  print(result.group())  # python
+  
+  # 匹配不到
+  s = '1python itheima python itheima python itheima'
+  result = re.match('python', s)
+  print(result)  # None
+  ~~~
+
+  - <font color="red">**search(匹配规则, 被匹配字符串)**</font>：搜索整个字符串，找出匹配的。从前向后，找到第一个后，就停止，不会继续向后
+
+  ~~~python
+  import re
+  
+  # 匹配到了
+  s = '1python666itheima666python666'
+  result = re.search('python', s)
+  print(result)          # <re.Match object; span=(1, 7), match='python'>
+  print(result.span())   # (1, 7)
+  print(result.group())  # python
+  
+  # 匹配不到
+  s = 'itheima666'
+  result = re.search('python', s)
+  print(result)  # None
+  ~~~
+
+  - <font color="red">**findall(匹配规则, 被匹配字符串)**</font>：匹配整个字符串，找出全部匹配项
+
+  ~~~python
+  import re
+  
+  # 匹配到了
+  s = '1python666itheima666python666'
+  result = re.findall('python', s)
+  print(result)  # ['python', 'python']
+  
+  # 匹配不到
+  s = '1python666itheima666python666'
+  result = re.findall('itcast', s)
+  print(result)  # []
+  ~~~
+
+| 方法         | 匹配范围               | 返回值特点                         |
+| ------------ | ---------------------- | ---------------------------------- |
+| `re.match`   | 仅字符串**开头**       | 成功返回 `Match` 对象，失败 `None` |
+| `re.search`  | 整个字符串**任意位置** | 找到第一个匹配即返回 `Match` 对象  |
+| `re.findall` | 整个字符串**所有匹配** | 返回所有匹配结果的**列表**         |
+
+
+
+### 8.2 匹配规则
+
+#### 8.2.1 单字符匹配
+
+| 字符 | 功能                                           |
+| ---- | ---------------------------------------------- |
+| `.`  | 匹配任意 1 个字符（除了`\n`），`\.` 匹配点本身 |
+| `[]` | 匹配`[]`中列举的字符                           |
+| `\d` | 匹配数字，即 0-9                               |
+| `\D` | 匹配非数字                                     |
+| `\s` | 匹配空白，即空格、tab 键                       |
+| `\S` | 匹配非空白                                     |
+| `\w` | 匹配单词字符，即 a-z、A-Z、0-9、`_`            |
+| `\W` | 匹配非单词字符                                 |
+
+- 核心要点总结
+  - **`r`前缀**：在 Python 中使用原始字符串`r''`，可以避免`\`被 Python 转义，直接传递给正则引擎。
+  - **`[]`字符集**：用于指定匹配范围，比如`[a-z]`匹配小写字母，`[0-9]`匹配数字。
+  - **预定义元字符**：`\d`、`\w`、`\s` 是最常用的快捷匹配方式。
+
+~~~python
+import re
+
+# 定义一个字符串
+s = "itheima1 @@python2 !!666 ##itcast3"
+
+# 获取所有的数字
+result = re.findall(r"\d", s)
+print(result)
+
+# 找出所有的单词字符
+result = re.findall(r"\w", s)
+print(result)
+
+# 找出所有的非单词字符
+result = re.findall(r"\W", s)
+print(result)
+
+# 找出范围内容
+result = re.findall(r"[A-Za-z1-3]", s)
+print(result)
+
+"""
+['1', '2', '6', '6', '6', '3']
+['i', 't', 'h', 'e', 'i', 'm', 'a', '1', 'p', 'y', 't', 'h', 'o', 'n', '2', '6', '6', '6', 'i', 't', 'c', 'a', 's', 't', '3']
+[' ', '@', '@', ' ', '!', '!', ' ', '#', '#']
+['i', 't', 'h', 'e', 'i', 'm', 'a', '1', 'p', 'y', 't', 'h', 'o', 'n', '2', 'i', 't', 'c', 'a', 's', 't', '3']
+"""
+~~~
+
+
+
+#### 8.2.2 数量匹配
+
+| 字符    | 功能                                                         |
+| ------- | ------------------------------------------------------------ |
+| `*`     | 匹配前一个规则的字符出现 **0 至无数次**（任意次数，包括 0 次） |
+| `+`     | 匹配前一个规则的字符出现 **1 至无数次**（至少 1 次）         |
+| `?`     | 匹配前一个规则的字符出现 **0 次或 1 次**（最多 1 次）        |
+| `{m}`   | 匹配前一个规则的字符出现 **m 次**（固定次数）                |
+| `{m,}`  | 匹配前一个规则的字符出现 **最少 m 次**（≥m 次）              |
+| `{m,n}` | 匹配前一个规则的字符出现 **m 到 n 次**（m≤次数≤n）           |
+
+- 这些字符都作用于**前一个字符 / 规则**，用来限定它出现的次数。
+- 比如：
+  - `\d*` 表示匹配任意多个数字（包括 0 个）
+  - `\w+` 表示匹配至少 1 个单词字符
+  - `a{2,4}` 表示匹配 2 到 4 个连续的字母`a`
+
+
+
+#### 8.2.3 边界匹配
+
+| 字符 | 功能               |
+| ---- | ------------------ |
+| `^`  | 匹配字符串开头     |
+| `$`  | 匹配字符串结尾     |
+| `\b` | 匹配一个单词的边界 |
+| `\B` | 匹配非单词边界     |
+
+- `^` 和 `$` 用来精准锁定字符串的开头和结尾，常用于格式校验（如手机号、邮箱格式）。
+- `\b` 和 `\B` 用于单词边界的匹配，区分 “完整单词” 和 “单词中的一部分”
+
+
+
+#### 8.2.4 分组匹配
+
+| 字符 | 功能                     |
+| ---- | ------------------------ |
+| `|`  | 匹配左右任意一个表达式   |
+| `()` | 将括号中字符作为一个分组 |
+
+- `|` 表示 “或” 逻辑，比如 `a|b` 可以匹配 `a` 或者 `b`。
+- `()` 可以将多个字符视为一个整体单元，方便后续提取或复用匹配结果。
+
+
+
+### 8.3 综合示例
+
+```python
+"""
+1. 匹配账号
+要求：只能由字母和数字组成，长度限制 6 到 10 位
+规则：^[0-9a-zA-Z]{6,10}$
+2. 匹配 QQ 号
+要求：纯数字，长度 5-11 位，第一位不为 0
+规则：^[1-9][0-9]{4,10}$
+说明：[1-9] 匹配第一位（非 0 数字），[0-9]{4,10} 匹配后面 4 到 10 位数字
+3. 匹配邮箱地址
+要求：只允许 qq、163、gmail 这三种邮箱地址
+规则：^[\w-]+(\.[\w-]+)*@(qq|163|gmail)(\.[\w-]+)+$
+说明：
+^[\w-]+(\.[\w-]+)*：匹配邮箱用户名部分（允许字母、数字、下划线、减号，以及点分隔的子段）
+@(qq|163|gmail)：匹配域名前缀，限定为这三个服务商
+(\.[\w-]+)+$：匹配域名后缀部分（如 .com、.cn 等）
+"""
+import re
+
+# 匹配账号
+s = 'asfnoas'
+r = "^[a-zA-Z0-9]{6,10}$"
+result = re.findall(r, s)
+print(result)
+
+# 匹配qq号
+s = '2369273108'
+r = "^[1-9][0-9]{4,10}$"
+result = re.findall(r, s)
+print(result)
+
+# 邮箱
+s = '2369273108@163.com'
+r = "^([\w-]+(\.[\w-]+)*@(qq|163|gmail)(\.[\w-]+)+)$"
+result = re.match(r, s)
+print(result)
+```
+
+
+
+## 9、递归
+
+- 递归：即方法（函数）自己调用自己的一种特殊编程写法
+
+~~~python
+def func():
+    if ...:
+        func()
+    return ...
+~~~
+
+- **递归定义**：函数在内部直接或间接调用自身的编程技巧。
+- **关键结构**：
+  1. **递归条件**：控制函数何时调用自身（避免无限循环）。
+  2. **终止条件**：函数不再调用自身，直接返回结果，结束递归。
+- **本质**：将复杂问题拆解为规模更小、结构相同的子问题，直到子问题足够简单可以直接求解。
+
+~~~python
+import os  # 隐含依赖
+
+def get_files_recursion_from_dir(path):
+    """
+    从指定的文件夹中使用递归的方式，获取全部的文件列表
+    :param path: 被判断的文件夹
+    :return: list，包含全部的文件，如果目录不存在或者无文件就返回一个空list
+    """
+    file_list = []
+    if os.path.exists(path):
+        for f in os.listdir(path):
+            new_path = path + "/" + f
+            if os.path.isdir(new_path):
+                # 进入到这里，表明这个目录是文件夹不是文件
+                file_list += get_files_recursion_from_dir(new_path)
+            else:
+                file_list.append(new_path)
+    else:
+        print(f"指定的目录{path}，不存在")
+        return []
+
+    return file_list
+
+
+if __name__ == '__main__':
+    print(get_files_recursion_from_dir("D:/pythonProject"))
+~~~
 
