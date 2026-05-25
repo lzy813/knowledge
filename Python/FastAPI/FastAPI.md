@@ -288,6 +288,8 @@ def homepage():
 
 ### 2.1 路径参数
 
+#### 2.1.1 定义
+
 - <font color="red">**路径参数（Path Parameter）是 URL 路径中的一部分，用来表示某个资源的标识**</font>。通常用于获取某个特定实体的信息，例如用户 ID、文章 ID 等
 
 - 位置：URL路径的一部分 /book/id
@@ -296,7 +298,135 @@ def homepage():
 - 写法
 
 ~~~python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    """
+    根据用户ID获取用户信息
+
+    参数:
+        user_id (int): 用户的唯一标识符
+
+    返回值:
+        dict: 包含用户ID的字典对象
+    """
+    return {"user_id": user_id}
 ~~~
 
+- 访问 `http://127.0.0.1:8000/users/100` 将返回：
 
+~~~bash
+{
+  "user_id": 100
+}
+~~~
+
+- `{user_id}` 是路径参数，FastAPI 会自动将 URL 中的部分提取出来并传给函数。
+- `user_id: int` 指定了类型为整数，如果传入字符串等类型不匹配的值，FastAPI 会自动返回 422 错误，表示请求验证失败。
+
+
+
+#### 2.1.2 路径参数类型转换
+
+- FastAPI 会根据类型提示自动完成转换与验证，支持的类型包括：
+
+| 类型    | 示例                      |
+| ------- | ------------------------- |
+| `int`   | `/items/123`              |
+| `float` | `/price/12.5`             |
+| `str`   | `/search/keyword`         |
+| `bool`  | `/flag/true` 或 `/flag/0` |
+
+- 如果传入参数与类型不匹配，FastAPI 会自动返回验证失败的响应，无需你手动处理
+
+
+
+#### 2.1.3 路径参数中的路径顺序
+
+- 路径参数中的路径顺序很重要，你不能在两个路径参数不明确区分的情况下定义多个路径。例如：
+
+~~~python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/files/{file_path}")
+def read_file(file_path: str):
+    """
+    读取指定路径的文件信息
+    
+    参数:
+        file_path (str): 文件路径参数，从URL中提取
+        
+    返回值:
+        dict: 包含文件路径信息的字典，格式为{"file_path": file_path}
+    """
+    return {"file_path": file_path}
+
+@app.get("/files/static")
+def static_file():
+    """
+    处理静态文件请求
+    
+    返回值:
+        dict: 包含静态文件消息的字典，格式为{"message": "Static file"}
+    """
+    return {"message": "Static file"}
+~~~
+
+- 访问 `/files/static` 时会优先匹配 `/files/{file_path}`，因为它更早被声明。因此建议将更“具体”的路径放在前面，或使用 `Path(..., regex=...)` 来更精确地控制
+
+
+
+### 2.2 查询参数
+
+#### 2.2.1 定义
+
+- 查询参数（Query Parameter）是 URL 中以 <font color="red">**`?`**</font> 开头，<font color="red">**`key=value`**</font> 形式出现的部分，常用于过滤、排序、分页等可选参数
+
+~~~python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/items")
+def list_items(category: str = "all", limit: int = Q):
+    """
+    获取物品列表
+    
+    参数:
+        category (str): 物品分类，默认为"all"表示所有分类
+        limit (int): 返回物品数量限制，默认为10
+    
+    返回值:
+        dict: 包含分类和限制数量的字典
+    """
+    return {"category": category, "limit": limit}
+
+~~~
+
+- 访问 `http://127.0.0.1:8000/items?category=fruit&limit=5` 将返回：
+
+~~~bash
+{
+  "category": "fruit",
+  "limit": 5
+}
+~~~
+
+- 查询参数特点：
+
+  - 无需写在路径中，而是通过 URL `?key=value` 的方式传递；
+
+  - 可以有默认值，也可以声明为必填项（使用 `= Query(...)`）；
+
+  - 不存在参数时会使用默认值
+
+
+
+#### 2.2.2 类型注解Path
 

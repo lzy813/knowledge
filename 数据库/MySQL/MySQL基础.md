@@ -10,6 +10,8 @@
 
 ![Mysql概述](MySQL基础篇图片/Mysql概述.png)
 
+
+
 ## 2、Mysql的前置准备
 
 ### 2.1 Mysql的下载与安装
@@ -400,7 +402,7 @@ insert into employee(id,workno,name,sex,age,idcard,entrydate) values(1,'1','lzy'
 insert into employee(id,workno,name,sex,age,idcard,entrydate) values(1,'1','lzy','男',18,'123456789012345678','2000-01-01'),(2,'2','lsq','女',18,'123456789012345678','2000-01-01');
 ~~~
 
-	
+​	
 
 #### 3.4.2 修改(update)
 
@@ -1098,7 +1100,7 @@ alter table emp add constraint fk_emp_dept_id foreign key(dept_id) references de
 
   ![一对一](MySQL基础篇图片/一对一.png)
 
-  ​
+  
 
 ### 6.2 多表查询
 
@@ -2016,7 +2018,7 @@ load data local infile '/root/sql1.log' into table 'tb_user' fields terminated b
 
   ![页分裂](D:/knowledge/knowledge/%E6%95%B0%E6%8D%AE%E5%BA%93/MySQL/MySQL%E8%BF%9B%E9%98%B6%E7%AF%87%E5%9B%BE%E7%89%87/%E9%A1%B5%E5%88%86%E8%A3%82.png)
 
-  ​
+  
 
 - 页合并
   - 当删除一行记录时，实际上记录并没有被物理删除，只是记录被标记（flaged）为删除并且它的空间变得允许被其他记录声明使用
@@ -3524,9 +3526,9 @@ show replica status/G;
 
   ![分库分表](D:/knowledge/knowledge/%E6%95%B0%E6%8D%AE%E5%BA%93/MySQL/MySQL%E9%AB%98%E9%98%B6%E7%AF%87%E5%9B%BE%E7%89%87/%E5%9E%82%E7%9B%B4%E5%88%86%E8%A1%A8.png)
 
-  ​
+  
 
-  ​
+  
 
 - 水平拆分
 
