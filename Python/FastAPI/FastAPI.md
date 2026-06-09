@@ -20,13 +20,13 @@
 
 ## 2、FastAPI 主要特性
 
-- 高性能：得益于 Starlette 和 Pydantic 的加持，FastAPI 拥有非常高的性能，接近 Node.js 和 Go，是现今最快的 Python Web 框架之一。性能对比（基于 TechEmpower 等基准测试，简化为每秒请求数）：
+- <font color="red">**高性能**</font>：得益于 Starlette 和 Pydantic 的加持，FastAPI 拥有非常高的性能，接近 Node.js 和 Go，是现今最快的 Python Web 框架之一。性能对比（基于 TechEmpower 等基准测试，简化为每秒请求数）：
   - FastAPI：~3000 请求/秒（异步，轻量）
   - Flask：~1000 请求/秒（同步，受 WSGI 限制）
   - Django：~800 请求/秒（同步，ORM 和中间件开销较大）
-- 开发效率高：FastAPI 使用 Python 类型提示（通过 Pydantic）进行数据验证，减少手动校验代码。类型提示使代码更易读，IDE（如 VSCode）提供自动补全和错误提示。
-- 自动生成 API 文档：FastAPI 内置 Swagger UI 和 ReDoc，自动生成交互式 API 文档。开发者只需编写代码，文档即自动生成，减少维护成本。
-- 异步支持：支持 async/await 语法，适合高并发场景（如实时聊天、流处理）。比传统同步框架（如 Flask）更适合现代 Web 应用
+- <font color="red">**开发效率高**</font>：FastAPI 使用 Python 类型提示（通过 Pydantic）进行数据验证，减少手动校验代码。类型提示使代码更易读，IDE（如 VSCode）提供自动补全和错误提示。
+- <font color="red">**自动生成 API 文档**</font>：FastAPI 内置 Swagger UI 和 ReDoc，自动生成交互式 API 文档。开发者只需编写代码，文档即自动生成，减少维护成本。
+- <font color="red">**异步支持**</font>：支持 async/await 语法，适合高并发场景（如实时聊天、流处理）。比传统同步框架（如 Flask）更适合现代 Web 应用
 
 
 
@@ -284,11 +284,9 @@ def homepage():
 
 
 
-## 2、参数
+## 2、路径参数
 
 ### 2.1 路径参数
-
-#### 2.1.1 定义
 
 - <font color="red">**路径参数（Path Parameter）是 URL 路径中的一部分，用来表示某个资源的标识**</font>。通常用于获取某个特定实体的信息，例如用户 ID、文章 ID 等
 
@@ -302,15 +300,14 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
-
 @app.get("/users/{user_id}")
 def get_user(user_id: int):
     """
     根据用户ID获取用户信息
-
+    
     参数:
         user_id (int): 用户的唯一标识符
-
+        
     返回值:
         dict: 包含用户ID的字典对象
     """
@@ -319,6 +316,7 @@ def get_user(user_id: int):
 
 - 访问 `http://127.0.0.1:8000/users/100` 将返回：
 
+
 ~~~bash
 {
   "user_id": 100
@@ -326,26 +324,24 @@ def get_user(user_id: int):
 ~~~
 
 - `{user_id}` 是路径参数，FastAPI 会自动将 URL 中的部分提取出来并传给函数。
-- `user_id: int` 指定了类型为整数，如果传入字符串等类型不匹配的值，FastAPI 会自动返回 422 错误，表示请求验证失败。
+- `user_id: int` 指定了类型为整数，如果传入字符串等类型不匹配的值，FastAPI 会自动返回 422 错误，表示请求验证失败
 
 
 
-#### 2.1.2 路径参数类型转换
+### 2.2 路径参数类型转换
 
 - FastAPI 会根据类型提示自动完成转换与验证，支持的类型包括：
 
-| 类型    | 示例                      |
-| ------- | ------------------------- |
-| `int`   | `/items/123`              |
-| `float` | `/price/12.5`             |
-| `str`   | `/search/keyword`         |
-| `bool`  | `/flag/true` 或 `/flag/0` |
-
-- 如果传入参数与类型不匹配，FastAPI 会自动返回验证失败的响应，无需你手动处理
+| 类型  | 示例                  |
+| ----- | --------------------- |
+| int   | /items/123            |
+| float | /price/12.5           |
+| str   | /search/keyword       |
+| bool  | /flag/true 或 /flag/0 |
 
 
 
-#### 2.1.3 路径参数中的路径顺序
+### 2.3 路径参数中的路径顺序
 
 - 路径参数中的路径顺序很重要，你不能在两个路径参数不明确区分的情况下定义多个路径。例如：
 
@@ -378,23 +374,121 @@ def static_file():
     return {"message": "Static file"}
 ~~~
 
-- 访问 `/files/static` 时会优先匹配 `/files/{file_path}`，因为它更早被声明。因此建议将更“具体”的路径放在前面，或使用 `Path(..., regex=...)` 来更精确地控制
+- 访问 `/files/static` 时会优先匹配 `/files/{file_path}`，因为它更早被声明。因此建议将更“具体”的路径放在前面，或使用 `Path(..., regex=...)` 来更精确地控制。
+
+- 响应：{"file_path":"static"}
 
 
 
-### 2.2 查询参数
+### 2.4 Path()用法（路径参数）
 
-#### 2.2.1 定义
+- 它们的作用：给参数添加<font color="red">**校验规则**</font>（长度、范围、正则）、**默认值**、**描述**、是否必填等，让接口更规范、更安全
+- 路径参数是 URL 路径的一部分，<font color="red">**必须通过 Path() 做校验 / 声明**</font>，语法：
 
-- 查询参数（Query Parameter）是 URL 中以 <font color="red">**`?`**</font> 开头，<font color="red">**`key=value`**</font> 形式出现的部分，常用于过滤、排序、分页等可选参数
+~~~python
+from fastapi import FastAPI, Path
+
+app = FastAPI()
+
+@app.get("/items/{item_id}")
+def read_item(item_id: int = Path(..., 参数配置)):
+    return {"item_id": item_id}
+~~~
+
+- 核心参数（常用）
+  1. `...`：表示**必填参数**（路径参数默认必填）
+  2. `gt` / `ge` / `lt` / `le`：数值范围校验
+     - `gt`：大于
+     - `ge`：大于等于
+     - `lt`：小于
+     - `le`：小于等于
+  3. `title` / `description`：接口文档描述
+  4. `pattern`：正则表达式校验
+  5. `deprecated=True`：标记参数废弃
+
+- 实例
+
+~~~python
+from fastapi import FastAPI, Path
+
+app = FastAPI()
+
+# 1. 基础校验：item_id 必须 ≥ 1
+@app.get("/items/{item_id}")
+def read_item(
+    # ... 表示必填，ge=1 表示大于等于1
+    item_id: int = Path(..., ge=1, description="物品ID，必须大于等于1")
+):
+    return {"item_id": item_id}
+
+# 2. 正则校验：只允许字母和数字
+@app.get("/users/{user_id}")
+def get_user(
+    user_id: str = Path(..., pattern="^[a-zA-Z0-9]+$", title="用户ID")
+):
+    return {"user_id": user_id}
+~~~
+
+
+
+### 2.5 路径参数的高级用法
+
+- <font color="red">**使用Path(...)表示这是一个必需的路径参数
+                          路径参数允许捕获包含斜杠的完整路径**</font>
+
+- FastAPI 支持你通过 `path` 类型获取包含 `/` 的路径内容：
+
+```python
+from fastapi import FastAPI
+from fastapi import Path
+app = FastAPI()
+
+
+
+@app.get("/files/{file_path:path}")
+def read_file(file_path: str = Path(...)):
+    """
+    读取文件路径信息
+
+    该函数通过FastAPI的路径参数捕获功能，接收任意深度的文件路径，
+    并将其作为响应返回。
+
+    参数:
+        file_path (str): 文件路径字符串，使用Path(...)表示这是一个必需的路径参数
+                        路径参数允许捕获包含斜杠的完整路径
+
+    返回值:
+        dict: 包含file_path键的字典，值为传入的文件路径字符串
+    """
+    return {"file_path": file_path}
+
+```
+
+- 访问 `/files/docs/intro.md` 会返回：
+
+```bash
+{
+  "file_path": "docs/intro.md"
+}
+```
+
+- <font color="red">**`:path` 表示该参数可以包含斜杠 `/`，适合表示文件路径、嵌套资源等场景**</font>
+
+
+
+## 3、查询参数
+
+### 3.1 使用查询参数
+
+- 查询参数（Query Parameter）是 URL 中以 `?` 开头，`key=value` 形式出现的部分，常用于过滤、排序、分页等可选参数。
 
 ~~~python
 from fastapi import FastAPI
 
 app = FastAPI()
 
-@app.get("/items")
-def list_items(category: str = "all", limit: int = Q):
+@app.get("/items/")
+def list_items(category: str = "all", limit: int = 10):
     """
     获取物品列表
     
@@ -409,7 +503,7 @@ def list_items(category: str = "all", limit: int = Q):
 
 ~~~
 
-- 访问 `http://127.0.0.1:8000/items?category=fruit&limit=5` 将返回：
+- 访问 `http://127.0.0.1:8000/items/?category=fruit&limit=5` 将返回：
 
 ~~~bash
 {
@@ -419,14 +513,188 @@ def list_items(category: str = "all", limit: int = Q):
 ~~~
 
 - 查询参数特点：
-
-  - 无需写在路径中，而是通过 URL `?key=value` 的方式传递；
-
-  - 可以有默认值，也可以声明为必填项（使用 `= Query(...)`）；
-
-  - 不存在参数时会使用默认值
+  - <font color="red">**无需写在路径中，而是通过 URL `?key=value` 的方式传递**</font>
+  - <font color="red">**可以有默认值，也可以声明为必填项（使用 `= Query(...)`）**</font>
+  - <font color="red">**不存在参数时会使用默认值**</font>
 
 
 
-#### 2.2.2 类型注解Path
+### 3.2 路径参数和查询参数的对比
+
+~~~python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/users/{user_id}")
+def get_user(user_id: int):
+    """
+    根据用户ID获取用户信息
+
+    参数:
+        user_id (int): 用户的唯一标识符
+
+    返回值:
+        dict: 包含用户ID的字典对象
+    """
+    return {"user_id": user_id}
+
+
+@app.get("/book")
+def get_book(book_id: int):
+    """
+    根据书籍ID获取书籍信息
+
+    参数:
+        book_id (int): 书籍的唯一标识符
+
+    返回值:
+        dict: 包含书籍ID的字典对象
+    """
+    return {"user_id": book_id}
+~~~
+
+- 上面两个接口的访问路径有不同
+
+~~~bash
+user：路径参数：http://127.0.0.1:8000/users/1
+curl -X 'GET' \
+  'http://127.0.0.1:8000/users/1' \
+  -H 'accept: application/json'
+  
+book：查询参数：http://127.0.0.1:8000/book?book_id=1
+curl -X 'GET' \
+  'http://127.0.0.1:8000/book?book_id=1' \
+  -H 'accept: application/json'
+~~~
+
+- 不同点
+
+|                           路径参数                           |                           查询参数                           |
+| :----------------------------------------------------------: | :----------------------------------------------------------: |
+| 写代码：需要在注解里的路径中拼接具体的串：@app.get("/users/{user_id}") |            写代码：不需要拼接：@app.get("/book")             |
+|     访问时采用restful风格：http://127.0.0.1:8000/users/1     | 访问时以?key=value的风格：http://127.0.0.1:8000/book?book_id=1 |
+
+
+
+### 3.3 路径参数与查询参数组合使用
+
+- 可以同时使用路径参数和查询参数，例如：
+
+~~~python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/users/{user_id}/orders")
+def get_orders(user_id: int, limit: int = 5):
+    """
+    获取指定用户的订单列表
+    
+    Args:
+        user_id (int): 用户ID，用于标识要查询订单的用户
+        limit (int, optional): 返回订单数量限制，默认值为5
+        
+    Returns:
+        dict: 包含用户ID和限制数量的字典对象
+    """
+    return {"user_id": user_id, "limit": limit}
+
+~~~
+
+- 访问 `http://127.0.0.1:8000/users/42/orders?limit=10`，将得到：
+
+~~~bash
+{
+  "user_id": 42,
+  "limit": 10
+}
+~~~
+
+
+
+### 3.4 Query () 用法（查询参数）
+
+- 查询参数是 URL 问号后的键值对，**用 Query() 声明校验规则**，语法：
+
+```python
+from fastapi import FastAPI, Query
+
+@app.get("/items/")
+def read_items(name: str = Query(默认值, 参数配置)):
+    return {"name": name}
+```
+
+- 核心参数（常用）
+
+1. `default`：默认值（写在第一个位置）
+2. `...`：必填查询参数
+3. `min_length` / `max_length`：字符串长度校验
+4. `gt`/`ge`/`lt`/`le`：数值范围
+5. `pattern`：正则校验
+6. `alias`：参数别名（如用 `item-name` 代替 `item_name`）
+7. `deprecated=True`：标记废弃
+
+- 示例代码
+
+```python
+from fastapi import FastAPI, Query
+from typing import Optional
+
+app = FastAPI()
+
+# 1. 基础：可选参数，默认值，长度校验
+@app.get("/items/")
+def read_items(
+    # 可选参数，默认 None，长度 2-10
+    name: Optional[str] = Query(None, min_length=2, max_length=10)
+):
+    return {"name": name}
+
+# 2. 必填查询参数
+@app.get("/required/")
+def required_param(q: str = Query(..., description="必填参数")):
+    return {"q": q}
+
+# 3. 数值范围 + 别名
+@app.get("/price/")
+def get_price(
+    # 别名 price_min，参数 ≥ 0
+    price: float = Query(..., alias="price_min", ge=0)
+):
+    return {"price_min": price}
+
+# 4. 接收多个值（列表）
+@app.get("/multi/")
+def multi_params(tags: list[str] = Query(["default"])):
+    return {"tags": tags}
+```
+
+
+
+### 3.5 Path + Query 混合使用
+
+- 实际开发中，**路径参数 + 查询参数**经常一起用：
+
+```python
+from fastapi import FastAPI, Path, Query
+
+app = FastAPI()
+
+@app.get("/users/{user_id}/items/{item_id}")
+def get_user_item(
+    # 路径参数：user_id ≥ 1，item_id 1-1000
+    user_id: int = Path(..., ge=1, title="用户ID"),
+    item_id: int = Path(..., gt=0, le=1000),
+    
+    # 查询参数：可选，长度 3-50
+    q: Optional[str] = Query(None, min_length=3, max_length=50)
+):
+    return {"user_id": user_id, "item_id": item_id, "q": q}
+```
+
+
+
+## 4、请求体和数据类型
 
