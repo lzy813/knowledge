@@ -1,6 +1,93 @@
-# 一、LangChain介绍
+# 一、概述
 
-## 1、什么是 LangChain
+## 1、为什么需要LangChain
+
+### 1.1 从传统应用到智能体时代
+
+- PC互联网时代
+- 移动互联网时代
+- AI 智能化时代
+
+![互联网更新](图片/互联网更新.png)
+
+
+
+
+
+### 1.2 单一的大语言模型的局限性
+
+- 单一的大语言模型有局限性
+  - <font color="red">**知识受限于训练数据**</font>，无法获取训练时点之后的信息
+  - <font color="red">**无法直接与外部系统交互**</font>，无法查询实时数据，调用API或读取数据库
+  - <font color="red">**不具备状态保持能力**</font>，难以及逆行连贯的多轮对话，遗忘之前的上下文
+
+![单一大语言模型的局限性](图片/单一大语言模型的局限性.png)
+
+- 所以要构建真正的AI应用，必须将大语言模型与外部工具、数据源和记忆机制有机结合，从而催生了LangChain框架的设计理念
+- LangChain，是当前构建生产级AI智能体系统的首选
+
+
+
+### 1.3 LangChain框架定位
+
+![框架定位](图片/框架定位.png)
+
+- LangChain 作为大模型与应用间的中间层，可统一调用各类大模型、管理提示词与上下文，还能集成外部工具和数据源，快速搭建具备推理、行动能力的智能体。
+- 核心定位三点：
+  1. <font color="red">**打通大模型与外部资源**</font>：统一接口对接数据库、检索引擎、API、文件系统等；
+  2. <font color="red">**封装底层复杂逻辑**</font>：抽象工具调用、记忆等能力，降低智能体开发难度；
+  3. <font color="red">**支撑多智能体协作**</font>：依托 LangGraph 等生态，从单智能体拓展至多智能体协作，可构建工业级智能体
+
+
+
+### 1.4 LangChain应用场景
+
+![应用场景](图片/应用场景.png)
+
+- 主要应用场景如下
+
+  - <font color="red">**检索增强生成（RAG）**</font>
+
+    - 流程：用户提问 → 调用外部知识库 → 大模型结合检索信息推理 → 输出精准答案
+
+    - 价值：解决大模型 “幻觉” 和知识滞后问题，让回答更可靠、贴合业务数据
+
+  - <font color="red">**Agent 智能体构建**</font>
+
+    - 流程：用户目标（如 “预订巴黎行程”）→ 推理引擎规划 → Agent 调用航班查询、酒店预订等工具 → 完成复杂任务
+
+    - 价值：让大模型具备自主规划、工具调用和多步执行能力，实现 “目标驱动” 的智能体
+
+  - <font color="red">**对话系统与聊天机器人**</font>
+
+    - 流程：多轮对话 → 上下文感知与用户偏好学习 → 对接订单数据库、教材等业务数据
+
+    - 价值：构建连贯、个性化的对话交互，适用于客服、教育助手等场景
+
+  - <font color="red">**多模态应用开发**</font>
+
+    - 视觉方向：用户上传图片 → 图像识别 API → 生成描述 → 大模型问答
+
+    - 语音方向：用户语音 → 转文字 → 处理 → 生成语音回复
+
+    - 价值：打通图文、语音等多模态交互，拓展大模型的输入输出形态
+
+  - <font color="red">**内容生成与自动化写作**</font>
+
+    - 流程：业务系统数据 / 法律模板 → 提示模板生成 → 输出解析 → 生成规范周报、法律文件等
+
+    - 价值：自动化生成结构化、合规的文档，提升办公效率
+
+  - <font color="red">**数据连接与处理**</font>
+
+    - 流程：PDF/Excel 等文件 → 文本提取 / 自然语言转等文 → 统一数据处理 → 生成 SQL 查询 → 输出趋势报告
+    - 价值：让大模型直接对接企业数据资产，用自然语言完成数据分析与可视化
+
+
+
+## 2、LangChain是什么
+
+### 2.1 是什么
 
 - LangChain 是一个基于 python 语言的模块化、可组合、面向开发者的开源框架，<font color="red">**旨在简化基于大型语言模型的应用程序开发**</font>。它由 Harrison Chase 于 2022 年 10 月发起，迅速成为 GitHub 上增长最快的开源项目之一。
 
@@ -12,7 +99,7 @@
 
 
 
-## 2、为什么需要LangChain
+### 2.2 为什么使用LangChain
 
 - 当ChatGPT、QwenLM、DeepSeek等大语言模型（LLM）横空出世时，开发者们立刻意识到：LLM不是终点，而是构建智能应用的“大脑”。但要让这个“大脑”真正解决实际问题，还需要解决<font color="red">**三个关键痛点**</font>：
   - <font color="red">**信息过时**</font>：LLM的知识截止于训练数据的时间节点（如GPT-4的训练数据截止到2023年），无法回答诸如“2024年最新AI论文内容”或“今天纽约股市收盘价”这样的问题
@@ -30,35 +117,9 @@
 
 
 
-## 3、使用场景
+### 2.3 主要模块
 
-- 可以实现的项目
-
-| 项目名称                         | 技术点                          |
-| -------------------------------- | ------------------------------- |
-| 文档问答助手                     | Prompt + Embeding + RetrievalQA |
-| 智能日程规划助手                 | Agent + Tool + Memory           |
-| LLM + 数据库问答                 | SQLDatabaseToolkit + Agent      |
-| 多模型路由对话系统               | RouterChain + 多LLM             |
-| 互联网智能客服                   | ConversationChain + RAG + Agent |
-| 企业只是库助手（RAG + 本地模型） | VectorDB + LLM + Streamlit      |
-
-- LangChain的位置
-
-![LangChain的位置](图片/LangChain的位置.PNG)
-
-
-
-## 4、资料介绍
-
-- 官网地址：https://www.langchain.com/langchain
-
-- 官网文档：https://python.langchain.com/docs/introduction/
-- API文档：https://python.langchain.com/api_reference
-
-
-
-## 5、总体架构设计
+![主要模块](图片/主要模块.PNG)
 
 
 
@@ -80,35 +141,25 @@
 
 
 
-# 二、开发环境配置
 
-- 创建项目
 
-~~~bash
-# 创建项目
-uv init LangChainDemo                                
-# 进入项目目录
-cd LangChainDemo 
-# 安装Langchain
-uv add langchain     
-~~~
 
-- 创建密钥环境变量，创建.env文件
 
-~~~bash
-DEEPSEEK_API_KEY=XXXX
-QWEN_API_KEY=XXXX
-OPENAI_API_KEY=XXX
-~~~
 
-- 通过 python-dotenv 库读取 env 文件中的环境变量，并加载到当前运行的环境中，代码如下：
 
-~~~python
-import os
-from dotenv import load_dotenv 
-load_dotenv(override=True)
 
-deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-# print(deepseek_api_key)  # 可以通过打印查看
-~~~
+
+
+
+
+
+
+
+
+
+
+
+# 二、模型调用和创建
+
+
 
