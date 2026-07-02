@@ -529,7 +529,7 @@ deepseek_llm = ChatDeepSeek(
 print(deepseek_llm.invoke("你好"))
 ~~~
 
-- 调用ChatDeepSeek要求系统存在名为DEEPSEEK_API_KEY的环境变量。URL通过源码可以查看，有默认值。如下：
+- <font color="red">**调用ChatDeepSeek要求系统存在名为DEEPSEEK_API_KEY的环境变量**</font>。URL通过源码可以查看，有默认值。如下：
 
 ~~~python
 api_key: SecretStr | None = Field(
@@ -544,4 +544,517 @@ api_base: str = Field(
 """DeepSeek API base URL"""
 DEFAULT_API_BASE = "https://api.deepseek.com/v1"
 ~~~
+
+
+
+#### 2.1.2 智谱大模型
+
+- 官网：<https://www.bigmodel.cn/>
+
+- 步骤1：相关依赖：
+
+~~~bash
+# 安装 Langchain 社区依赖包，包含ChatHunyuan、ChatTongyi、ChatZhipuAI
+uv add langchain-community
+# ChatZhipuAI / 智谱 AI 认证相关依赖
+uv add pyjwt
+~~~
+
+- 步骤2：在.env环境变量中补充
+
+~~~bash
+ZHIPUAI_API_KEY=<Your API Key>
+ZHIPUAI_BASE_URL=https://open.bigmodel.cn/api/paas/v4/
+~~~
+
+- 步骤3：初始化大模型
+
+~~~python
+import os
+
+from langchain_community.chat_models import ChatZhipuAI
+from dotenv import load_dotenv
+
+# override=True 确保.env文件优先
+load_dotenv(override=True)
+
+ZHIPUAI_API_KEY = os.getenv("ZHIPUAI_API_KEY")
+ZHIPUAI_BASE_URL = os.getenv("ZHIPUAI_BASE_URL")
+
+zhipu_llm = ChatZhipuAI(
+    model="glm-5.1",
+    api_base=ZHIPUAI_BASE_URL,  #可选
+    api_key=ZHIPUAI_API_KEY     #可选
+)
+print(zhipu_llm.invoke("请介绍一下你自己"))
+~~~
+
+
+
+#### 2.1.3 千问大模型
+
+- 通过阿里云百炼平台调用，官网：<https://bailian.console.aliyun.com/>
+- 步骤1：相关依赖：
+
+~~~bash
+# ChatTongyi / 阿里通义千问依赖包
+uv add dashscope
+~~~
+
+- 步骤2：环境变量.env
+  - 注意：一般不要添加这样的环境变量
+  - DASHSCOPE_BASE_URL=<https://dashscope.aliyuncs.com/compatible-mode/v1>
+  - 百炼平台提供了两种访问方式：专用SDK和OpenAI兼容接口，上述URL是为后者准备的，而ChatTongyi底层是基于专用SDK实现的，如果指定了上述URL，则运行报错
+
+~~~bash
+DASHSCOPE_API_KEY=<Your API Key>
+~~~
+
+- 步骤3：初始化模型
+
+~~~python
+import os
+from langchain_community.chat_models import ChatTongyi
+from dotenv import load_dotenv
+
+# override=True 确保.env文件优先
+load_dotenv(override=True)
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+tongyi_llm = ChatTongyi(
+    api_key=DASHSCOPE_API_KEY,
+    model="glm-5",
+)
+
+print(tongyi_llm.invoke("请介绍一下你自己"))
+~~~
+
+
+
+### 2.2 兼容用法
+
+- 一方面，LangChain没有为所有大模型厂商提供专用接口，见Langchain大模型集成列表。如果选用的平台没有专用接口，可以通过兼容接口调用。
+- 另一方面，专用接口的对接方式五花八门，如腾讯混元的ChatHunyuan需要单独的APP_ID + SecretId + SecretKey ，配置繁琐，用户不友好。
+
+- 结论：<font color="red">**大多数API平台都支持OpenAI API接口规范，所以基本都可以通过 ChatOpenAI 集成**</font>
+- DeepSeek
+
+~~~python
+import os
+
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+
+# 从环境变量中加载
+load_dotenv(override=True)
+# 从环境变量读取配置
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+DASHSCOPE_BASE_URL = os.getenv("DASHSCOPE_BASE_URL")
+
+chat_model = ChatOpenAI(
+    api_key=DASHSCOPE_API_KEY,
+    base_url=DASHSCOPE_BASE_URL,
+    model_name="glm-5"
+)
+
+print(chat_model.invoke("你好"))
+~~~
+
+- 智谱
+
+~~~python
+import os
+
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+
+# 从环境变量中加载
+load_dotenv(override=True)
+# 从环境变量读取配置
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
+
+chat_model = ChatOpenAI(
+    api_key=DEEPSEEK_API_KEY,
+    base_url=DEEPSEEK_BASE_URL,
+    model_name="glm-5.1"
+)
+
+print(chat_model.invoke("你好"))
+~~~
+
+- 千问
+
+~~~python
+import os
+
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+
+# 从环境变量中加载
+load_dotenv(override=True)
+# 从环境变量读取配置
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+DASHSCOPE_BASE_URL = os.getenv("DASHSCOPE_BASE_URL")
+
+chat_model = ChatOpenAI(
+    api_key=DASHSCOPE_API_KEY,
+    base_url=DASHSCOPE_BASE_URL,
+    model_name="glm-5"
+)
+
+print(chat_model.invoke("你好"))
+~~~
+
+
+
+### 2.3 中转站
+
+- 受政策影响，国内无法直接调用国外顶尖的闭源模型，某些复杂任务需要用这些模型实现，此时可以通过中转平台曲线救国
+
+
+
+#### 2.3.1 OpenRouter
+
+- 官网：<https://openrouter.ai/>
+
+- OpenRouter 是一个多模型 API 聚合平台，提供统一的 OpenAI 兼容接口，可以通过一个 API Key 调用 OpenAI、Claude、Gemini、DeepSeek、Qwen 等不同厂商的大模型。它适合用于模型对比、模型路由、Agent 应用开发和课程实验。
+
+- 是目前知名度最高的中转平台。但是使用的话，需要tizi（即魔法，大家都懂的）
+
+- 步骤1：相关依赖：
+
+~~~bash
+# OpenRouter 模型集成
+uv add langchain-openrouter
+~~~
+
+- 步骤2：环境变量
+
+~~~bash
+OPENROUTER_API_KEY=<YOUR_API_KEY>
+OPENROUTER_API_BASE=https://openrouter.ai/api/v1
+~~~
+
+- 步骤3：LangChain 当前版本为 OpenRouter 提供了专用集成：ChatOpenRouter
+
+~~~python
+from langchain_openrouter import ChatOpenRouter
+from dotenv import load_dotenv
+import os
+
+
+load_dotenv(override=True)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+# OPENROUTER_API_BASE = os.getenv("OPENROUTER_API_BASE")
+model = ChatOpenRouter(
+    model="deepseek/deepseek-v4-flash",
+    api_key=OPENROUTER_API_KEY,
+    # base_url=OPENROUTER_API_BASE,
+)
+print(model.invoke("一句话介绍下你自己"))
+~~~
+
+- 步骤3：当然也可以使用ChatOpenAI的方式进行调用。如下：
+
+~~~python
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+import os
+load_dotenv(override=True)
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_API_BASE = os.getenv("OPENROUTER_API_BASE")
+model = ChatOpenAI(
+    model="deepseek/deepseek-v4-flash",
+    api_key=OPENROUTER_API_KEY,
+    base_url=OPENROUTER_API_BASE,
+)
+print(model.invoke("一句话介绍下你自己"))
+~~~
+
+
+
+#### 2.3.2 CloseAI
+
+- 官网：<https://www.closeai-asia.com/>
+
+- CloseAI 是一个面向国内用户的 AI API 中转平台，提供 OpenAI、Claude、Gemini 等模型接口的代理访问能力。它适合用于解决国内网络访问、支付和接口统一管理等问题，常用于大模型应用开发、教学演示和测试环境。
+
+- LangChain没有为CloseAI提供专用集成，可以通过ChatOpenAI兼容接口调用。
+
+- 举例：
+
+~~~python
+from dotenv import load_dotenv
+from langchain_openai import ChatOpenAI
+import os
+
+load_dotenv(override=True)
+CLOSEAI_API_KEY = os.getenv("CLOSEAI_API_KEY")
+CLOSEAI_BASE_URL = os.getenv("CLOSEAI_BASE_URL")
+
+model = ChatOpenAI(
+    # model="gpt-5-mini",
+    model="deepseek-v4-flash",
+    api_key=CLOSEAI_API_KEY,
+    base_url=CLOSEAI_BASE_URL,
+)
+print(model.invoke("欧盟都有哪些国家"))
+~~~
+
+
+
+## 3、init_chat_model初始化模型
+
+### 3.1 介绍
+
+- init_chat_model 是 LangChain 1.x 中推出的用于初始化聊天模型的统一接口。只要是LangChain支持的模型都可以处理，它会根据模型名称自动选择对应的模型类初始化实例
+
+- 基本用法
+
+~~~python
+from langchain.chat_models import init_chat_model
+model = init_chat_model(
+    "provider:model_name",   # 提供商:模型名称
+    api_key="your-api-key",  # API 密钥（可选，可从环境变量读取）
+    temperature=0.7,         # 温度参数（可选）
+    max_tokens=1000,         # 最大 token 数（可选）
+    **kwargs                 # 其他模型特定参数
+)
+~~~
+
+- 问题： init_chat_model 和直接使用 ChatTongyi、ChatOpenAI、ChatDeepSeek有什么区别？
+- 回答： init_chat_model 是 LangChain 1.0 的统一接口，优势包括：
+  - <font color="red">**统一接口**</font>：无需记住每个提供商的不同初始化方式（以一致的方式初始化）
+  - <font color="red">**易于切换**</font>：简化了智能体系统中模型切换策略（只需修改模型字符串）
+  - <font color="red">**简洁明了**</font>：更简洁的语法，减少样板代码自动适配：内部根据模型标识自动选择对应的驱动类(ChatOpenAI、ChatDeepSeek)
+
+![init_chat_model](图片/init_chat_model.PNG)
+
+
+
+### 3.2 使用步骤
+
+- 调用DeepSeek官网的大模型：当我们传递的模型名称为deepseek-v4-flash 时，init_chat_model会自动调用ChatDeepSeek初始化模型实例，和直接通过ChatDeepSeek初始化的效果完全一致
+
+~~~python
+import os
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+
+# 从.env文件中加载环境变量
+load_dotenv(override=True)
+
+# 从环境变量读取配置
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL")
+model = init_chat_model(model="deepseek:deepseek-v4-flash",
+                        #model_provider="deepseek",
+                        api_key=DEEPSEEK_API_KEY,
+                        base_url=DEEPSEEK_BASE_URL)
+# 向模型发送单条数据
+response = model.invoke("你好，用一句话回答")
+# 打印响应
+print(response)
+~~~
+
+- 调用阿里百炼大模型
+
+~~~python
+import os
+
+from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
+
+load_dotenv(override=True)
+
+DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
+DASHSCOPE_BASE_URL = os.getenv("DASHSCOPE_BASE_URL")
+
+model = init_chat_model(
+    model="glm-5",
+    model_provider="openai",
+    api_key=DASHSCOPE_API_KEY,
+    base_url=DASHSCOPE_BASE_URL
+)
+
+print(model.invoke("你是谁"))
+~~~
+
+- 调用CloseAI中转平台大模型
+
+~~~python
+from langchain.chat_models import init_chat_model
+from dotenv import load_dotenv
+import os
+
+load_dotenv(override=True)
+CLOSEAI_API_KEY=os.getenv("CLOSEAI_API_KEY")
+CLOSEAI_BASE_URL=os.getenv("CLOSEAI_BASE_URL")
+model = init_chat_model(model="deepseek-v4-flash",
+                        model_provider="openai",
+                        api_key=CLOSEAI_API_KEY,
+                        base_url=CLOSEAI_BASE_URL)
+print(model.invoke("你好，用一句话回答"))
+~~~
+
+- 问题1：model_provider支持哪些provider？
+  - 答：model_provider 表示模型的提供者，支持的providers有：anthropic , anthropic_bedrock, azure_ai, azure_openai, bedrockbedrock_converse, cohere, deepseek , fireworks, google_anthropic_vertex, google_genai, google_vertexaigrog, huggingface, ibm, mistralai, nvidia, ollama , openai , openrouter , perplexity, together, upstage, xai。
+  - 如果 model_provider="openai" ，会自动加载langchain-openai 的依赖包，底层调用的是 ChatOpenAI 类。
+  - 如果 model_provider="deepseek" ，会自动加载langchain-deepseek 的依赖包，底层调用的是ChatDeepSeek 类。
+  - 像阿里的dashscope 尚未被LangChain官方纳入模型的统一注册体系，暂时不知道"dashscope"的提供者是谁。此时可以将model_provider设置为openai，底层将会用openai的规范处理请求，这就要求我们调用的模型服务是OpenAI Compatible的
+
+- 问题2：如果在model参数中没有指明模型提供者，必须在model_provider中指明？
+  - <font color="red">**可以在model参数中通过前缀指定模型供应商，和模型名称之间用冒号分割，等价于通过model_provider参数指定供应商。**</font>如果两个位置都没有指明供应商，LangChain底层会按照内置规则自动推断。
+  - 但是，并非所有的模型都支持自动推断，如model名称qwen-plus 不支持自动推断，没有指明供应商会报错
+
+
+
+### 3.3 小结
+
+- DeepSeek官网的DeepSeek模型：可以调用ChatDeepSeek()、ChatOpenAI()、init_chat_model()三种方式
+- 阿里云百炼平台的DeepSeek模型：可以调用ChatTongyi()、ChatOpenAI()、init_chat_model()三种方式
+- OpenRouter平台的DeepSeek模型：可以调用ChatOpenRouter()、ChatOpenAI()、init_chat_model()三种方式
+- CloseAPI平台的DeepSeek模型：可以调用ChatOpenAI()、init_chat_model() 两种方式
+
+![init_chat_model小结](图片/init_chat_model小结.PNG)
+
+
+
+### 3.4 模型初始化参数(常用版)
+
+- 在LangChain中，Model Class 和init_chat_model初始化模型共同的参数及解释。
+
+- API文档：<https://docs.langchain.org.cn/oss/python/langchain/models#parameters>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 5、模型调用
+
+- 在 LangChain 中，模型调用（Invocation）是指通过特定方法触发大语言模型生成输出的过程。根据不同的应用场景和需求，LangChain 提供了几种核心的调用方式，主要是 invoke() 、stream() 和 batch() 方法，以及它们的异步版本 ainvoke() 、astream() 和abatch() ，下面将系统地介绍这些方法。
+
+  - invoke() ：阻塞式，一次性返回完整结果问答、批处理任务、无需实时反馈的场景。
+
+  - ainvoke() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务。
+
+  - stream() ：流式输出，实时返回每个token聊天机器人、长文本生成、需要提升用户体验的交互应用。
+
+  - asteam() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务。
+
+  - batch() ：批量处理多个输入高并发场景，需要同时处理大量请求。
+
+  - abatch() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
