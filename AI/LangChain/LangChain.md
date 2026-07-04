@@ -1,7 +1,3 @@
-https://lc.opxqo.cn/02.html#11-%E4%B8%80%E5%BC%A0%E8%80%81%E5%9B%BE%E7%9C%8B%E5%A4%A7%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%B0%83%E7%94%A8
-
-
-
 # 一、概述
 
 ## 1、为什么需要LangChain
@@ -1014,21 +1010,1135 @@ print(model.invoke("你好，用一句话回答"))
 
 
 
+
+
+
+
 ## 5、模型调用
 
 - 在 LangChain 中，模型调用（Invocation）是指通过特定方法触发大语言模型生成输出的过程。根据不同的应用场景和需求，LangChain 提供了几种核心的调用方式，主要是 invoke() 、stream() 和 batch() 方法，以及它们的异步版本 ainvoke() 、astream() 和abatch() ，下面将系统地介绍这些方法。
 
-  - invoke() ：阻塞式，一次性返回完整结果问答、批处理任务、无需实时反馈的场景。
+  - invoke() ：阻塞式，<font color="red">**一次性返回完整结果**</font>问答、批处理任务、无需实时反馈的场景。
 
   - ainvoke() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务。
 
-  - stream() ：流式输出，实时返回每个token聊天机器人、长文本生成、需要提升用户体验的交互应用。
+  - stream() ：流式输出，<font color="red">**实时返回每个token**</font>聊天机器人、长文本生成、需要提升用户体验的交互应用。
 
   - asteam() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务。
 
-  - batch() ：批量处理多个输入高并发场景，需要同时处理大量请求。
+  - batch() ：<font color="red">**批量处理多个输入高并发场景**</font>，需要同时处理大量请求。
 
   - abatch() ：非阻塞式，提高系统吞吐量高并发Web应用、IO密集型任务
+
+
+
+### 5.1 invoke()
+
+- invoke()是LangChain中最核心的方法，它的工作模式是<font color="red">**阻塞式**</font>的，即<font color="red">**程序会等待模型完全生成整个响应之后，再一次性将结果返回给用户**</font>
+
+
+
+#### 5.1.1 invoke()说明
+
+- 简单来说，invoke方法的作用就是：
+  - <font color="red">**接收用户输入**</font>（问题、指令、对话历史等）
+  - <font color="red">**发送给LLM模型**</font>（GPT、deepseek等）
+  - <font color="red">**返回模型响应**</font>（文本回复+元数据信息）
+- 基本语法
+
+~~~python
+response = model.invoke(input, config=None)
+~~~
+
+- 参数详解
+
+| 参数   | 类型                                 | 说明                                 | 必需 | 默认值 |
+| ------ | ------------------------------------ | ------------------------------------ | ---- | ------ |
+| input  | str \| list[dict] \| list[Message]等 | 要发送给模型的内容                   | 必需 | 无     |
+| config | dict                                 | 高级配置（回调函数、元数据、标签等） | 可选 | None   |
+
+
+
+#### 5.1.2 输入参数详解
+
+- invoke方法非常灵活，支持三种形式的输入：<font color="red">**文本输入、字典列表、消息对象列表**</font>
+
+- <font color="red">**文本输入（最简单）**</font>
+
+  - 简单的一次性问答，直接传入一个问题或者指令，在invoke中直接输入文本，即可自动转化为user message并进行对话
+  - 使用场景：快速测试，不需要保留对话历史的简单生成任务
+  - 缺点：无法设置系统提示（system prompt），无法传递对话历史
+
+  ~~~python
+  import os
+  
+  import dotenv
+  from langchain.chat_models import init_chat_model
+  
+  # 从环境变量中获取配置信息
+  dotenv.load_dotenv(override=True)
+  
+  # 初始化模型
+  model = init_chat_model(
+      model=os.getenv("CHAT_MODEL"),
+      model_provider="openai",
+      base_url=os.getenv("CHAT_BASE_URL"),
+      api_key=os.getenv("CHAT_API_KEY")
+  )
+  
+  # 模型对话
+  response = model.invoke("你好", config=None)
+  print(response)
+  ~~~
+
+- <font color="red">**字典列表（推荐，最灵活）**</font>
+
+  - 创建字典列表组成消息。一条消息通常包含：**role（角色）、content（内容）**等信息
+  - 使用场景：可以设置系统提示，表达多轮对话历史，JSON兼容，易于序列化和网络传输，生产环境最推荐
+  - 缺点：代码稍微多点（但更清晰）
+  - 格式
+
+  ~~~python
+  message = [
+      {"role": "system", "content": "系统提示"},
+      {"role": "user", "content": "用户消息"},
+      {"role": "assistant", "content": "AI回复"},       # 可选，用于历史对话
+      {"role": "user", "content": "继续提问"}
+  ]
+  ~~~
+
+  - 角色说明
+
+    - 注意："user"和"human"有时可以互换，单遵循模型提供商的惯例”user“最为稳妥
+
+    | 角色      | 英文           | 作用                           | 示例                       |
+    | --------- | -------------- | ------------------------------ | -------------------------- |
+    | system    | System         | 设定AI的行为、角色、规则       | "你是一个专业的python导师" |
+    | user      | Human / User   | 用户的输入问题                 | "什么是装饰器"             |
+    | assistant | AI / Assistant | AI的历史回复（用于对话上下文） | "装饰器是一种设计模式"     |
+
+  - 举例
+
+  ~~~python
+  import os
+  
+  import dotenv
+  from langchain.chat_models import init_chat_model
+  
+  # 从环境变量中获取配置信息
+  dotenv.load_dotenv(override=True)
+  
+  # 初始化模型
+  model = init_chat_model(
+      model=os.getenv("CHAT_MODEL"),
+      model_provider="openai",
+      base_url=os.getenv("CHAT_BASE_URL"),
+      api_key=os.getenv("CHAT_API_KEY")
+  )
+  
+  # 模型对话
+  message = [
+      {"role": "system", "content": "你是一个专业的数学老师"},
+      {"role": "user", "content": "1 + 2 = ?"},
+      {"role": "assistant", "content": "3"},
+      {"role": "user", "content": "我刚刚问的什么问题，回答的是什么"}
+  ]
+  response = model.invoke(message, config=None)
+  print(response)
+  ~~~
+
+- <font color="red">**消息对象列表**</font>
+
+  - 使用内置的消息类（如：SystemMessage、HumanMessge、AIMessage），将消息对象列表输入模型
+  - 适用场景：需要类型检查（针对大型项目），IDE自动补全的场景
+  - 缺点：代码较长，不如字典简洁，难以序列化（JSON）
+  - 消息类型对照
+
+  | 消息类        | 对应字典格式                         | 作用     |
+  | ------------- | ------------------------------------ | -------- |
+  | SystemMessage | {"role": "system", "content": ""}    | 系统提示 |
+  | HumanMessage  | {"role": "user", "content": ""}      | 用户输入 |
+  | AIMessage     | {"role": "assistant", "content": ""} | AI回复   |
+
+  - 举例
+
+  ~~~python
+  import os
+  
+  import dotenv
+  from langchain.chat_models import init_chat_model
+  from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+  
+  # 从环境变量中获取配置信息
+  dotenv.load_dotenv(override=True)
+  
+  # 初始化模型
+  model = init_chat_model(
+      model=os.getenv("CHAT_MODEL"),
+      model_provider="openai",
+      base_url=os.getenv("CHAT_BASE_URL"),
+      api_key=os.getenv("CHAT_API_KEY")
+  )
+  
+  # 模型对话
+  message = [
+      SystemMessage("你是一个专业的数学老师"),
+      HumanMessage("1 + 2 = ?"),
+      AIMessage("3"),
+      HumanMessage("我刚刚问的什么问题，回答的是什么")
+  ]
+  
+  response = model.invoke(message, config=None)
+  print(response)
+  ~~~
+
+
+#### 5.1.3 返回值详解
+
+- invoke返回的是一个AIMessage对象，源码如下：
+
+~~~python
+def invoke(
+    self,
+    input: LanguageModelInput,
+    config: RunnableConfig | None = None,
+    *,
+    stop: list[str] | None = None,
+    **kwargs: Any,
+) -> AIMessage:
+~~~
+
+- AIMessage中包含丰富的信息，通过rich库将返回格式化如下：
+
+~~~json
+AIMessage(
+    # --- 核心内容 --- 
+    content='你刚刚问的是：“1 + 2 = ?”  \n我回答的是：“3”。', # 模型生成的最终文本答案
+    additional_kwargs={'refusal': None},  # 模型拒绝回答的情况（如触碰安全策略），None表示正常												回答
+    
+    # --- 响应元数据（API返回的详细原始数据）---
+    response_metadata={
+        'token_usage': {
+            'completion_tokens': 20,				# 生成回答消耗的Token数（输出）
+            'prompt_tokens': 28,					# 用户输入消耗的Token数（输入）
+            'total_tokens': 48,						# 本次交互总共消耗的Token数
+            'completion_tokens_details': None,
+            'prompt_tokens_details': None,
+            'ttft': 349,
+            'tpot': 67
+        },
+        'model_provider': 'openai',
+        'model_name': 'hosted_vllm/DeepSeek-V3.1-Terminus-NoThinking-32K',
+        'system_fingerprint': None,
+        'id': 'chatcmpl-46aca926b6',
+        'finish_reason': 'stop',
+        'logprobs': None
+    },
+    
+    # --- LangChain 内部标识 ---
+    # LangChain追踪此条运行的唯一ID
+    id='lc_run--019f261d-6cc7-7530-ad74-6bcad39fd11d-0',
+    
+    # --- 工具调用信息 ---
+    tool_calls=[],			# 正常触发的外部工具调用列表
+    invalid_tool_calls=[],	# 触发失败或格式错误的工具调用列表
+    
+    # --- 统一消耗元数据（LangChain标准的消耗格式）---
+    usage_metadata={
+        'input_tokens': 28,				# 输入token数
+        'output_tokens': 20,			# 输出token数
+        'total_tokens': 48,				# 总token数
+        'input_token_details': {
+			'audio': 0,
+    		'cache_read': 0				# 从缓存中读取的输入token数量
+        },		
+    	'output_token_details': {
+    		'audio': 0,
+    		'reasoning': 0				# 包含在输出中的推理token
+    	}
+    }
+)
+~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5.2 stream()
+
+- invoke和stream有什么区别
+  - invoke()：<font color="red">**同步调用，在模型输出完成后一次性获取响应**</font>，对于输出文本很长的场景，用户体验不好
+  - stream()：<font color="red">**流式调用，实时返回响应片段**</font>。调用后，返回一个迭代器 (iterator)，可以通过循环来实时处理每个新生的chunk内容块
+
+- 注意：流式输出依赖于模型供应商对于流式输出的支持
+- 基本语法
+  - **end=''**
+    - 默认情况下，`print()`会在输出内容后自动添加换行符（`\n`）。
+    - 通过设置`end=''`，可以将原本的换行符替换为空字符串，使输出内容不换行，直接衔接下一次打印的内容。
+  - **flush=True**
+    - 默认情况下，`print()`的输出会被缓存在系统缓冲区中，可能不会立即显示（例如在重定向到文件或某些终端时）。
+    - 设置`flush=True`会强制将缓冲区的内容立即刷新到目标输出（如控制台或文件），确保内容实时显示。这在需要即时输出（如进度条、实时日志）时特别有用
+
+```python
+response = model.stream(message, config=None)
+for chunk in response:
+    print(chunk.text, end='', flush=True)
+```
+
+- 例子
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型对话
+message = [
+    SystemMessage("你是一个专业的数学老师"),
+    HumanMessage("1 + 2 = ?"),
+    AIMessage("3"),
+    HumanMessage("我刚刚问的什么问题，回答的是什么")
+]
+
+response = model.stream(message, config=None)
+for chunk in response:
+    print(chunk.text, end='', flush=True)
+~~~
+
+- 优点
+  - <font color="red">**响应速度更快**</font>，用户不必等待完整输出
+  - <font color="red">**交互体验更流畅**</font>，尤其在长文本或复杂推理场景下
+  - <font color="red">**可实时展示模型思考过程**</font>
+
+
+
+### 5.3 batch()
+
+- batch()方法允许一次性<font color="red">**发送一组请求**</font>（含多条独立请求），模型会在后台<font color="red">**并行处理**</font>，然后<font color="red">**返回所有结果的列表**</font>
+- 与逐个顺序调用 (invoke) 相比，能<font color="red">**大幅减少网络往返开销和等待时间**</font>，显著提升性能、降低成本
+- 适用场景：文档摘要、批量问答、数据预处理、多样本分类等
+
+
+
+#### 5.3.1 按输入消息顺序接收
+
+- 关键字：batch()
+
+- 语法
+
+~~~python
+message = [
+    "你是谁?",
+    "1 + 2 = ?",
+    "我国首都是哪里?"
+]
+
+response_list = model.batch(message, config=None)
+for response in response_list:
+    print(response)
+~~~
+
+- batch()特点是等待所有请求处理完毕，按原始输入顺序返回结果列表
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型对话
+message = [
+    "你是谁?",
+    "1 + 2 = ?",
+    "我国首都是哪里?"
+]
+
+response_list = model.batch(message, config=None)
+for response in response_list:
+    print(response)
+~~~
+
+- 回答也是按照输入的问题的顺序进行返回的
+  - 你好！我是DeepSeek，由深度求索公司创造的AI助手！
+  - 1 + 2 = 3
+  - 中国的首都是**北京**
+
+
+
+#### 5.3.2 按完成顺序接收响应
+
+- 关键字：batch_as_completed()
+
+- 语法
+
+```python
+message = [
+    "你是谁?",
+    "1 + 2 = ?",
+    "我国首都是哪里?"
+]
+
+response_list = model.batch_as_completed(message, config=None)
+for response in response_list:
+    print(response)
+```
+
+- batch()特点是等待所有请求处理完毕，按原始输入顺序返回结果列表
+
+```python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型对话
+message = [
+    "你是谁?",
+    "1 + 2 = ?",
+    "我国首都是哪里?"
+]
+
+response_list = model.batch_as_completed(message, config=None)
+for response in response_list:
+    print(response)
+```
+
+- 回答是按完成顺序接收响应
+  - 1 + 2 = 3
+  - 中国的首都是**北京**
+  - 你好！我是DeepSeek，由深度求索公司创造的AI助手！
+
+
+
+#### 5.3.3 性能对比
+
+- 使用batch()方法：batch耗时1.37秒
+
+~~~python
+import os
+import time
+
+import dotenv
+from langchain.chat_models import init_chat_model
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型对话
+message = [
+    "翻译成英文：春天来了",
+    "翻译成英文：夏天很热",
+    "翻译成英文：秋天落叶",
+    "翻译成英文：冬天下雪"
+]
+
+# 记录开始时间
+start_time = time.time()
+# 模型调用
+response_list = model.batch(message, config=None)
+# 计算耗时
+batch_time = time.time() - start_time
+
+# 循环输出
+for response in response_list:
+    print(response)
+
+# 打印耗时
+print(f"batch耗时{batch_time:.2f}秒")
+~~~
+
+- 使用invoke循环调用：循环invoke耗时4.23秒
+
+~~~python
+import os
+import time
+
+import dotenv
+from langchain.chat_models import init_chat_model
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型对话
+messages = [
+    "翻译成英文：春天来了",
+    "翻译成英文：夏天很热",
+    "翻译成英文：秋天落叶",
+    "翻译成英文：冬天下雪"
+]
+
+# 记录开始时间
+start_time = time.time()
+# 模型调用
+response_list = []
+for message in messages:
+    response = model.invoke(message, config=None)
+    response_list.append(response)
+# 计算耗时
+batch_time = time.time() - start_time
+
+# 循环输出
+for response in response_list:
+    print(response)
+
+# 打印耗时
+print(f"循环invoke耗时{batch_time:.2f}秒")
+~~~
+
+- 总结：性能提升了一倍
+
+
+
+### 5.4 异步调用
+
+- 同步（sync）
+  - 发起一个任务后，<font color="red">**需要等待该任务完成后**</font>，才能继续执行后续任务
+  - 表现：<font color="red">**当前执行流会被阻塞**</font>
+- 异步（async）
+  - 发起一个任务后。<font color="red">**不必等待该任务完成**</font>，就可以继续执行其他任务
+  - 备注：虽然不必等待任务完成，但是任务完成后，仍然可以通过特定方式获取结果
+  - 表现：<font color="red">**当前执行流不会被阻塞**</font>
+
+- 在LangChain框架中，异步方法（ainvoke、astream、abatch）以他们的同步版本（invoke、stream、batch）相比，具备以下特点
+  - <font color="red">**避免阻塞主线程**</font>：同步调用会阻塞程序执行，而异步方法会让应用程序在等待API响应时保持响应性
+  - <font color="red">**优化资源利用**</font>：异步操作可以更高效率利用系统资源，减少空闲等待时间
+
+- ainvoke
+
+~~~python
+
+~~~
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6、拓展内容
+
+### 6.1 美化模型输出响应
+
+#### 6.1.1 使用pretty_print()
+
+- 可以使用pretty_print()美化输出内容
+- 用法：<font color="red">**response.pretty_print()**</font>
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型调用
+response = model.invoke("1+1=?", config=None)
+response.pretty_print()
+~~~
+
+- <font color="red">**控制字符无法被渲染，只会输出文本内容**</font>，返回如下
+
+~~~bash
+================================== Ai Message ==================================
+
+1 + 1 = 2.  
+
+If you’re looking for a more detailed explanation:  
+- In basic arithmetic, adding two single units together results in two units.  
+- In binary, 1 + 1 = 10 (which is 2 in decimal).  
+
+Let me know if you meant something more abstract!
+~~~
+
+
+
+#### 6.1.2 使用rich库
+
+- 如果在终端（Terminal）工作，想要色彩鲜明，排版优雅的测试界面，可以使用rich库
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from rich import print as rprint
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 模型调用
+response = model.invoke("1+1=?", config=None)
+rprint(response)
+~~~
+
+- 返回如下
+
+~~~bash
+AIMessage(
+    content='**Answer:** 2\n\n**Explanation:** In basic arithmetic, adding the 
+number 1 to the number 1 equals 2.',
+    additional_kwargs={'refusal': None},
+    response_metadata={
+        'token_usage': {
+            'completion_tokens': 28,
+            'prompt_tokens': 8,
+            'total_tokens': 36,
+            'completion_tokens_details': None,
+            'prompt_tokens_details': None,
+            'ttft': 310,
+            'tpot': 58
+        },
+        'model_provider': 'openai',
+        'model_name': 'hosted_vllm/DeepSeek-V3.1-Terminus-NoThinking-32K',
+        'system_fingerprint': None,
+        'id': 'chatcmpl-8cb1bb3ba4',
+        'finish_reason': 'stop',
+        'logprobs': None
+    },
+    id='lc_run--019f2729-39a6-7602-8186-6db728e46e48-0',
+    tool_calls=[],
+    invalid_tool_calls=[],
+    usage_metadata={
+        'input_tokens': 8,
+        'output_tokens': 28,
+        'total_tokens': 36,
+        'input_token_details': {},
+        'output_token_details': {}
+    }
+)
+~~~
+
+
+
+### 6.2 模型配置信息profile
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 三、LangSmith基本使用
+
+## 1、概述
+
+### 1.1 什么是LangSmith
+
+- LangSmith是LangChain生态系统中专门用于LLM（大语言模型）应用<font color="red">**调试、监控、评估和管理**</font>的平台
+  - <font color="red">**追踪（tracing）**</font>：记录每次LLM调用的详细信息
+  - <font color="red">**监控（monitoring）**</font>：实时查看应用性能
+  - <font color="red">**调试（debug）**</font>：排查问题和优化性能
+  - <font color="red">**评估（evaluate）**</font>：系统化测试LLM应用
+
+
+
+### 1.2 LangSmith功能
+
+| 菜单项                     | 所属             | 核心功能                                                     |
+| -------------------------- | ---------------- | ------------------------------------------------------------ |
+| **Tracing**                | 核心应用与开发   | **链路追踪**：查看所有 LLM 应用的运行日志和调用链路，是调试和排查问题的核心入口。你可以看到每一次请求的完整执行流程、输入输出、耗时和 Token 消耗。 |
+| **Monitoring**             | 核心应用与开发   | **监控仪表板**：聚合展示项目的运行指标，如请求量、延迟、错误率、Token 消耗等，用于生产环境的性能监控和异常告警。 |
+| **Datasets & Experiments** | 核心应用与开发   | **数据集与实验**：管理测试数据集，批量运行你的 LLM 应用，对比不同模型、提示词或配置的效果，用于版本迭代和 A/B 测试。 |
+| **Evaluators**             | 核心应用与开发   | **评估器**：配置和管理自动评估规则，用于量化评估模型输出的质量（如相关性、准确性、是否存在幻觉等）。 |
+| **Annotation Queues**      | 核心应用与开发   | **人工标注队列**：将需要人工审核的模型输出加入队列，供团队成员进行标注和反馈，用于优化评估和训练数据。 |
+| **Prompts**                | 提示词与调试工具 | **提示词管理**：集中管理和版本化你的提示词模板，方便在不同场景下复用和迭代。 |
+| **Playground**             | 提示词与调试工具 | **在线调试 playground**：快速测试模型、提示词和工具调用，无需编写完整代码，适合快速验证想法。 |
+| **Studio**                 | 提示词与调试工具 | **可视化工作流 Studio**：通过拖拽方式可视化构建和编辑 LangChain 链 / 代理，适合低代码方式开发复杂流程。 |
+| **Context Hub**            | 提示词与调试工具 | **上下文中心**：管理和存储可复用的上下文数据（如文档、知识库片段），方便在应用中快速引用。 |
+| **Deployments**            | 部署与沙盒       | **部署管理**：将你的 LangChain 应用部署为 API 服务，管理部署版本、流量和环境。 |
+| **Sandboxes**              | 部署与沙盒       | **沙箱环境**：提供隔离的运行环境，用于安全测试新功能或代码，避免影响生产环境。 |
+
+- 使用建议
+  - **开发调试阶段**：优先使用 **Tracing** 和 **Playground**，快速定位问题和验证逻辑。
+  - **迭代优化阶段**：结合 **Datasets & Experiments** 和 **Evaluators**，量化评估不同方案的效果。
+  - **生产上线后**：重点关注 **Monitoring**，实时监控应用健康状态和成本消耗。
+
+
+
+## 2、准备账号
+
+### 2.1 注册或登录
+
+- 步骤1：访问官网，地址：https://smith.LangChain.com/
+- 步骤2：自由选择注册或登陆方式，一般用的github账号，可以直接登录
+- 步骤3：登陆成功
+
+![LangSmith主界面](图片/LangSmith主界面.png)
+
+
+
+### 2.2 获取Key
+
+- 在左下角有个setting
+
+![LangSmith获取apiKey1](图片/LangSmith获取apiKey1.png)
+
+- 然后右上角新增
+
+![LangSmith获取apiKey2](图片/LangSmith获取apiKey2.png)
+
+- 新增后复制
+
+![LangSmith获取apiKey3](图片/LangSmith获取apiKey3.png)
+
+
+
+### 2.3 新增环境变量
+
+- 在`.env`配置文件中，添加四个环境变量：
+
+~~~bash
+# 是否启用Langsmith监控功能
+LANGSMITH_TRACING=true
+
+# Langsmith监控WebUI地址
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+
+# 创建的API_KEY
+LANGSMITH_API_KEY=<YOUR_API_KEY>
+
+# 自定义项目名称，可以在Langsmith WebUI监控页面根据名称查看对应的运行记录
+LANGSMITH_PROJECT="LangChainDemo"
+~~~
+
+
+
+## 3、性能指标
+
+- **添加上述环境变量后，在程序中通过`load_dotenv()`加载，而后运行 LangChain 代码，LangSmith 会自动记录运行指标，并同步至后台服务，我们可以在 LangSmith 官网查看运行记录**
+
+![LangSmith监控日志](图片/LangSmith监控日志.png)
+
+
+
+四、
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+四、
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
