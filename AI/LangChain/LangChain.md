@@ -2082,73 +2082,561 @@ LANGSMITH_PROJECT="LangChainDemo"
 
 
 
-四、
+# 四、消息与提示词模板
 
+## 1、认识消息
 
+- 大模型没有记忆，它的输出只和输入模型的内容有关（上下文），很多大模型API服务也没有在服务端维护会话历史，是无状态的。因此，<font color="red">**如果应用要记住对话历史，需要在程序中维护消息列表**</font>
 
+![认识消息](图片/认识消息.PNG)
 
+- <font color="red">**在LangChain中，Message（消息）是模型交互的最基本单元**</font>。他既代表模型接收到的输入（input），也代表了模型生成的输出（output）
 
+- 每一轮与大模型的对话，都由一条或多条messge构成，每条message不仅包含了<font color="red">**文字内容**</font>，还携带描述上下文状态的<font color="red">**元信息（metadata）**</font>，用于保持对话的一致性和可追踪性。比如，模型在多轮交互中理解谁在说话、说了什么、这条信息属于哪一轮对话
 
+- LangChain在1.0中提供了<font color="red">**跨模型统一的message标准**</font>。无论使用的是OpenAI、Anthropic、Gemini还是本地模型，这一标准都能保持一致的行为。好处：
 
+  - <font color="red">**兼容性强**</font>：不同模型的消息格式自动对其
+  - <font color="red">**可扩展性高**</font>：方便添加多模态内容或自定义字段
+  - <font color="red">**可追踪性好**</font>：为LangSmith等调试工具提供一致的上下文数据结构
 
 
+### 1.1 消息的内部结构
 
+- LangChain的消息（message）对象包含了三种字段
+  - <font color="red">**Role**</font>：消息所属的角色或类型，如：system、user、assistant
+  - <font color="red">**Content**</font>：消息内容
+  - <font color="red">**Metadata**</font>：（可选）元数据，存储额外信息，如：消息ID、响应时间、token消耗量、消息标签等
 
 
 
+### 1.2 消息的类型
 
+- LangChain定义了很多消息类型，通过role区分，常见的有四种
 
+  - <font color="red">**系统消息**</font>
 
+    - 也称为系统提示词，用于在对话开始时，为模型设定角色、行为准则和上下文背景。它像是给AI助手的一份工作说明书，决定了其回答问题的风格、领域和专业范围
 
+    ~~~json
+    {"role": "system", "content": "你是一个精通编程的软件架构师"}
+    ~~~
 
+  - <font color="red">**用户消息**</font>
 
+    - 也称用户提示词，在多轮对话中，它表示用户的一次输入。可以包含简单的文本问题，也可以是复杂的多模态内容（如图片、音频、文档等）
 
+    ~~~json
+    {"role": "user", "content": "你好"}
+    ~~~
 
+  - <font color="red">**助手(AI)消息**</font>
 
+    - 代表模型的回复，包括生成的文本、工具调用、元数据等
 
+    ~~~json
+    {"role": "assistant", "content": "我也很高兴认识你"}
+    ~~~
 
+    ~~~json
+    {
+        "role": "assistant",
+        "content": "我也很高兴认识你",
+        "tool_calls": [{
+            "name": "get_weather",
+            "args": {"location": "北京"},
+            "id": "call_00_nfqwfqfafasgsgsdgsag"
+        }]
+    }
+    ~~~
 
+  - <font color="red">**工具调用消息**</font>
 
+    - 工具调用结果匹配的消息类型。将此消息返回给模型，让模型基于这个结果继续生成回复。
 
+    ~~~json
+    {
+        "role": "tool",
+        "content": "我也很高兴认识你",
+        "tool_calls_id": "call_00_nfqwfqfafasgsgsdgsag"
+    }
+    ~~~
 
+- 问题：<font color="red">**为什么要使用不同的消息类型**</font>
 
+  - <font color="red">**明确角色**</font>：清晰区分系统提示、用户输入和AI回复
+  - <font color="red">**控制行为**</font>：通过SystemMessage精确控制AI的行为
+  - <font color="red">**对话历史**</font>：构建完整的多轮对话上下文
+  - <font color="red">**调试友好**</font>：更容易追踪和调试对话流程
 
 
 
+### 1.3 消息格式
 
+- LangChain支持两种消息格式
 
+  - <font color="red">**Json格式**</font>
 
-四、
+    - 系统消息
 
+    ~~~json
+    {"role": "system", "content": "你是一个精通编程的软件架构师"}
+    ~~~
 
+    - 用户消息
 
+    ~~~json
+    {"role": "user", "content": "你好"}
+    ~~~
 
+    - 助手消息
 
+    ~~~json
+    {
+        "role": "assistant",
+        "content": "我也很高兴认识你",
+        "tool_calls": [{
+            "name": "get_weather",
+            "args": {"location": "北京"},
+            "id": "call_00_nfqwfqfafasgsgsdgsag"
+        }]
+    }
+    ~~~
 
+    - 工具调用消息
 
+    ~~~json
+    {
+        "role": "tool",
+        "content": "我也很高兴认识你",
+        "tool_calls_id": "call_00_nfqwfqfafasgsgsdgsag"
+    }
+    ~~~
 
+  - <font color="red">**对象格式**</font>
 
+    - 系统消息
 
+    ~~~bash
+    SystemMessage(content="你是一个精通编程的软件架构师")
+    ~~~
 
+    - 用户消息
 
+    ~~~bash
+    HumanMessage(content="你好")
+    ~~~
 
+    - 助手消息
 
+    ~~~bash
+    AIMessage(content="我也很高兴认识你")
+    ~~~
 
+    - 工具调用消息
 
+    ~~~bash
+    ToolMessage(
+    	content="<工具输出>",
+    	tool_call_id="call_00_nfqwfqfafasgsgsdgsag"
+    )
+    ~~~
 
 
+### 1.4 例子
 
+```python
+import os
 
+import dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
 
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
 
+# 消息列表
+message_list = [
+    SystemMessage(content="你是一个友好的AI助手"),
+    HumanMessage(content="1 + 2 = ？"),
+    AIMessage(content="3"),
+    HumanMessage(content="我刚刚问了什么？")
+]
 
+# 模型对话
+response_list = model.stream(message_list, config=None)
+for response in response_list:
+    print(response.text, end='', flush=True)
+```
 
 
 
+### 1.5 消息对象字段说明
 
+#### 1.5.1 SystemMessage
 
+- <font color="red">**content**</font>：消息内容，字段名可以省略
 
+~~~python
+SystemMessage("你是一个善解人意的助手")
+# 相当于
+SystemMessage(content="你是一个善解人意的助手")
+~~~
+
+
+
+#### 1.5.2 HumanMessage
+
+- <font color="red">**content**</font>：消息内容，字段名可以省略
+
+```python
+HumanMessage("你好")
+# 相当于
+HumanMessage(content="你好")
+```
+
+- <font color="red">**metadata**</font>：元数据字段，可以有很多，自定义
+  - name和id都属于元数据字段，当消息类型相同，对消息进行区分。但不是所有模型都支持这一功能，是否支持取决于模型供应商
+  - 比如：OpenAI支持name作为元数据，DeepSeek不支持
+
+~~~python
+HumanMessage(
+    content="你好",
+    name="alice",	# 可选：用户名
+    id="id_123"		# 可选：message的ID
+)
+~~~
+
+- 例子
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 消息列表
+message_list = [
+    SystemMessage(content="你是一个信息抽取器，你会收到多条来自不同发言者的user消息，每条消息可能带有name字段，你的任务是："
+                          "严格根据每条消息的name提取发言者及其观点，并输出Json，禁止使用“第一个人/第二个人”这种相对称呼。若某条消息没有name，则输出unknown，"
+                          "输出格式：{\"speakers\": [{\"name\": \"...\", \"claim\": \"...\"}]}"),
+    HumanMessage(content="我认为 1+1=2", name="Bob"),
+    HumanMessage(content="我认为 1+1>2", name="Tom"),
+    HumanMessage(content="请列举出谁说了什么，不要判断对错", name="audience")
+]
+
+# 模型对话
+response_list = model.stream(message_list, config=None)
+for response in response_list:
+    print(response.text, end='', flush=False)
+
+# 打印：{"speakers": [{"name": "unknown", "claim": "我认为 1+1=2"}, {"name": "unknown", "claim": "我认为 1+1>2"}]}
+~~~
+
+
+
+#### 1.5.3 AIMessage
+
+- <font color="red">**content**</font>：模型输出的原始内容，字段名可以省略
+
+```python
+AIMessage("你好")
+# 相当于
+AIMessage(content="你好")
+```
+
+- <font color="red">**response_metadata**</font>：AIMessage特有属性，LLM响应中附加元数据，根据不同模型会有不同，如可能会包含本次token使用量等信息
+- <font color="red">**tool_calls**</font>：AIMessage特有属性，表示工具调用信息。当LLM决定调用工具时，在AIMessage中就会包含这个属性，没有工具调用则为空。结构如下：
+  - tool_calls属性是一个ToolCall列表，每个ToolCall都是一个字典，包含字段如下
+
+~~~python
+tool_calls=[
+    {
+        "name":"get_weather",				# 调用工具的工具名
+        "args":{"city": "杭州"},			   # 调用工具的参数
+        "id":"call_asdasdassdfsfsdf",		# 工具调用的唯一标识ID
+        "type":"tool_call",
+    },
+    {
+        "name":"get_news",
+        "args":{},
+        "id":"call_asdasdassdzxcz",
+        "type":"tool_call",
+    }
+]
+~~~
+
+- <font color="red">**usage_metadata**</font>：用量信息
+
+
+
+#### 1.5.4 ToolMessage
+
+- <font color="red">**content**</font>：文本内容
+- <font color="red">**name**</font>：工具列表
+- <font color="red">**tool_call_id**</font>：工具调用唯一ID，ToolMeseage必须紧邻匹配的AIMessage，和前者tool_calls中的id一致
+
+~~~python
+ToolMessage(
+	content="<工具输出>",
+    name="get_weather",
+    tool_call_id="call_00_fvdsgsgdsgsdgwtfwq"
+)
+~~~
+
+
+
+### 1.6 实战
+
+#### 1.6.1 对话历史管理
+
+- 关键规则：每次调用必须传递完整的对话历史
+
+~~~bash
+第一轮
+[system, user] —> AI回复 —> 保存回复 
+
+第二轮
+[system, user, assistant, user] —> AI回复 —> 保存回复 
+
+第三轮
+[system, user, assistant, user, assistant, user] —> AI回复
+~~~
+
+- 注意：<font color="red">**每次对话都要在原有的消息列表中添加新消息，不可重新创建新的列表**</font>
+
+~~~python
+import os
+
+import dotenv
+from langchain.chat_models import init_chat_model
+
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+# 消息列表
+conversation = []
+
+# 第一次
+conversation.append({"role": "user", "content": "我叫张三"})
+response1 = model.invoke(conversation, config=None)
+# 关键：保存 AI 回复
+conversation.append({"role": "assistant", "content": response1.text})
+
+# 第二次
+conversation.append({"role": "user", "content": "我的朋友叫李四"})
+response2 = model.invoke(conversation, config=None)
+# 关键：保存 AI 回复
+conversation.append({"role": "assistant", "content": response2.text})
+
+# 第三次
+conversation.append({"role": "user", "content": "我叫什么"})
+response3 = model.invoke(conversation, config=None)
+print(response3)
+~~~
+
+
+
+#### 1.6.2 对话历史优化
+
+- 问题：对话历史会越来越长，消耗大量token和成本
+- 解决方案：只保留最近N轮对话，具体
+  - 总是保留system消息（定义角色）
+  - 只保留近N轮对话，丢弃更早的历史
+- 定义保留最近对话轮数的函数
+
+~~~python
+def keep_recent_messages(messages, max_pairs=2):
+    """
+    保留最近的N轮对话
+    :param messages: 消息列表
+    :param max_pairs: 保留的对话轮数（每轮 = user + assistant）
+    :return:
+    """
+
+    # 分离system消息和对话消息
+    system_message = {}
+    conversation_message = []
+    for message in messages:
+        if message.get("role") == "system":
+            system_message = message
+        if message.get("role") != "system":
+            conversation_message.append(message)
+
+    # 只保留最近的消息对：从-4到结尾
+    recent_messages = conversation_message[-(max_pairs * 2):]
+    return recent_messages
+~~~
+
+
+
+#### 1.6.3 多轮对话聊天机器人
+
+- 代码
+
+```python
+import os
+from http.client import responses
+
+import dotenv
+from langchain.chat_models import init_chat_model
+from requests_toolbelt.utils.deprecated import find_pragma
+
+# 从环境变量中获取配置信息
+dotenv.load_dotenv(override=True)
+
+# 初始化模型
+model = init_chat_model(
+    model=os.getenv("CHAT_MODEL"),
+    model_provider="openai",
+    base_url=os.getenv("CHAT_BASE_URL"),
+    api_key=os.getenv("CHAT_API_KEY")
+)
+
+def keep_recent_messages(messages, max_pairs=3):
+    """
+    保留最近的N轮对话
+    :param messages: 消息列表
+    :param max_pairs: 保留的对话轮数（每轮 = user + assistant）
+    :return:
+    """
+
+    # 分离system消息和对话消息
+    system_message = []
+    conversation_message = []
+    for message in messages:
+        if message.get("role") == "system":
+            system_message.append(message)
+        if message.get("role") != "system":
+            conversation_message.append(message)
+
+    # 只保留最近的消息对:从-4到结尾
+    recent_messages = conversation_message[-(max_pairs * 2):]
+    return system_message + recent_messages
+
+
+def chat_with_machine():
+    """
+    跟机器人对话
+    :return:
+    """
+    # 维护一个消息列表
+    message_list = [{"role": "system", "content": "你是一个耐心、友好的AI助手，可以回答任何问题，请根据用户的问题耐心回答"}]
+
+    print("请输入具体的问题，当输入exit的时候，结束对话")
+
+    # 多轮对话
+    i = 1
+    while True:
+        print("\n", "="*10, f"第{i}轮对话开始", "="*10, "\n")
+        # 用户输入
+        user_input = input("请输入：")
+
+        # 判断用户输入是否是exit
+        if user_input == "exit":
+            print("回话已结束")
+            break
+
+        # 将用户输入添加到多轮对话中
+        message_list.append({"role": "user", "content": user_input})
+
+        # 模型对话
+        response_list = model.stream(message_list, config=None)
+        assistant_response = ""
+        for response in response_list:
+            assistant_response = assistant_response + response.text
+            print(response.text, end='', flush=True)
+
+        # 将模型回答放回消息列表中
+        message_list.append({"role": "assistant", "content": assistant_response})
+        # 只选择前十轮对话
+        message_list = keep_recent_messages(messages=message_list, max_pairs=5)
+
+        i = i + 1
+
+if __name__ == '__main__':
+    chat_with_machine()
+```
+
+- 响应
+
+~~~bash
+请输入具体的问题，当输入exit的时候，结束对话
+
+ ========== 第1轮对话开始 ========== 
+
+请输入：你好
+你好！有什么问题我可以帮助你吗？
+ ========== 第2轮对话开始 ========== 
+
+请输入：你是谁
+我是来自阿里云的大规模语言模型，我叫通义千问。我是来帮助你的，可以回答写故事、写公文、表达观点，玩游戏等任务。请问有什么我可以帮到你的吗？
+ ========== 第3轮对话开始 ========== 
+
+请输入：我的名字叫lzy
+很高兴认识你，lzy！如果你有任何问题或需要帮助，尽管告诉我，我会尽力提供支持的。
+ ========== 第4轮对话开始 ========== 
+
+请输入：你的名字是什么
+我是通义千问，是阿里云开发的超大规模预训练模型。你可以叫我通义千问，也可以叫我Qwen。很高兴为你提供帮助！
+ ========== 第5轮对话开始 ========== 
+
+请输入：第一个问题是什么
+你好，lzy！既然你问起了第一个问题，那你想从哪个方面开始呢？可以是任何你感兴趣的话题，比如学习、工作、生活中的疑问，或者是对某个具体领域的探索。我在这里，就是希望能帮到你。请随时告诉我你的问题吧！
+ ========== 第6轮对话开始 ========== 
+
+请输入：我跟你对话的第一个问题是什么
+你跟我对话的第一个问题是：“你好。” 这也是你向我打招呼的方式。如果你有更具体的问题或者需要帮助的地方，随时可以告诉我哦！
+ ========== 第7轮对话开始 ========== 
+
+请输入：我跟你对话的第一个问题是什么
+你跟我对话的第一个问题是：“你是谁”。这个问题你是在了解我的身份和背景。如果有更多问题或者需要帮助，随时可以告诉我！
+ ========== 第8轮对话开始 ========== 
+
+请输入：我跟你对话的第一个问题是什么
+你跟我对话的第一个问题是：“我的名字叫lzy”。这是你向我介绍自己的方式。如果还有其他问题或需要帮助，欢迎随时提问！
+ ========== 第9轮对话开始 ========== 
+
+请输入：我跟你对话的第一个问题是什么
+你跟我对话的第一个问题是：“你的名字是什么”。这个问题你是在了解我的名称和身份。如果有更多问题或者需要帮助，随时可以告诉我！
+ ========== 第10轮对话开始 ========== 
+
+请输入：exit
+回话已结束
+~~~
+
+
+
+### 1.7 消息属性
 
 
 
@@ -2180,9 +2668,218 @@ LANGSMITH_PROJECT="LangChainDemo"
 
 
 
-1.2
+### 1.2 工具调用方式
+
+- 在LangChain中，工具(Tools)实际上是指明确定义了输入和输出的<font color="red">**可调用函数**</font>。因此，<font color="red">**工具调用(Tool Calling)**</font>也被称为<font color="red">**"函数调用"（Function Calling）**</font>
+
+- 有两种调用方式
+  - 调用方式1：<font color="red">**直接调用**</font>
+
+  ~~~python
+  @tool
+  def get_weather(city: str) -> str:
+      """
+      获取指定城市的天气信息
+  
+      参数：
+          city：城市名称，如：北京、上海
+  
+      返回：
+          天气信息字符串
+      :return:
+      """
+      # 具体实现
+      return city + "晴天，温度25度"
+  
+  # 使用invoke方法直接调用
+  result = get_weather.invoke({"city": "上海"})
+  print(result)
+  ~~~
+
+  - 调用方式2：<font color="red">**基于模型进行调用**</font>
+
+  ~~~python
+  @tool
+  def get_weather(city: str) -> str:
+      """
+      获取指定城市的天气信息
+  
+      参数：
+          city：城市名称，如：北京、上海
+  
+      返回：
+          天气信息字符串
+      :return:
+      """
+      return city + "晴天，温度25度"
+  
+  # 绑定工具
+  model_with_tool = model.bind_tools([get_weather])
+  
+  # AI可以决定是否调用工具
+  responses = model_with_tool.invoke("北京天气如何?")
+  
+  # 检查AI是否要调用工具
+  if responses.tool_calls:
+      print("AI想要调用工具：", responses.tool_calls)
+  else:
+      print("AI直接回答：", responses.content)
+      
+      
+  # 打印1：AI想要调用工具： [{'name': 'get_weather', 'args': {'city': '北京'}, 'id': 'call_uB506ogH', 'type': 'tool_call'}]
+  # 打印2：AI直接回答： 1 + 1 = 2
+  ~~~
+
+
+### 1.3 工具调用的整体流程
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 六、结构化输出
+
+## 1、结构化输出概述
+
+### 1.1 什么是结构化输出
+
+- LangChain的结构化输出（Structured Output）指的是：
+
+  - <font color="red">**要求模型最终返回一个符合预定义结构的数据对象**</font>，例如固定字段的JSON，Pydantic模型、TypedDict，而不再是无格式的自然语言文本
+
+- 它的核心目标是<font color="red">**把自然语言回答变成程序可以稳定消费的数据**</font>
+
+- 例如
+
+  - 不再让模型输出
+
+  ~~~bash
+  盗梦空间在2010年上映，导演是诺兰，评分9.3	
+  ~~~
+
+  - 而是让他输出类似这样的结构
+
+  ~~~json
+  {
+      "title": "盗梦空间",
+      "year": 2010,
+      "director": "诺兰",
+      "rating": 9.3
+  }
+  ~~~
+
+- 这样做的价值有三点
+
+  - <font color="red">**更容易被代码处理**</font>：下游系统可以直接读字段，而不再从自然语言里做解析
+  - <font color="red">**结果更稳定**</font>：减少模型说法变了但意思差不多导致的解析失败
+  - <font color="red">**更适合工程化**</font>：适用于表单抽取、分类、路由、调用工具参数生成、工作流状态传递等场景
+
+
+
+### 1.2 传统方式 vs 结构化输出
+
+- <font color="red">**传统的几种方式：繁琐不推荐**</font>
+
+~~~python
+# 1、提示词要求json
+prompt = "以json格式返回：{name, age, sex}"
+response = model.invoke(prompt)
+
+# 2、手动解析
+import json
+data = json.loads(response.content)
+
+# 3、手动验证类型
+if not isintance(data['age'], int):
+    raise ValueError('age must be int')
+    
+# 4、手动创建对象
+person = Person(**data)
+~~~
+
+- <font color="red">**结构化输出：简洁**</font>
+
+~~~python
+# 一步到位
+structured_llm = model.with_structured_output(Person)
+person = structured_llm.invoke("张三是一名30岁的工程师")
+~~~
+
+- 为什么结构化输出受欢迎
+  - 在没有Pydantic等结构化方案之前，开发者需要写大量的Prompt苦口婆心的球大模型“请返回json，不要带任何解释”，然后自己写繁琐的 json.loads()和try ...except
+  - 而有了Pydantic等结构化方案结合 .with_structured_output()之后
+    - <font color="red">**prompt变干净了**</font>：字段的description直接充当了prompt的一部分
+    - <font color="red">**类型安全**</font>：编辑器能自动补全，代码运行前就能做类型检查
+    - <font color="red">**极其稳定**</font>：依托大模型厂商底层的json模式，输出错误率降到了极低
+
+
+
+### 1.3 结构化输出模式
+
+- 目前LangChain支持多种Schema与结构化输出方式
+  - <font color="red">**Pydantic**</font>（字段校验、描述、嵌套结构、功能最丰富）
+  - <font color="red">**TypedDict**</font>（轻量类型约束）
+  - <font color="red">**JSON Schema**</font>（与前后端/跨语言接口最通用）
+  - <font color="red">**dataclass**</font>
+
+- 模型对象可以调用with_structured_output()绑定输出模式(schema)
+- <font color="red">**只有Pydantic返回的是Schema类实例，其余三种返回的都是字典；也只有Pydantic在类型不匹配时会抛出异常**</font>
+
+- 目前绝大数模型都支持结构化输出，不支持的LangChain需要回退到提示词+json解析
+
+
+
+## 2、四种模式使用
+
+### 2.1 Pydantic
 
